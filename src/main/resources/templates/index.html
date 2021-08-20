@@ -18,6 +18,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:include="fragments/general.html :: headerfiles"></th:block>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.1.2/css/buttons.dataTables.css" />
 </head>
 <body>
     <noscript>
@@ -48,10 +50,13 @@
                 </div>
                 <div class="card shadow" sec:authorize="isAuthenticated()">
                     <div class="card-header">
-                        <h2>Certificate Board</h2>
+                        <h2>X.509 Certificate Dahboard</h2>
                     </div>
-                    <div class="card-body">
-                        <p>Nothing to show for now!</p>
+                    <div class="card-body p-0">
+                        <div class="col-12 m-1">
+                            <table id="mrn_entities_table" class="table table-striped table-bordered table-sm row-border hover w-100">
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -60,6 +65,11 @@
     </div>
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <script th:src="@{/src/common.js}"></script>
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js" ></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.2/js/dataTables.buttons.js" ></script>
+    <script src="https://cdn.datatables.net/select/1.3.1/js/dataTables.select.js" ></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.5/js/dataTables.responsive.js" ></script>
+    <script th:src="@{/lib/dataTables.altEditor.free.js}"></script>
+    <script th:src="@{/src/mrnEntities.js}"></script>
 </body>
 </html>
