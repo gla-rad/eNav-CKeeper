@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 GLA UK Research and Development Directive
+ * Copyright (c) 2021 GLA Research and Development Directorate
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.grad.eNav;
+
+package org.grad.eNav.cKeeper;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 /**
  * The Certificate Keeper Micro-Service.
@@ -26,6 +28,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  */
 @SpringBootApplication
 @EnableDiscoveryClient
+@EnableFeignClients
 public class CKeeper {
 
 	/**
