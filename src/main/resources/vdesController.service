@@ -1,0 +1,9 @@
+[Unit]
+Description=ee-Navigation Certificate Keeper Service
+After=syslog.target
+
+[Service]
+ExecStart=/opt/e-nav/cKeeper/cKeeper.jar
+
+[Install]
+WantedBy=multi-user.target
