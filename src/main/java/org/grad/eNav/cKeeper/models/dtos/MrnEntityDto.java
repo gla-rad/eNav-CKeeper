@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * The type Mrn entity dto.
  */
-public class MRNEntityDto {
+public class MrnEntityDto {
 
     // Class Variables
     private BigInteger id;
@@ -40,7 +40,7 @@ public class MRNEntityDto {
     /**
      * Instantiates a new Mrn entity dto.
      */
-    public MRNEntityDto() {
+    public MrnEntityDto() {
 
     }
 
@@ -49,7 +49,7 @@ public class MRNEntityDto {
      *
      * @param mrnEntity the mrn entity
      */
-    public MRNEntityDto(MRNEntity mrnEntity) {
+    public MrnEntityDto(MRNEntity mrnEntity) {
         this.id = mrnEntity.getId();
         this.name = mrnEntity.getName();
         this.mrn = mrnEntity.getMrn();
@@ -175,8 +175,8 @@ public class MRNEntityDto {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof MRNEntityDto)) return false;
-        MRNEntityDto that = (MRNEntityDto) o;
+        if (!(o instanceof MrnEntityDto)) return false;
+        MrnEntityDto that = (MrnEntityDto) o;
         return Objects.equals(id, that.id) && mrn.equals(that.mrn);
     }
 

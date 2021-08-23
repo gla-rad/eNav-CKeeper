@@ -18,9 +18,9 @@ package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
-import org.grad.eNav.cKeeper.models.dtos.MRNEntityDto;
+import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.*;
-import org.grad.eNav.cKeeper.services.MRNEntityService;
+import org.grad.eNav.cKeeper.services.MrnEntityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,8 +50,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ActiveProfiles("test")
-@WebMvcTest(controllers = MRNEntityController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
-class MRNEntityControllerTest {
+@WebMvcTest(controllers = MrnEntityController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
+class MrnEntityControllerTest {
 
     /**
      * The Mock MVC.
@@ -66,16 +66,16 @@ class MRNEntityControllerTest {
     ObjectMapper objectMapper;
 
     /**
-     * The Station Service mock.
+     * The MRN Entity Service mock.
      */
     @MockBean
-    MRNEntityService mrnEntityService;
+    MrnEntityService mrnEntityService;
 
     // Test Variables
-    private List<MRNEntityDto> entities;
+    private List<MrnEntityDto> entities;
     private Pageable pageable;
-    private MRNEntityDto newEntity;
-    private MRNEntityDto existingEntity;
+    private MrnEntityDto newEntity;
+    private MrnEntityDto existingEntity;
 
     /**
      * Common setup for all the tests.
@@ -85,7 +85,7 @@ class MRNEntityControllerTest {
         // Initialise the MRN entities list
         this.entities = new ArrayList<>();
         for(long i=0; i<10; i++) {
-            MRNEntityDto entity = new MRNEntityDto();
+            MrnEntityDto entity = new MrnEntityDto();
             entity.setId(BigInteger.valueOf(i));
             entity.setName("Entity Name");
             entity.setMrn("urn:mrn:mcp:device:mcc:grad:test" + i);
@@ -99,7 +99,7 @@ class MRNEntityControllerTest {
         this.pageable = PageRequest.of(0, 5);
 
         // Create a new MRN entity
-        this.newEntity = new MRNEntityDto();
+        this.newEntity = new MrnEntityDto();
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
         this.newEntity.setCertificate("CertificateNew");
@@ -107,7 +107,7 @@ class MRNEntityControllerTest {
         this.newEntity.setPrivateKey("PrivateKeyNew");
 
         // Create an MRN entity with an ID
-        this.existingEntity = new MRNEntityDto();
+        this.existingEntity = new MrnEntityDto();
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
@@ -123,7 +123,7 @@ class MRNEntityControllerTest {
     @Test
     void testGetMrnEntities() throws Exception {
         // Created a result page to be returned by the mocked service
-        Page<MRNEntityDto> page = new PageImpl<>(this.entities.subList(0, 5), this.pageable, this.entities.size());
+        Page<MrnEntityDto> page = new PageImpl<>(this.entities.subList(0, 5), this.pageable, this.entities.size());
         doReturn(page).when(this.mrnEntityService).findAll(any());
 
         // Perform the MVC request
@@ -133,7 +133,7 @@ class MRNEntityControllerTest {
                 .andReturn();
 
         // Parse and validate the response
-        MRNEntityDto[] result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MRNEntityDto[].class);
+        MrnEntityDto[] result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MrnEntityDto[].class);
         assertEquals(5, Arrays.asList(result).size());
     }
 
@@ -159,7 +159,7 @@ class MRNEntityControllerTest {
         dtPagingRequest.setColumns(Collections.singletonList(dtColumn));
 
         // Create a mocked datatables paging response
-        DtPage<MRNEntityDto> dtPage = new DtPage<>();
+        DtPage<MrnEntityDto> dtPage = new DtPage<>();
         dtPage.setData(this.entities);
         dtPage.setDraw(1);
         dtPage.setRecordsFiltered(this.entities.size());
@@ -176,7 +176,7 @@ class MRNEntityControllerTest {
                 .andReturn();
 
         // Parse and validate the response
-        DtPage<MRNEntityDto> result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), DtPage.class);
+        DtPage<MrnEntityDto> result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), DtPage.class);
         assertEquals(this.entities.size(), result.getData().size());
     }
 
@@ -195,7 +195,7 @@ class MRNEntityControllerTest {
                 .andReturn();
 
         // Parse and validate the response
-        MRNEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MRNEntityDto.class);
+        MrnEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MrnEntityDto.class);
         assertEquals(this.existingEntity, result);
     }
 
@@ -232,7 +232,7 @@ class MRNEntityControllerTest {
                 .andReturn();
 
         // Parse and validate the response
-        MRNEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MRNEntityDto.class);
+        MrnEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MrnEntityDto.class);
         assertEquals(this.existingEntity, result);
     }
 
@@ -271,7 +271,7 @@ class MRNEntityControllerTest {
                 .andReturn();
 
         // Parse and validate the response
-        MRNEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MRNEntityDto.class);
+        MrnEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MrnEntityDto.class);
         assertEquals(this.existingEntity, result);
     }
 
