@@ -47,10 +47,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Paths;
+import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Optional;
@@ -120,7 +118,7 @@ public class McpService {
         //Loading the Keystore file
         SSLContextBuilder SSLBuilder = SSLContexts.custom();
         ClassPathResource keyStoreResource = new ClassPathResource(this.keyStore);
-        SSLBuilder = SSLBuilder.loadKeyMaterial(this.loadKeyMaterial(keyStoreResource.getURI(), this.keyStorePass.toCharArray()), this.keyStorePass.toCharArray());
+        SSLBuilder = SSLBuilder.loadKeyMaterial(this.loadKeyMaterial(keyStoreResource.getInputStream(), this.keyStorePass.toCharArray()), this.keyStorePass.toCharArray());
 
         //Building the SSLContext
         this.sslContext = SSLBuilder.build();
@@ -307,21 +305,20 @@ public class McpService {
      * password, this function will load and the return the keystore in a
      * Java Security format.
      *
-     * @param uri   The keystore URI
+     * @param kin    The keystore input stream
      * @param ksp   The keystore encryption password
      * @return The loaded keystore
      * @throws KeyStoreException if no Provider supports a KeyStoreSpi implementation for the specified type
      * @throws IOException for any file loading operations gone wrong
      */
-    protected KeyStore loadKeyMaterial(URI uri, char[] ksp) throws KeyStoreException, IOException {
+    protected KeyStore loadKeyMaterial(InputStream kin, char[] ksp) throws KeyStoreException, IOException {
         final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        final FileInputStream inputStream = new FileInputStream(Paths.get(uri).toFile());
         try {
-            keyStore.load(inputStream, ksp);
+            keyStore.load(kin, ksp);
         } catch(NoSuchAlgorithmException | CertificateException ex) {
             this.log.error(ex.getMessage());
         } finally {
-            inputStream.close();
+            kin.close();
         }
         return keyStore;
     }
