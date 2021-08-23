@@ -130,10 +130,6 @@ $(document).ready( function () {
             });
         },
         onEditRow: function (datatable, rowdata, success, error) {
-            // The geometry is not read correctly so we need to access it in-direclty
-            var idx = stationsTable.cell('.selected', 0).index();
-            var data = stationsTable.rows(idx.row).data();
-            var geometry = data[0].geometry;
             $.ajax({
                 url: `/api/mrn-entities/${rowdata["id"]}`,
                 type: 'PUT',

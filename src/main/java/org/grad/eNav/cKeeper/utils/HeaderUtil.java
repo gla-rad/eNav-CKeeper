@@ -50,7 +50,7 @@ public class HeaderUtil {
      * @return the http headers
      */
     public static HttpHeaders createFailureAlert(String entityName, String errorKey, String defaultMessage) {
-        log.error("Entity creation failed, {}", defaultMessage);
+        log.error("Entity creation/update failed, {}", defaultMessage);
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-cKeeper-error", "error." + errorKey);
         headers.add("X-cKeeper-params", entityName);

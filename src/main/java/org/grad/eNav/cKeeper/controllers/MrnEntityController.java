@@ -17,10 +17,10 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.grad.eNav.cKeeper.models.dtos.MRNEntityDto;
+import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPagingRequest;
-import org.grad.eNav.cKeeper.services.MRNEntityService;
+import org.grad.eNav.cKeeper.services.MrnEntityService;
 import org.grad.eNav.cKeeper.utils.HeaderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -43,13 +43,13 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/mrn-entities")
 @Slf4j
-public class MRNEntityController {
+public class MrnEntityController {
 
     /**
      * The MRN Entity Service
      */
     @Autowired
-    MRNEntityService mrnEntityService;
+    MrnEntityService mrnEntityService;
 
     /**
      * GET /api/mrn-entities : Returns a paged list of all current MRN entities.
@@ -58,14 +58,13 @@ public class MRNEntityController {
      * @param size the number of entries on each page
      * @return the ResponseEntity with status 200 (OK) and the list of MRN entities in body
      */
-    @ResponseStatus
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<MRNEntityDto>> getMrnEntities(@RequestParam("page") Optional<Integer> page,
-                                                           @RequestParam("size") Optional<Integer> size) {
+    public ResponseEntity<List<MrnEntityDto>> getMrnEntities(@RequestParam("page") Optional<Integer> page,
+                                                             @RequestParam("size") Optional<Integer> size) {
         log.debug("REST request to get page of MRN Entities");
         int currentPage = page.orElse(1);
         int pageSize = size.orElse(10);
-        Page<MRNEntityDto> mrnEntityPage = this.mrnEntityService.findAll(PageRequest.of(currentPage - 1, pageSize));
+        Page<MrnEntityDto> mrnEntityPage = this.mrnEntityService.findAll(PageRequest.of(currentPage - 1, pageSize));
         return ResponseEntity.ok()
                 .body(mrnEntityPage.getContent());
     }
@@ -77,20 +76,20 @@ public class MRNEntityController {
      * @return the ResponseEntity with status 200 (OK) and the list of MRN entities in body
      */
     @PostMapping(value = "/dt", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<DtPage<MRNEntityDto>> getMrnEntitiesForDatatables(@RequestBody DtPagingRequest dtPagingRequest) {
+    public ResponseEntity<DtPage<MrnEntityDto>> getMrnEntitiesForDatatables(@RequestBody DtPagingRequest dtPagingRequest) {
         log.debug("REST request to get page of MRN Entities for datatables");
         return ResponseEntity.ok()
                 .body(this.mrnEntityService.handleDatatablesPagingRequest(dtPagingRequest));
     }
 
     /**
-     * GET /api/mrn-entities/:id : get the "id" MRN entity.
+     * GET /api/mrn-entities/{id} : get the "id" MRN entity.
      *
      * @param id the ID of the MRN entity to retrieve
      * @return the ResponseEntity with status 200 (OK) and with body the MRN entity, or with status 404 (Not Found)
      */
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<MRNEntityDto> getMrnEntity(@PathVariable BigInteger id) {
+    public ResponseEntity<MrnEntityDto> getMrnEntity(@PathVariable BigInteger id) {
         log.debug("REST request to get MRN Entity : {}", id);
         return ResponseEntity.ok()
                 .body(this.mrnEntityService.findOne(id));
@@ -104,7 +103,7 @@ public class MRNEntityController {
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<MRNEntityDto> createMrnEntity(@RequestBody MRNEntityDto entity) throws Exception, URISyntaxException {
+    public ResponseEntity<MrnEntityDto> createMrnEntity(@RequestBody MrnEntityDto entity) throws Exception, URISyntaxException {
         log.debug("REST request to save MRN Entity : {}", entity);
         if (entity.getId() != null) {
             return ResponseEntity.badRequest()
@@ -126,15 +125,15 @@ public class MRNEntityController {
     }
 
     /**
-     * PUT /api/mrn-entities : Update an existing MRN entity.
+     * PUT /api/mrn-entities/{id} : Update an existing MRN entity.
      *
      * @param id the ID of the MRN entity to update
      * @param entity the MRN entity to update
-     * @return the ResponseEntity with status 201 (Created) and with body the new MRN entity, or with status 400 (Bad Request) if the MRN entity has already an ID
+     * @return the ResponseEntity with status 200 (OK) and with body the updated MRN entity, or with status 400 (Bad Request) if the MRN entity does not have an ID
      */
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<MRNEntityDto> updateMrnEntity(@PathVariable BigInteger id,
-                                                        @RequestBody MRNEntityDto entity) {
+    public ResponseEntity<MrnEntityDto> updateMrnEntity(@PathVariable BigInteger id,
+                                                        @RequestBody MrnEntityDto entity) {
         log.debug("REST request to update MRN Entity : {}", entity);
         if (id == null) {
             return ResponseEntity.badRequest()
@@ -158,7 +157,7 @@ public class MRNEntityController {
     }
 
     /**
-     * DELETE /api/mrn-entities/:id : Delete the "ID" MRN entity.
+     * DELETE /api/mrn-entities/{id} : Delete the "ID" MRN entity.
      *
      * @param id the ID of the MRN entity to delete
      * @return the ResponseEntity with status 200 (OK)

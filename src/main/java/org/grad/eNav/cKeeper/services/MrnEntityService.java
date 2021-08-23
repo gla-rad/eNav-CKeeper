@@ -19,9 +19,11 @@ package org.grad.eNav.cKeeper.services;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.Query;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
+import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
-import org.grad.eNav.cKeeper.models.dtos.MRNEntityDto;
+import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPagingRequest;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
@@ -37,8 +39,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.validation.constraints.NotNull;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -51,13 +56,19 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class MRNEntityService {
+public class MrnEntityService {
 
     /**
      * The Entity Manager.
      */
     @Autowired
     EntityManager entityManager;
+
+    /**
+     * The MCP Service.
+     */
+    @Autowired
+    McpService mcpService;
 
     /**
      * The MRN Entity Repo
@@ -77,11 +88,11 @@ public class MRNEntityService {
      * @return the list of MRN Entities
      */
     @Transactional(readOnly = true)
-    public List<MRNEntityDto> findAll() {
+    public List<MrnEntityDto> findAll() {
         log.debug("Request to get all MRN Entities");
         return this.mrnEntityRepo.findAll()
                 .stream()
-                .map(MRNEntityDto::new)
+                .map(MrnEntityDto::new)
                 .collect(Collectors.toList());
     }
 
@@ -92,10 +103,10 @@ public class MRNEntityService {
      * @return the list of MRN Entities
      */
     @Transactional(readOnly = true)
-    public Page<MRNEntityDto> findAll(Pageable pageable) {
+    public Page<MrnEntityDto> findAll(@NotNull Pageable pageable) {
         log.debug("Request to get all MRN Entities in a pageable search");
         return this.mrnEntityRepo.findAll(pageable)
-                .map(MRNEntityDto::new);
+                .map(MrnEntityDto::new);
     }
 
     /**
@@ -105,10 +116,10 @@ public class MRNEntityService {
      * @return the node
      */
     @Transactional(readOnly = true)
-    public MRNEntityDto findOne(BigInteger id) {
+    public MrnEntityDto findOne(@NotNull BigInteger id) {
         log.debug("Request to get MRN Entity : {}", id);
         return this.mrnEntityRepo.findById(id)
-                .map(MRNEntityDto::new)
+                .map(MrnEntityDto::new)
                 .orElseThrow(() ->
                         new DataNotFoundException(String.format("No MRN Entity node found for the provided ID: %d", id))
                 );
@@ -121,10 +132,10 @@ public class MRNEntityService {
      * @return the node
      */
     @Transactional(readOnly = true)
-    public MRNEntityDto findOneByMrn(String mrn) {
+    public MrnEntityDto findOneByMrn(@NotNull String mrn) {
         log.debug("Request to get MRN Entity with MRN : {}", mrn);
         return this.mrnEntityRepo.findByMrn(mrn)
-                .map(MRNEntityDto::new)
+                .map(MrnEntityDto::new)
                 .orElseThrow(() ->
                         new DataNotFoundException(String.format("No MRN Entity found for the provided MRN: %s", mrn))
                 );
@@ -136,12 +147,40 @@ public class MRNEntityService {
      * @param entity the MRN Entity to save
      * @return the persisted MRN Entity
      */
-    public MRNEntityDto save(MRNEntityDto entity) {
+    @Transactional
+    public MrnEntityDto save(@NotNull MrnEntityDto entity) {
         log.debug("Request to save MRN Entity : {}", entity);
         return Optional.of(entity)
-                .map(MRNEntityDto::toMRNEntity)
+                .map(MrnEntityDto::toMRNEntity)
+                .map(e -> {
+                    McpDeviceDto mcpDevice = null;
+                    try {
+                        // First try to identify if the entity exists in the MRN
+                        // MIR, and if no we are going to create it, otherwise
+                        // update it
+                        try {
+                            mcpDevice = this.mcpService.getMcpDevice(e.getMrn());
+                        } catch(DataNotFoundException ex) {
+                            this.log.warn("MCP entry for the MRN device with MRN {} not found", e.getMrn());
+                        }
+
+                        // Choose whether to create or update
+                        if(Objects.isNull(mcpDevice)) {
+                            this.mcpService.createMcpDevice(new McpDeviceDto(e.getName(), e.getMrn()));
+                        } else {
+                            // We can only update the name of the MRN device
+                            mcpDevice.setName(e.getName());
+                            mcpDevice = this.mcpService.updateMcpDevice(mcpDevice.getMrn(), mcpDevice);
+                            // Always read the MRN from the MCP MIR
+                            e.setMrn(mcpDevice.getMrn());
+                        }
+                    } catch (IOException ex) {
+                        return null;
+                    }
+                    return e;
+                })
                 .map(this.mrnEntityRepo::save)
-                .map(MRNEntityDto::new)
+                .map(MrnEntityDto::new)
                 .orElseThrow(() ->
                         new SavingFailedException(String.format("Cannot save invalid MRN Entity object"))
                 );
@@ -152,10 +191,24 @@ public class MRNEntityService {
      *
      * @param id the ID of the node
      */
-    public void delete(BigInteger id) {
+    @Transactional
+    public void delete(@NotNull BigInteger id) {
         log.debug("Request to delete MRN Entity : {}", id);
         if(this.mrnEntityRepo.existsById(id)) {
-            // Finally delete the station node
+            // Check and update the MCP Identity Registry
+            this.mrnEntityRepo.findById(id)
+                    .map(e -> {
+                        try {
+                            this.mcpService.deleteMcpDevice(e.getMrn());
+                        } catch (IOException ex) {
+                            return null;
+                        }
+                        return e.getId();
+                    })
+                    .orElseThrow(() ->
+                            new DeletingFailedException(String.format("Cannot delete invalid MRN Entity object"))
+                    );
+            // Finally, delete the station node
             this.mrnEntityRepo.deleteById(id);
         } else {
             throw new DataNotFoundException(String.format("No MRN Entity found for the provided ID: %d", id));
@@ -167,7 +220,7 @@ public class MRNEntityService {
      *
      * @param mrn the MRN of the MRN Entity
      */
-    public void deleteByMRN(String mrn) throws DataNotFoundException {
+    public void deleteByMRN(@NotNull String mrn) throws DataNotFoundException {
         log.debug("Request to delete MRN Entity with MRN : {}", mrn);
         this.delete(this.findOneByMrn(mrn).getId());
     }
@@ -180,7 +233,7 @@ public class MRNEntityService {
      * @return the Datatables paged response
      */
     @Transactional(readOnly = true)
-    public DtPage<MRNEntityDto> handleDatatablesPagingRequest(DtPagingRequest dtPagingRequest) {
+    public DtPage<MrnEntityDto> handleDatatablesPagingRequest(DtPagingRequest dtPagingRequest) {
         // Create the search query
         FullTextQuery searchQuery = this.searchStationsQuery(dtPagingRequest.getSearch().getValue());
         searchQuery.setFirstResult(dtPagingRequest.getStart());
@@ -197,8 +250,8 @@ public class MRNEntityService {
                 .map(FullTextQuery::getResultList)
                 .map(entities -> new PageImpl<>(entities, dtPagingRequest.toPageRequest(), searchQuery.getResultSize()))
                 .map(Page.class::cast)
-                .map(page -> page.map(entity -> new MRNEntityDto((MRNEntity)entity)))
-                .map(page -> new DtPage<>((Page<MRNEntityDto>)page, dtPagingRequest))
+                .map(page -> page.map(entity -> new MrnEntityDto((MRNEntity)entity)))
+                .map(page -> new DtPage<>((Page<MrnEntityDto>)page, dtPagingRequest))
                 .orElseGet(DtPage::new);
     }
 
