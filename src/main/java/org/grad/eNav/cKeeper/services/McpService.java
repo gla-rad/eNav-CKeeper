@@ -97,21 +97,14 @@ public class McpService {
     String keyStorePass;
 
     /**
-     * The MRN Entity Service.
-     */
-    @Autowired
-    MrnEntityService mrnEntityService;
-
-    /**
      * The JSON Object Mapper
      */
     @Autowired
     ObjectMapper objectMapper;
 
     // Apache HTTP Client SSL Context
-    private SSLContext sslContext;
-    private SSLConnectionSocketFactory sslConSocFactory;
-    private HttpClientBuilder clientbuilder;
+    protected SSLContext sslContext;
+    protected HttpClientBuilder clientBuilder;
 
     /**
      * Once the service has been initialised, it needs to register the
@@ -123,7 +116,7 @@ public class McpService {
      * For more information see: https://www.baeldung.com/java-ssl
      */
     @PostConstruct
-    public void init() throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, UnrecoverableKeyException {
+    public void init() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, UnrecoverableKeyException {
         //Loading the Keystore file
         SSLContextBuilder SSLBuilder = SSLContexts.custom();
         ClassPathResource keyStoreResource = new ClassPathResource(this.keyStore);
@@ -135,11 +128,11 @@ public class McpService {
         // Creating SSLConnectionSocketFactory object
         // To allow all hosts, create SSLConnectionSocketFactory object by
         // passing a SSLContext object and a NoopHostnameVerifier object.
-        this.sslConSocFactory = new SSLConnectionSocketFactory(this.sslContext, new NoopHostnameVerifier());
+        SSLConnectionSocketFactory sslConSocFactory = new SSLConnectionSocketFactory(this.sslContext, new NoopHostnameVerifier());
 
         //Creating HttpClientBuilder
-        this.clientbuilder = HttpClients.custom();
-        this.clientbuilder = clientbuilder.setSSLSocketFactory(this.sslConSocFactory);
+        this.clientBuilder = HttpClients.custom();
+        this.clientBuilder = clientBuilder.setSSLSocketFactory(sslConSocFactory);
     }
 
     /**
@@ -159,24 +152,24 @@ public class McpService {
         }
 
         //Building the CloseableHttpClient
-        CloseableHttpClient httpclient = this.clientbuilder.build();
-        HttpGet httpget = new HttpGet(this.constructMcpEndpointUrl("device") + mrn);
+        CloseableHttpClient httpClient = this.clientBuilder.build();
+        HttpGet httpGet = new HttpGet(this.constructMcpEndpointUrl("device") + mrn);
 
         //Executing the request
-        HttpResponse httpresponse = httpclient.execute(httpget);
+        HttpResponse httpResponse = httpClient.execute(httpGet);
 
         // Construct and return the MCP device object through JSON
-        return Optional.of(httpresponse)
+        return Optional.of(httpResponse)
                 .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
                 .map(HttpResponse::getEntity)
                 .map(e -> {
                     try {
                         return this.objectMapper.readValue(e.getContent(), McpDeviceDto.class);
                     } catch (IOException ex) {
-                        throw new DeletingFailedException("Unable to parse MCP response");
+                        throw new DataNotFoundException("Unable to parse MCP response");
                     }
                 })
-                .orElseThrow(() -> new DataNotFoundException(httpresponse.getStatusLine().getReasonPhrase()));
+                .orElseThrow(() -> new DataNotFoundException(httpResponse.getStatusLine().getReasonPhrase()));
     }
 
     /**
@@ -207,15 +200,15 @@ public class McpService {
         entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
         //Building the CloseableHttpClient
-        CloseableHttpClient httpclient = this.clientbuilder.build();
+        CloseableHttpClient httpClient = this.clientBuilder.build();
         HttpPost httpPost = new HttpPost(this.constructMcpEndpointUrl("device"));
         httpPost.setEntity(entity);
 
         //Executing the request
-        HttpResponse httpresponse = httpclient.execute(httpPost);
+        HttpResponse httpResponse = httpClient.execute(httpPost);
 
         // Construct and return the MCP device object through JSON
-        return Optional.of(httpresponse)
+        return Optional.of(httpResponse)
                 .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.CREATED.value())
                 .map(HttpResponse::getEntity)
                 .map(e -> {
@@ -225,7 +218,7 @@ public class McpService {
                         throw new SavingFailedException("Unable to parse MCP response");
                     }
                 })
-                .orElseThrow(() -> new SavingFailedException(httpresponse.getStatusLine().getReasonPhrase()));
+                .orElseThrow(() -> new SavingFailedException(httpResponse.getStatusLine().getReasonPhrase()));
     }
 
     /**
@@ -258,15 +251,15 @@ public class McpService {
         entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
         //Building the CloseableHttpClient
-        CloseableHttpClient httpclient = this.clientbuilder.build();
+        CloseableHttpClient httpClient = this.clientBuilder.build();
         HttpPut httpPut = new HttpPut(this.constructMcpEndpointUrl("device") + mrn);
         httpPut.setEntity(entity);
 
         //Executing the request
-        HttpResponse httpresponse = httpclient.execute(httpPut);
+        HttpResponse httpResponse = httpClient.execute(httpPut);
 
         // Construct and return the MCP device object through JSON
-        return Optional.of(httpresponse)
+        return Optional.of(httpResponse)
                 .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
                 .map(HttpResponse::getEntity)
                 .map(e -> {
@@ -276,7 +269,7 @@ public class McpService {
                         throw new SavingFailedException("Unable to parse MCP response");
                     }
                 })
-                .orElseThrow(() -> new SavingFailedException(httpresponse.getStatusLine().getReasonPhrase()));
+                .orElseThrow(() -> new SavingFailedException(httpResponse.getStatusLine().getReasonPhrase()));
     }
 
     /**
@@ -296,17 +289,17 @@ public class McpService {
         }
 
         //Building the CloseableHttpClient
-        CloseableHttpClient httpclient = this.clientbuilder.build();
+        CloseableHttpClient httpClient = this.clientBuilder.build();
         HttpDelete httpDelete = new HttpDelete(this.constructMcpEndpointUrl("device") + mrn);
 
         //Executing the request
-        HttpResponse httpresponse = httpclient.execute(httpDelete);
+        HttpResponse httpResponse = httpClient.execute(httpDelete);
 
         // Construct and return the MCP device object through JSON
-        return Optional.of(httpresponse)
+        return Optional.of(httpResponse)
                 .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
                 .map(r -> Boolean.TRUE)
-                .orElseThrow(() -> new DeletingFailedException(httpresponse.getStatusLine().getReasonPhrase()));
+                .orElseThrow(() -> new DeletingFailedException(httpResponse.getStatusLine().getReasonPhrase()));
     }
 
     /**
