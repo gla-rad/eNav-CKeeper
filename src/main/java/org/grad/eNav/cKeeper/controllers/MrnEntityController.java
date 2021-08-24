@@ -17,9 +17,11 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPagingRequest;
+import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.services.MrnEntityService;
 import org.grad.eNav.cKeeper.utils.HeaderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * REST controller for managing MRN Entities.
@@ -50,6 +53,12 @@ public class MrnEntityController {
      */
     @Autowired
     MrnEntityService mrnEntityService;
+
+    /**
+     * The Certificate Service.
+     */
+    @Autowired
+    CertificateService certificateService;
 
     /**
      * GET /api/mrn-entities : Returns a paged list of all current MRN entities.
@@ -83,7 +92,7 @@ public class MrnEntityController {
     }
 
     /**
-     * GET /api/mrn-entities/{id} : get the "id" MRN entity.
+     * GET /api/mrn-entities/{id} : get the "ID" MRN entity.
      *
      * @param id the ID of the MRN entity to retrieve
      * @return the ResponseEntity with status 200 (OK) and with body the MRN entity, or with status 404 (Not Found)
@@ -169,6 +178,40 @@ public class MrnEntityController {
         return ResponseEntity.ok()
                 .headers(HeaderUtil.createEntityDeletionAlert("mrnEntity", id.toString()))
                 .build();
+    }
+
+    /**
+     * GET /api/mrn-entities/{id}/certificates : get the "ID" MRN entity
+     * certificates.
+     *
+     * @param id the ID of the MRN entity to retrieve the certificates for
+     * @return the ResponseEntity with status 200 (OK) and with body the certificates set, or with status 404 (Not Found)
+     */
+    @GetMapping(value = "/{id}/certificates", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Set<CertificateDto>> getMrnEntityCertificates(@PathVariable BigInteger id) {
+        log.debug("REST request to get MRN Entity certificates: {}", id);
+        return ResponseEntity.ok()
+                .body(this.certificateService.findAllByMrn(id));
+    }
+
+    /**
+     * PUT /api/mrn-entities/{id}/certificates : put a new certificate in the
+     * "ID" MRN entity.
+     *
+     * @param id the ID of the MRN entity to generate the certificates for
+     * @return the ResponseEntity with status 200 (OK) and with body the new certificates, or with status 404 (Not Found)
+     */
+    @PutMapping(value = "/{id}/certificates", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CertificateDto> putMrnEntityCertificate(@PathVariable BigInteger id) {
+        log.debug("REST request to generate a new certificates for MRN Entity : {}", id);
+        try {
+            return ResponseEntity.ok()
+                    .body(this.certificateService.generateMrnEntityCertificate(id));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest()
+                    .headers(HeaderUtil.createFailureAlert("certificate", ex.getMessage(), ex.toString()))
+                    .build();
+        }
     }
 
 }

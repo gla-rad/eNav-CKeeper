@@ -142,7 +142,7 @@ public class MrnEntityService {
     }
 
     /**
-     * Save a node.
+     * Save an MRN entity.
      *
      * @param entity the MRN Entity to save
      * @return the persisted MRN Entity
@@ -187,9 +187,9 @@ public class MrnEntityService {
     }
 
     /**
-     * Delete the node by ID.
+     * Delete the MRN entity by ID.
      *
-     * @param id the ID of the node
+     * @param id the ID of the MRN entity
      */
     @Transactional
     public void delete(@NotNull BigInteger id) {

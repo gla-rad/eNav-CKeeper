@@ -30,7 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- * REST controller for managing MCP Certificate Operations.
+ * REST controller for managing MCP Operations.
  *
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */

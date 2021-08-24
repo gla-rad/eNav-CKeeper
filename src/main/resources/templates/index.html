@@ -61,6 +61,71 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="certificatesPanel" tabindex="-1" role="dialog" aria-labelledby="certificatesPanelHeader"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-slideout modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="certificatesPanelHeader">Entity Certificates</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <table id="certificates_table" class="table table-striped table-bordered table-sm row-border hover w-100">
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="float-right">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal" title="Cancel Changes">
+                                <i class="fas">&times</i>
+                                <span class="btn-label"> Close</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="confirm-generate-certificate" tabindex="-1" role="dialog" aria-labelledby="confirmGenerateCertificateLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmGenerateCertificateLabel">Confirm Certificate Generation</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>You are about to generate a new certificate for the selected MRN entity.</p>
+                        <p>Do you want to proceed?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary btn-ok">Generate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="confirm-revoke-certificate" tabindex="-1" role="dialog" aria-labelledby="confirmRevokeCertificateLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmRevokeCertificateLabel">Confirm Revoke Certificate</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>You are about to revoke this certificate. This operation cannot be undone.</p>
+                        <p>Are you sure you want to proceed?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger btn-ok">Revoke</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div th:replace="fragments/general.html :: footer"></div>
     </div>
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
