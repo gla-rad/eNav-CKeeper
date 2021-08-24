@@ -79,7 +79,7 @@ public class McpService {
     /**
      * The MCP MRN Sting Prefix.
      */
-    @Value("${gla.rad.ckeeper.mcp.mrnDevicePrefix:urn:mrn:mcp:device:mcc:}")
+    @Value("${gla.rad.ckeeper.mcp.mrnDevicePrefix:urn:mrn:mcp:device:mcc}")
     String mrnDevicePrefix;
 
     /**
@@ -146,12 +146,12 @@ public class McpService {
 
         // Make sure the MCP device MRN has the right prefix
         if(!mrn.startsWith(this.mrnDevicePrefix)) {
-            mrn = String.format("%s%s:%s", this.mrnDevicePrefix, this.organisation, mrn);
+            mrn = String.format("%s:%s:%s", this.mrnDevicePrefix, this.organisation, mrn);
         }
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpGet httpGet = new HttpGet(this.constructMcpEndpointUrl("device") + mrn);
+        HttpGet httpGet = new HttpGet(this.constructMcpDeviceEndpointUrl("device") + mrn);
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpGet);
@@ -189,7 +189,7 @@ public class McpService {
 
         // Make sure the MCP device MRN has the right prefix
         if(!mcpDevice.getMrn().startsWith(this.mrnDevicePrefix)) {
-            mcpDevice.setMrn(String.format("%s%s:%s", this.mrnDevicePrefix, this.organisation, mcpDevice.getMrn()));
+            mcpDevice.setMrn(String.format("%s:%s:%s", this.mrnDevicePrefix, this.organisation, mcpDevice.getMrn()));
         }
 
         // Convert the new MCP Device object to a string entity
@@ -199,7 +199,7 @@ public class McpService {
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.constructMcpEndpointUrl("device"));
+        HttpPost httpPost = new HttpPost(this.constructMcpDeviceEndpointUrl("device"));
         httpPost.setEntity(entity);
 
         //Executing the request
@@ -240,7 +240,7 @@ public class McpService {
 
         // Make sure the MCP device MRN has the right prefix
         if(!mrn.startsWith(this.mrnDevicePrefix)) {
-            mrn = String.format("%s%s:%s", this.mrnDevicePrefix, this.organisation, mrn);
+            mrn = String.format("%s:%s:%s", this.mrnDevicePrefix, this.organisation, mrn);
         }
 
         // Convert the new MCP Device object to a string entity
@@ -250,7 +250,7 @@ public class McpService {
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPut httpPut = new HttpPut(this.constructMcpEndpointUrl("device") + mrn);
+        HttpPut httpPut = new HttpPut(this.constructMcpDeviceEndpointUrl("device") + mrn);
         httpPut.setEntity(entity);
 
         //Executing the request
@@ -283,12 +283,12 @@ public class McpService {
 
         // Make sure the MCP device MRN has the right prefix
         if(!mrn.startsWith(this.mrnDevicePrefix)) {
-            mrn = String.format("%s%s:%s", this.mrnDevicePrefix, this.organisation, mrn);
+            mrn = String.format("%s:%s:%s", this.mrnDevicePrefix, this.organisation, mrn);
         }
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpDelete httpDelete = new HttpDelete(this.constructMcpEndpointUrl("device") + mrn);
+        HttpDelete httpDelete = new HttpDelete(this.constructMcpDeviceEndpointUrl("device") + mrn);
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpDelete);
@@ -331,8 +331,8 @@ public class McpService {
      * @param endpoint  The MCP endpoint to be reached
      * @return the complete MCP endpoint URL
      */
-    protected String constructMcpEndpointUrl(String endpoint) {
-        return String.format("https://%s/x509/api/org/urn:mrn:mcp:org:mcc:%s/%s/", this.host, this.organisation, endpoint);
+    protected String constructMcpDeviceEndpointUrl(String endpoint) {
+        return String.format("https://%s/x509/api/org/%s:%s/%s/", this.host, this.mrnDevicePrefix, this.organisation, endpoint);
     }
 
 }

@@ -303,17 +303,18 @@ class McpServiceTest {
      * Test that we correctly construct the endpoint URLs for the MCP.
      */
     @Test
-    void testConstructMcpEndpointUrl() {
+    void testConstructMcpDeviceEndpointUrl() {
         // First set the host and the organization registered to the MCP
         this.mcpService.host = "localhost";
+        this.mcpService.mrnDevicePrefix = "urn:mrn:mcp:org:mcc";
         this.mcpService.organisation = "grad";
 
         // Make the assertions
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/null/", this.mcpService.constructMcpEndpointUrl(null));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad//", this.mcpService.constructMcpEndpointUrl(""));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test/", this.mcpService.constructMcpEndpointUrl("test"));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test2/", this.mcpService.constructMcpEndpointUrl("test2"));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test3/", this.mcpService.constructMcpEndpointUrl("test3"));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/null/", this.mcpService.constructMcpDeviceEndpointUrl(null));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad//", this.mcpService.constructMcpDeviceEndpointUrl(""));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test/", this.mcpService.constructMcpDeviceEndpointUrl("test"));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test2/", this.mcpService.constructMcpDeviceEndpointUrl("test2"));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test3/", this.mcpService.constructMcpDeviceEndpointUrl("test3"));
     }
 
 }
