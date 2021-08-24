@@ -20,6 +20,7 @@ import org.grad.eNav.cKeeper.models.domain.Certificate;
 
 import java.math.BigInteger;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The type Certificate DTO Class.
@@ -32,6 +33,7 @@ public class CertificateDto {
     private BigInteger id;
     private BigInteger mrnEntityId;
     private String publicKey;
+    private Boolean revoked;
 
     /**
      * Instantiates a new Certificate dto.
@@ -49,6 +51,9 @@ public class CertificateDto {
         this.id = certificate.getId();
         this.mrnEntityId = certificate.getMrnEntity().getId();
         this.publicKey = certificate.getPublicKey();
+        this.revoked = Optional.of(certificate)
+                .map(Certificate::isRevoked)
+                .orElse(Boolean.FALSE);
     }
 
     /**
@@ -103,6 +108,25 @@ public class CertificateDto {
      */
     public void setPublicKey(String publicKey) {
         this.publicKey = publicKey;
+    }
+
+
+    /**
+     * Is revoked boolean.
+     *
+     * @return the boolean
+     */
+    public Boolean isRevoked() {
+        return revoked;
+    }
+
+    /**
+     * Sets revoked.
+     *
+     * @param revoked the revoked
+     */
+    public void setRevoked(Boolean revoked) {
+        this.revoked = revoked;
     }
 
     /**

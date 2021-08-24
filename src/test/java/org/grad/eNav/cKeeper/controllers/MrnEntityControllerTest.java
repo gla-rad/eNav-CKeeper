@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.*;
+import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.services.MrnEntityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,6 +71,12 @@ class MrnEntityControllerTest {
      */
     @MockBean
     MrnEntityService mrnEntityService;
+
+    /**
+     * The Certificate Service mock.
+     */
+    @MockBean
+    CertificateService certificateService;
 
     // Test Variables
     private List<MrnEntityDto> entities;

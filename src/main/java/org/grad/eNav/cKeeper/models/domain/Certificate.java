@@ -64,6 +64,9 @@ public class Certificate {
     @Column(name = "privateKey")
     private String privateKey;
 
+    @Column(name = "revoked")
+    private Boolean revoked;
+
     /**
      * Gets id.
      *
@@ -143,6 +146,25 @@ public class Certificate {
      */
     public String getPrivateKey() {
         return privateKey;
+    }
+
+
+    /**
+     * Is revoked boolean.
+     *
+     * @return the boolean
+     */
+    public Boolean isRevoked() {
+        return revoked;
+    }
+
+    /**
+     * Sets revoked.
+     *
+     * @param revoked the revoked
+     */
+    public void setRevoked(Boolean revoked) {
+        this.revoked = revoked;
     }
 
     /**
