@@ -21,7 +21,7 @@ import java.math.BigInteger;
 import java.util.Objects;
 
 /**
- * The MCP Device Dto Class
+ * The MCP Device DTO Class.
  *
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */

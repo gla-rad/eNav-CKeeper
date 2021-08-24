@@ -17,14 +17,17 @@
 package org.grad.eNav.cKeeper.models.domain;
 
 import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.search.annotations.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * The type MRN Entity.
@@ -58,17 +61,9 @@ public class MRNEntity implements Serializable {
     @Column(name = "mrn")
     private String mrn;
 
-    @Type(type="text")
-    @Column(name = "certificate")
-    private String certificate;
-
-    @Type(type="text")
-    @Column(name = "publicKey")
-    private String publicKey;
-
-    @Type(type="text")
-    @Column(name = "privateKey")
-    private String privateKey;
+    @OneToMany(mappedBy = "mrnEntity", cascade = CascadeType.REMOVE)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<Certificate> certificates = new HashSet<>();
 
     /**
      * Instantiates a new Entity.
@@ -131,57 +126,21 @@ public class MRNEntity implements Serializable {
     }
 
     /**
-     * Gets certificate.
+     * Gets certificates.
      *
-     * @return the certificate
+     * @return the certificates
      */
-    public String getCertificate() {
-        return certificate;
+    public Set<Certificate> getCertificates() {
+        return certificates;
     }
 
     /**
-     * Sets certificate.
+     * Sets certificates.
      *
-     * @param certificate the certificate
+     * @param certificates the certificates
      */
-    public void setCertificate(String certificate) {
-        this.certificate = certificate;
-    }
-
-    /**
-     * Gets public key.
-     *
-     * @return the public key
-     */
-    public String getPublicKey() {
-        return publicKey;
-    }
-
-    /**
-     * Sets public key.
-     *
-     * @param publicKey the public key
-     */
-    public void setPublicKey(String publicKey) {
-        this.publicKey = publicKey;
-    }
-
-    /**
-     * Gets private key.
-     *
-     * @return the private key
-     */
-    public String getPrivateKey() {
-        return privateKey;
-    }
-
-    /**
-     * Sets private key.
-     *
-     * @param privateKey the private key
-     */
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
+    public void setCertificates(Set<Certificate> certificates) {
+        this.certificates = certificates;
     }
 
     /**

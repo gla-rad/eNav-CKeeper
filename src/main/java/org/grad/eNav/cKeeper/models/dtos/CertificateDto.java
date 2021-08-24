@@ -16,48 +16,39 @@
 
 package org.grad.eNav.cKeeper.models.dtos;
 
-import org.grad.eNav.cKeeper.models.domain.MRNEntity;
+import org.grad.eNav.cKeeper.models.domain.Certificate;
 
-import javax.validation.constraints.NotNull;
 import java.math.BigInteger;
 import java.util.Objects;
 
 /**
- * The type MRN Entity DTO Class.
+ * The type Certificate DTO Class.
  *
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-public class MrnEntityDto {
+public class CertificateDto {
 
     // Class Variables
     private BigInteger id;
-    @NotNull
-    private String name;
-    @NotNull
-    private String mrn;
+    private BigInteger mrnEntityId;
+    private String publicKey;
 
     /**
-     * Instantiates a new Mrn entity dto.
+     * Instantiates a new Certificate dto.
      */
-    public MrnEntityDto() {
+    public CertificateDto() {
 
     }
 
     /**
-     * Instantiates a new Mrn entity dto.
+     * Instantiates a new Certificate dto.
      *
-     * @param mrnEntity the mrn entity
+     * @param certificate The certificate domain object to construct the DTO from
      */
-    public MrnEntityDto(MRNEntity mrnEntity) {
-        // Sanity Check
-        if(Objects.isNull(mrnEntity)) {
-            return;
-        }
-
-        // Otherwise, populate the fields from the MRN entity domain object
-        this.id = mrnEntity.getId();
-        this.name = mrnEntity.getName();
-        this.mrn = mrnEntity.getMrn();
+    public CertificateDto(Certificate certificate) {
+        this.id = certificate.getId();
+        this.mrnEntityId = certificate.getMrnEntity().getId();
+        this.publicKey = certificate.getPublicKey();
     }
 
     /**
@@ -79,39 +70,39 @@ public class MrnEntityDto {
     }
 
     /**
-     * Gets name.
+     * Gets mrn entity id.
      *
-     * @return the name
+     * @return the mrn entity id
      */
-    public String getName() {
-        return name;
+    public BigInteger getMrnEntityId() {
+        return mrnEntityId;
     }
 
     /**
-     * Sets name.
+     * Sets mrn entity id.
      *
-     * @param name the name
+     * @param mrnEntityId the mrn entity id
      */
-    public void setName(String name) {
-        this.name = name;
+    public void setMrnEntityId(BigInteger mrnEntityId) {
+        this.mrnEntityId = mrnEntityId;
     }
 
     /**
-     * Gets mrn.
+     * Gets public key.
      *
-     * @return the mrn
+     * @return the public key
      */
-    public String getMrn() {
-        return mrn;
+    public String getPublicKey() {
+        return publicKey;
     }
 
     /**
-     * Sets mrn.
+     * Sets public key.
      *
-     * @param mrn the mrn
+     * @param publicKey the public key
      */
-    public void setMrn(String mrn) {
-        this.mrn = mrn;
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
     }
 
     /**
@@ -123,9 +114,9 @@ public class MrnEntityDto {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof MrnEntityDto)) return false;
-        MrnEntityDto that = (MrnEntityDto) o;
-        return Objects.equals(id, that.id) && mrn.equals(that.mrn);
+        if (!(o instanceof CertificateDto)) return false;
+        CertificateDto that = (CertificateDto) o;
+        return id.equals(that.id) && mrnEntityId.equals(that.mrnEntityId);
     }
 
     /**
@@ -135,20 +126,7 @@ public class MrnEntityDto {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(id, mrn);
-    }
-
-    /**
-     * Translated the MRN Entiry DTO object to a domain MRN Entity.
-     *
-     * @return The corresponding MRN entity object
-     */
-    public MRNEntity toMRNEntity() {
-        MRNEntity entity = new MRNEntity();
-        entity.setId(this.id);
-        entity.setName(this.name);
-        entity.setMrn(this.mrn);
-        return entity;
+        return Objects.hash(id, mrnEntityId);
     }
 
 }

@@ -84,7 +84,7 @@ class McpServiceTest {
         this.mcpService.objectMapper = this.objectMapper;
 
         // Initialise the absolutely necessary parameters
-        this.mcpService.mrnDevicePrefix = "urn:mrn:mcp:device:mcc:";
+        this.mcpService.mcpDevicePrefix = "urn:mrn:mcp:device:mcc:";
 
         // Mock an HTTP client returning from the builder
         this.httpClient = mock(CloseableHttpClient.class);
@@ -173,7 +173,7 @@ class McpServiceTest {
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
 
         // Mock the HTTP response
-        doReturn(HttpStatus.CREATED.value()).when(this.statusLine).getStatusCode();
+        doReturn(HttpStatus.OK.value()).when(this.statusLine).getStatusCode();
         doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
         doReturn(IOUtils.toInputStream(this.objectMapper.writeValueAsString(this.mcpDevice))).when(this.httpEntity).getContent();
         doReturn(this.httpEntity).when(this.httpResponse).getEntity();
@@ -306,7 +306,7 @@ class McpServiceTest {
     void testConstructMcpDeviceEndpointUrl() {
         // First set the host and the organization registered to the MCP
         this.mcpService.host = "localhost";
-        this.mcpService.mrnDevicePrefix = "urn:mrn:mcp:org:mcc";
+        this.mcpService.mcpOrgPrefix = "urn:mrn:mcp:org:mcc";
         this.mcpService.organisation = "grad";
 
         // Make the assertions

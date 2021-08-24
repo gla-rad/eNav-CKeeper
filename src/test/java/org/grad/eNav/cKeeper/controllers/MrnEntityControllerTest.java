@@ -89,9 +89,6 @@ class MrnEntityControllerTest {
             entity.setId(BigInteger.valueOf(i));
             entity.setName("Entity Name");
             entity.setMrn("urn:mrn:mcp:device:mcc:grad:test" + i);
-            entity.setCertificate("CertificateNo" +i);
-            entity.setPublicKey("PublicKeyNo" + i);
-            entity.setPrivateKey("PrivateKeyNo" + i);
             this.entities.add(entity);
         }
 
@@ -102,18 +99,12 @@ class MrnEntityControllerTest {
         this.newEntity = new MrnEntityDto();
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
-        this.newEntity.setCertificate("CertificateNew");
-        this.newEntity.setPublicKey("PublicKeyNew");
-        this.newEntity.setPrivateKey("PrivateKeyNew");
 
         // Create an MRN entity with an ID
         this.existingEntity = new MrnEntityDto();
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
-        this.existingEntity.setCertificate("CertificateExisting");
-        this.existingEntity.setPublicKey("PublicKeyExisting");
-        this.existingEntity.setPrivateKey("PrivateKeyExisting");
     }
 
     /**
