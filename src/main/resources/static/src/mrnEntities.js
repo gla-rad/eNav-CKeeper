@@ -25,24 +25,6 @@ var mrnEntitiesColumnDefs = [{
     hoverMsg: "MRN of the entity",
     placeholder: "MRN of the entity",
     required: true,
-}, {
-    data: "certificate",
-    title: "Certificate",
-    type: "hidden",
-    visible: false,
-    searchable: false
-}, {
-    data: "publicKey",
-    title: "Public Key",
-    type: "hidden",
-    visible: false,
-    searchable: false
-}, {
-    data: "privateKey",
-    title: "Private Key",
-    type: "hidden",
-    visible: false,
-    searchable: false
 }];
 
 // Run when the document is ready
@@ -112,10 +94,7 @@ $(document).ready( function () {
                 data: JSON.stringify({
                     id: rowdata["id"],
                     name: rowdata["name"],
-                    mrn: rowdata["mrn"],
-                    certificate: rowdata["certificate"],
-                    publicKey: rowdata["publicKey"],
-                    privateKey: rowdata["privateKey"]
+                    mrn: rowdata["mrn"]
                 }),
                 success: success,
                 error: error
@@ -138,10 +117,7 @@ $(document).ready( function () {
                 data: JSON.stringify({
                     id: rowdata["id"],
                     name: rowdata["name"],
-                    mrn: rowdata["mrn"],
-                    certificate: rowdata["certificate"],
-                    publicKey: rowdata["publicKey"],
-                    privateKey: rowdata["privateKey"]
+                    mrn: rowdata["mrn"]
                 }),
                 success: success,
                 error: error

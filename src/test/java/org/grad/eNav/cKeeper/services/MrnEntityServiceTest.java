@@ -95,9 +95,6 @@ class MrnEntityServiceTest {
             entity.setId(BigInteger.valueOf(i));
             entity.setName("Entity Name");
             entity.setMrn("urn:mrn:mcp:device:mcc:grad:test" + i);
-            entity.setCertificate("CertificateNo" +i);
-            entity.setPublicKey("PublicKeyNo" + i);
-            entity.setPrivateKey("PrivateKeyNo" + i);
             this.entities.add(entity);
         }
 
@@ -108,18 +105,12 @@ class MrnEntityServiceTest {
         this.newEntity = new MRNEntity();
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
-        this.newEntity.setCertificate("CertificateNew");
-        this.newEntity.setPublicKey("PublicKeyNew");
-        this.newEntity.setPrivateKey("PrivateKeyNew");
 
         // Create a new MRN entity
         this.existingEntity = new MRNEntity();
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
-        this.existingEntity.setCertificate("CertificateExisting");
-        this.existingEntity.setPublicKey("PublicKeyExisting");
-        this.existingEntity.setPrivateKey("PrivateKeyExisting");
 
         // Create an MCP Device DTO
         this.mcpDevice = new McpDeviceDto(this.existingEntity.getName(), this.existingEntity.getMrn());
@@ -186,9 +177,7 @@ class MrnEntityServiceTest {
         assertNotNull(result);
         assertEquals(this.existingEntity.getId(), result.getId());
         assertEquals(this.existingEntity.getName(), result.getName());
-        assertEquals(this.existingEntity.getCertificate(), result.getCertificate());
-        assertEquals(this.existingEntity.getPublicKey(), result.getPublicKey());
-        assertEquals(this.existingEntity.getPrivateKey(), result.getPrivateKey());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
     }
 
     /**
@@ -222,9 +211,7 @@ class MrnEntityServiceTest {
         assertNotNull(result);
         assertEquals(this.existingEntity.getId(), result.getId());
         assertEquals(this.existingEntity.getName(), result.getName());
-        assertEquals(this.existingEntity.getCertificate(), result.getCertificate());
-        assertEquals(this.existingEntity.getPublicKey(), result.getPublicKey());
-        assertEquals(this.existingEntity.getPrivateKey(), result.getPrivateKey());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
     }
 
     /**
@@ -254,9 +241,7 @@ class MrnEntityServiceTest {
         // Test the result
         assertEquals(this.newEntity.getId(), result.getId());
         assertEquals(this.newEntity.getName(), result.getName());
-        assertEquals(this.newEntity.getCertificate(), result.getCertificate());
-        assertEquals(this.newEntity.getPublicKey(), result.getPublicKey());
-        assertEquals(this.newEntity.getPrivateKey(), result.getPrivateKey());
+        assertEquals(this.newEntity.getMrn(), result.getMrn());
 
         // Also that a saving call took place in the repository
         verify(this.mrnEntityRepo, times(1)).save(this.newEntity);
@@ -278,9 +263,7 @@ class MrnEntityServiceTest {
         // Test the result
         assertEquals(this.existingEntity.getId(), result.getId());
         assertEquals(this.existingEntity.getName(), result.getName());
-        assertEquals(this.existingEntity.getCertificate(), result.getCertificate());
-        assertEquals(this.existingEntity.getPublicKey(), result.getPublicKey());
-        assertEquals(this.existingEntity.getPrivateKey(), result.getPrivateKey());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
 
         // Also that a saving call took place in the repository
         verify(this.mrnEntityRepo, times(1)).save(this.existingEntity);
