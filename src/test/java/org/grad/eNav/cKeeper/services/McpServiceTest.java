@@ -416,6 +416,24 @@ class McpServiceTest {
     }
 
     /**
+     * Test that we correctly construct the MCP devices MRNs.
+     */
+    @Test
+    void testConstructMcpDeviceMrn() {
+        // First set the host and the organization registered to the MCP
+        this.mcpService.host = "localhost";
+        this.mcpService.mcpDevicePrefix = "urn:mrn:mcp:device:mcc";
+        this.mcpService.organisation = "grad";
+
+        // Make the assertions
+        assertEquals("urn:mrn:mcp:device:mcc:grad:null", this.mcpService.constructMcpDeviceMrn(null));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:", this.mcpService.constructMcpDeviceMrn(""));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:test", this.mcpService.constructMcpDeviceMrn("test"));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:test2", this.mcpService.constructMcpDeviceMrn("test2"));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:test3", this.mcpService.constructMcpDeviceMrn("test3"));
+    }
+
+    /**
      * Test that we can correclty parse the error messages returned by the
      * HTTP calls to the MCP MIR.
      */

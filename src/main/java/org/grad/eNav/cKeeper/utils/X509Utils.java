@@ -23,7 +23,10 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -31,15 +34,20 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -57,6 +65,7 @@ public class X509Utils {
      * algorithm is always ECDSA by the curve can be provided as a parameter,
      * otherwise the default "secp256r1" mode will be chosen.
      *
+     * @param curve         The curve to be used for generating the pair - leave null for default
      * @return the generates key-pair
      * @throws NoSuchAlgorithmException if the provided algorithm does not exist
      * @throws InvalidAlgorithmParameterException if the provided algorithm parameters are not valid
@@ -214,6 +223,48 @@ public class X509Utils {
         pemKeyWriter.writeObject(keyPair.getPrivate());
         pemKeyWriter.flush();
         return keyWriter.toString();
+    }
+
+    /**
+     * Retrieves the public key object as generated from the Bouncy Castle
+     * library from it's PEM string representation.
+     *
+     * @param publicKeyPem     The public key PEM representation
+     * @return The public key object
+     * @throws NoSuchAlgorithmException if the key factory algorithm doesn't exist
+     * @throws InvalidKeySpecException if the key provided is invalid
+     * @throws IOException for exceptions while accessing the public key
+     */
+    public static PublicKey publicKeyFromPem(String publicKeyPem) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+        KeyFactory factory = KeyFactory.getInstance("EC");
+        StringReader stringReader = new StringReader(publicKeyPem);
+        PemReader pemReader = new PemReader(stringReader);
+        PemObject pemObject = pemReader.readPemObject();
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pemObject.getContent());
+        return factory.generatePublic(publicKeySpec);
+    }
+
+    /**
+     * Retrieves the private key object as generated from the Bouncy Castle
+     * library from it's PEM string representation. The encryption
+     *  algorithm is always ECDSA by the curve can be provided as a parameter,
+     *  otherwise the default "secp256r1" mode will be chosen.
+     *
+     * @param privateKeyPem     The private key PEM representation
+     * @param curve             The curve to be used for reading the private key - leave blank for default
+     * @return The private key object
+     * @throws NoSuchAlgorithmException if the key factory algorithm doesn't exist
+     * @throws InvalidKeySpecException if the key provided is invalid
+     * @throws IOException for exceptions while accessing the public key
+     */
+    public static PrivateKey privateKeyFromPem(String privateKeyPem, String curve) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        KeyFactory factory = KeyFactory.getInstance("EC");
+        StringReader stringReader = new StringReader(privateKeyPem);
+        PemReader pemReader = new PemReader(stringReader);
+        PemObject pemObject = pemReader.readPemObject();
+        ECParameterSpec spec = ECNamedCurveTable.getParameterSpec(Optional.ofNullable(curve).orElse("secp256r1"));
+        ECPrivateKeySpec ecPrivateKeySpec = new ECPrivateKeySpec(new BigInteger(1, pemObject.getContent()), spec);
+        return factory.generatePrivate(ecPrivateKeySpec);
     }
 
 }
