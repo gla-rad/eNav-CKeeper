@@ -942,6 +942,10 @@
                             errstr += error.responseJSON.errors[key][0];
                         }
                     }
+                    // Custom error message handling for GRAD services
+                    else if(error.responseJSON && error.responseJSON.message) {
+                        errstr = error.responseJSON.message;
+                    }
                     var message = '<div class="alert alert-danger" role="alert">' +
                         '<strong>' + this.language.error.label + '</strong> ' + (error.status == null ? "" : this.language.error.responseCode + error.status) + " " + errstr +
                         '</div>';

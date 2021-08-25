@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -34,10 +35,13 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
+import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -49,8 +53,11 @@ import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Optional;
 
 /**
@@ -147,7 +154,7 @@ public class McpService {
      * @return the retrieved MCP device object
      * @throws IOException if the HTTP call failed to execute
      */
-    public McpDeviceDto getMcpDevice(String mrn) throws IOException {
+    public McpDeviceDto getMcpDevice(@NotNull String mrn) throws IOException {
         this.log.debug("Request to get all MCP Devices");
 
         // Make sure the MCP device MRN has the right prefix
@@ -173,7 +180,7 @@ public class McpService {
                         throw new DataNotFoundException("Unable to parse MCP response");
                     }
                 })
-                .orElseThrow(() -> new DataNotFoundException(httpResponse.getStatusLine().getReasonPhrase()));
+                .orElseThrow(() -> new DataNotFoundException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));
     }
 
     /**
@@ -222,7 +229,7 @@ public class McpService {
                         throw new SavingFailedException("Unable to parse MCP response");
                     }
                 })
-                .orElseThrow(() -> new SavingFailedException(httpResponse.getStatusLine().getReasonPhrase()));
+                .orElseThrow(() -> new SavingFailedException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));
     }
 
     /**
@@ -273,7 +280,7 @@ public class McpService {
                         throw new SavingFailedException("Unable to parse MCP response");
                     }
                 })
-                .orElseThrow(() -> new SavingFailedException(httpResponse.getStatusLine().getReasonPhrase()));
+                .orElseThrow(() -> new SavingFailedException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));
     }
 
     /**
@@ -303,7 +310,81 @@ public class McpService {
         return Optional.of(httpResponse)
                 .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
                 .map(r -> Boolean.TRUE)
-                .orElseThrow(() -> new DeletingFailedException(httpResponse.getStatusLine().getReasonPhrase()));
+                .orElseThrow(() -> new DeletingFailedException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));
+    }
+
+    /**
+     * Requests the MCP MIR to issue a new X509 certificate based on the
+     * provided certificate signing operation. This certificate will be attached
+     * to the specified MCP device, based on the provided MRN.
+     *
+     * @param mrn           The MCP device MRN to attach the new certificate tp
+     * @param csr           The certificate signing request to issue the certificate from
+     * @return the signed X.509 certificate
+     * @throws IOException if the PEM generation of the csr or the HTTP request fail
+     */
+    public X509Certificate issueMcpDeviceCertificate(String mrn, PKCS10CertificationRequest csr) throws IOException {
+        this.log.debug("Request to issue a new certificate for the  MCP Device with MRN {}", mrn);
+
+        // Make sure the MCP device MRN has the right prefix
+        if(!mrn.startsWith(this.mcpDevicePrefix)) {
+            mrn = String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, mrn);
+        }
+
+        // Convert the new MCP Device object to a string entity
+        StringEntity entity = new StringEntity(X509Utils.formatCSR(csr));
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "text/plain"));
+
+        //Building the CloseableHttpClient
+        CloseableHttpClient httpClient = this.clientBuilder.build();
+        HttpPost httpPost = new HttpPost(this.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/issue-new/csr");
+        httpPost.setEntity(entity);
+
+        //Executing the request
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+
+        // Construct and return the MCP device object through JSON
+        return Optional.of(httpResponse)
+                .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
+                .map(HttpResponse::getEntity)
+                .map(e -> {
+                    try {
+                        return (X509Certificate) CertificateFactory.getInstance("X.509")
+                                .generateCertificate(e.getContent());
+                    } catch (CertificateException | IOException ex) {
+                        throw new  InvalidRequestException(ex.getMessage());
+                    }
+                })
+                .orElseThrow(() -> new InvalidRequestException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));
+    }
+
+    /**
+     * Requests the MCP MIR to issue revoke an existing X509 certificate based
+     * on the provided MCP device MRN and the certificate ID.
+     *
+     * @param mrn       The MRN of the MCP device to revoke the certificate for
+     * @param certId    The ID of the certificate to be revoked
+     * @throws IOException if the HTTP request fails
+     */
+    public void revokeMcpDeviceCertificate(String mrn, BigInteger certId) throws IOException {
+        this.log.debug("Request to revoke a certificate for the  MCP Device with MRN {}", mrn);
+
+        // Make sure the MCP device MRN has the right prefix
+        if(!mrn.startsWith(this.mcpDevicePrefix)) {
+            mrn = String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, mrn);
+        }
+
+        //Building the CloseableHttpClient
+        CloseableHttpClient httpClient = this.clientBuilder.build();
+        HttpPost httpPost = new HttpPost(this.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/" + certId + "/revoke");
+
+        //Executing the request
+        HttpResponse httpResponse = httpClient.execute(httpPost);
+
+        // Construct and return the MCP device object through JSON
+        Optional.of(httpResponse)
+                .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
+                .orElseThrow(() -> new InvalidRequestException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));
     }
 
     /**
@@ -339,6 +420,20 @@ public class McpService {
      */
     protected String constructMcpDeviceEndpointUrl(String endpoint) {
         return String.format("https://%s/x509/api/org/%s:%s/%s/", this.host, this.mcpOrgPrefix, this.organisation, endpoint);
+    }
+
+    /**
+     * Tries to identify the error returns by the MCP MIR server and if non
+     * found, a standard error message is returned.
+     *
+     * @param statusLine    The MCP MIR returned status line
+     * @return The parsed error message
+     */
+    protected String parseMCPStatusLineError(StatusLine statusLine) {
+        return Optional.of(statusLine)
+                .map(StatusLine::getReasonPhrase)
+                .filter(StringUtils::isNotBlank)
+                .orElse("Unknown error returned by the MCP MIR.");
     }
 
 }

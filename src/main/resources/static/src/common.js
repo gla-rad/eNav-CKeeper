@@ -2,6 +2,15 @@
  * Standard jQuery initialisation of the page were all buttons are assigned an
  * operation and the form doesn't really do anything.
  */
-$(function () {
+$(() => {
     console.log("Content Loaded");
 });
+
+/**
+ * A helper function that shows the error boostrap error dialog and displays
+ * the provided error message in it.
+ */
+function showError(errorMsg) {
+    $('#error-dialog').modal('show');
+    $('#error-dialog .modal-body').html(`<p class="text-danger">${errorMsg}</p>`);
+}

@@ -317,4 +317,19 @@ class McpServiceTest {
         assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test3/", this.mcpService.constructMcpDeviceEndpointUrl("test3"));
     }
 
+    /**
+     * Test that we can correclty parse the error messages returned by the
+     * HTTP calls to the MCP MIR.
+     */
+    @Test
+    void testParseMCPStatusLineError() {
+        // Test for a random error message
+        doReturn("Random Error").when(this.statusLine).getReasonPhrase();
+        assertEquals("Random Error", this.mcpService.parseMCPStatusLineError(this.statusLine));
+
+        // Test for no error message
+        doReturn("").when(this.statusLine).getReasonPhrase();
+        assertEquals("Unknown error returned by the MCP MIR.", this.mcpService.parseMCPStatusLineError(this.statusLine));
+    }
+
 }

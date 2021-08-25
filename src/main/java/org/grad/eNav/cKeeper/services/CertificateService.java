@@ -19,6 +19,7 @@ package org.grad.eNav.cKeeper.services;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
@@ -94,6 +95,12 @@ public class CertificateService {
     MRNEntityRepo mrnEntityRepo;
 
     /**
+     * The MCP Service.
+     */
+    @Autowired
+    McpService mcpService;
+
+    /**
      * The service post-construct operations where the Bouncy Castle
      * security provider is added onto the environment.
      */
@@ -110,7 +117,7 @@ public class CertificateService {
      * @param mrnEntityId   The ID of the MRN entity to retrieve the certificates for
      * @return the set of certificates assigned to the provided MRN entity
      */
-    public Set<CertificateDto> findAllByMrn(@NotNull BigInteger mrnEntityId) {
+    public Set<CertificateDto> findAllByMrnEntityId(@NotNull BigInteger mrnEntityId) {
         return this.certificateRepo.findAllByMrnEntityId(mrnEntityId)
                 .stream()
                 .map(CertificateDto::new)
@@ -124,13 +131,12 @@ public class CertificateService {
      *
      * @param mrnEntityId   The ID of the MRN entity to generate the certificate for
      * @return The generated X.509 certificate DTO
-     * @throws NoSuchAlgorithmException if the provided encryption algorithm is not found
      * @throws InvalidAlgorithmParameterException if the provided encryption parameters are not valid
-     * @throws CertificateException if the certificate is not valid
+     * @throws NoSuchAlgorithmException if the provided encryption algorithm is not found
      * @throws OperatorCreationException if the certificate generation process fails
-     * @throws IOException for error during the PEM exporting operation
+     * @throws IOException for errors during the PEM exporting or HTTP call operations
      */
-    public CertificateDto generateMrnEntityCertificate(@NotNull BigInteger mrnEntityId) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException {
+    public CertificateDto generateMrnEntityCertificate(@NotNull BigInteger mrnEntityId) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, IOException {
         MRNEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElseThrow(() ->
                         new DataNotFoundException(String.format("No MRN Entity node found for the provided ID: %d", mrnEntityId))
@@ -139,17 +145,15 @@ public class CertificateService {
         // Generate a new keypair for the certificate
         KeyPair keyPair = X509Utils.generateKeyPair(this.keyPairCurve);
 
-        // Now
-        Date validityBeginDate = new Date(System.currentTimeMillis() - 1);
-        // Next Year
-        Date validityEndDate = new Date(System.currentTimeMillis() + this.certYearDuration * 356 * 24 * 60 * 60 * 1000);
+        // Generate a new X509 certificate signing request
+        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, this.certAlgorithm);
 
-        // Generate a new X509 certificate
-        X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certDirName, validityBeginDate, validityEndDate, this.certAlgorithm);
+        // Get the X509 certificate signed by the MCP
+        X509Certificate x509Certificate = this.mcpService.issueMcpDeviceCertificate(mrnEntity.getMrn(), csr);
 
         // Populate the new certificate object
         Certificate certificate = new Certificate();
-        certificate.setCertificate(X509Utils.formatCrtFileContents(x509Certificate));
+        certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
         certificate.setPublicKey(X509Utils.formatPublicKey(keyPair));
         certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair));
         certificate.setMrnEntity(mrnEntity);
@@ -171,7 +175,6 @@ public class CertificateService {
     public void delete(@NotNull BigInteger id) {
         log.debug("Request to delete Certificate : {}", id);
         if(this.certificateRepo.existsById(id)) {
-            // Finally, delete the station node
             this.certificateRepo.deleteById(id);
         } else {
             throw new DataNotFoundException(String.format("No Certificate found for the provided ID: %d", id));
@@ -183,15 +186,19 @@ public class CertificateService {
      *
      * @param id    The ID of the certificate to be revoked
      * @return The revoked certificate
+     * @throws IOException for errors during the HTTP call operation
      */
-    public CertificateDto revoke(@NotNull BigInteger id) {
+    public CertificateDto revoke(@NotNull BigInteger id) throws IOException {
         // Access the certificate if found
         Certificate certificate = this.certificateRepo.findById(id)
                 .orElseThrow(() ->
                     new DataNotFoundException(String.format("No Certificate found for the provided ID: %d", id))
                 );
 
-        // Mark as revoked
+        // Mark as revoked in the MCP
+        this.mcpService.revokeMcpDeviceCertificate(certificate.getMrnEntity().getMrn(), certificate.getId());
+
+        // And if successful, make it locally as well
         certificate.setRevoked(true);
 
         // Save and return
@@ -202,4 +209,5 @@ public class CertificateService {
                         new SavingFailedException(String.format("Failed to revoke Certificate with ID: %d", id))
                 );
     }
+
 }

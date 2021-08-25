@@ -253,6 +253,7 @@ class MrnEntityServiceTest {
      */
     @Test
     void testUpdate() throws IOException {
+        doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());
         doReturn(this.mcpDevice).when(this.mcpService).getMcpDevice(this.existingEntity.getMrn());
         doReturn(this.mcpDevice).when(this.mcpService).updateMcpDevice(this.mcpDevice.getMrn(), this.mcpDevice);
         doReturn(this.existingEntity).when(this.mrnEntityRepo).save(any());
