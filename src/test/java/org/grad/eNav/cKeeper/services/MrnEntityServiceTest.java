@@ -106,7 +106,7 @@ class MrnEntityServiceTest {
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
 
-        // Create a new MRN entity
+        // Create an existing MRN entity
         this.existingEntity = new MRNEntity();
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");

@@ -50,11 +50,44 @@ var certificatesColumnDefs = [{
     hoverMsg: "The Certificate Public Key",
     placeholder: "The Certificate Public Key",
     required: true,
-},  {
-   data: "revoked",
-   title: "Revoked",
-   hoverMsg: "Revoked",
-   placeholder: "Revoked"
+    width: "40%"
+}, {
+    data: "startDate",
+    title: "Start Date",
+    type: "date",
+    dateFormat: "MMM DD, YYYY",
+    render: (data) => {
+        return data ? moment(data).format("MMM DD, YYYY") : null;
+    },
+    hoverMsg: "The Certificate is Valid From",
+    placeholder: "The Certificate is Valid From",
+    width: "25%"
+}, {
+    data: "endDate",
+    title: "End Date",
+    type: "date",
+    dateFormat: "MMM DD, YYYY",
+    render: (data) => {
+        return data ? moment(data).format("MMM DD, YYYY") : null;
+    },
+    hoverMsg: "The Certificate is Valid Until",
+    placeholder: "The Certificate is Valid Until",
+    width: "25%"
+}, {
+    data: "revoked",
+    title: "Revoked",
+    type: "select",
+    options: {
+        true: "true",
+        false: "false"
+    },
+    render: function (data, type, row) {
+        return (data ? '<i class="fas fa-check" style="color:red"></i>' : '<i class="fas fa-times-circle" style="color:green"></i>');
+    },
+    className: "dt-body-center",
+    hoverMsg: "Revoked",
+    placeholder: "Revoked",
+    width: "10%"
 }];
 
 // Run when the document is ready
@@ -245,6 +278,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
         columns: certificatesColumnDefs,
         dom: 'Bfrltip',
         select: 'single',
+        autoWidth: false,
         lengthMenu: [10, 25, 50, 75, 100],
         responsive: true,
         altEditor: true, // Enable altEditor

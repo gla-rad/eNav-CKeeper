@@ -40,10 +40,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -122,6 +119,9 @@ class MrnEntityControllerTest {
         this.certificateDto.setId(BigInteger.ONE);
         this.certificateDto.setMrnEntityId(this.existingEntity.getId());
         this.certificateDto.setPublicKey("PUBLIC KEY");
+        this.certificateDto.setStartDate(new Date());
+        this.certificateDto.setEndDate(new Date());
+        this.certificateDto.setRevoked(Boolean.FALSE);
     }
 
     /**

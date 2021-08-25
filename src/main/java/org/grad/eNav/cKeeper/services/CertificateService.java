@@ -156,6 +156,9 @@ public class CertificateService {
         certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
         certificate.setPublicKey(X509Utils.formatPublicKey(keyPair));
         certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair));
+        certificate.setStartDate(x509Certificate.getNotBefore());
+        certificate.setEndDate(x509Certificate.getNotAfter());
+        certificate.setMcpMirId(null); // TODO: We need to wait for MIR to return the generated ID
         certificate.setMrnEntity(mrnEntity);
 
         // Save the certificate into the database
