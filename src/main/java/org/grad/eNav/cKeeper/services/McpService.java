@@ -158,9 +158,7 @@ public class McpService {
         this.log.debug("Request to get all MCP Devices");
 
         // Make sure the MCP device MRN has the right prefix
-        if(!mrn.startsWith(this.mcpDevicePrefix)) {
-            mrn = String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, mrn);
-        }
+        mrn = this.constructMcpDeviceMrn(mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
@@ -201,9 +199,7 @@ public class McpService {
                 .orElseThrow(() -> new SavingFailedException("Cannot create new devices in the MCP without a name or an MRN"));
 
         // Make sure the MCP device MRN has the right prefix
-        if(!mcpDevice.getMrn().startsWith(this.mcpDevicePrefix)) {
-            mcpDevice.setMrn(String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, mcpDevice.getMrn()));
-        }
+        mcpDevice.setMrn(this.constructMcpDeviceMrn(mcpDevice.getMrn()));
 
         // Convert the new MCP Device object to a string entity
         String json = this.objectMapper.writeValueAsString(mcpDevice);
@@ -252,9 +248,7 @@ public class McpService {
                 .orElseThrow(() -> new SavingFailedException("Cannot update devices in the MCP without a name or an MRN"));
 
         // Make sure the MCP device MRN has the right prefix
-        if(!mrn.startsWith(this.mcpDevicePrefix)) {
-            mrn = String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, mrn);
-        }
+        mrn = this.constructMcpDeviceMrn(mrn);
 
         // Convert the new MCP Device object to a string entity
         String json = this.objectMapper.writeValueAsString(mcpDevice);
@@ -295,9 +289,7 @@ public class McpService {
         this.log.debug("Request to delete MCP Device with MRN {}", mrn);
 
         // Make sure the MCP device MRN has the right prefix
-        if(!mrn.startsWith(this.mcpDevicePrefix)) {
-            mrn = String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, mrn);
-        }
+        mrn = this.constructMcpDeviceMrn(mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
@@ -327,9 +319,7 @@ public class McpService {
         this.log.debug("Request to issue a new certificate for the  MCP Device with MRN {}", mrn);
 
         // Make sure the MCP device MRN has the right prefix
-        if(!mrn.startsWith(this.mcpDevicePrefix)) {
-            mrn = String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, mrn);
-        }
+        mrn = this.constructMcpDeviceMrn(mrn);
 
         // Convert the new MCP Device object to a string entity
         StringEntity entity = new StringEntity(X509Utils.formatCSR(csr));
@@ -370,9 +360,7 @@ public class McpService {
         this.log.debug("Request to revoke a certificate for the  MCP Device with MRN {}", mrn);
 
         // Make sure the MCP device MRN has the right prefix
-        if(!mrn.startsWith(this.mcpDevicePrefix)) {
-            mrn = String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, mrn);
-        }
+        mrn = this.constructMcpDeviceMrn(mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
@@ -385,6 +373,29 @@ public class McpService {
         Optional.of(httpResponse)
                 .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
                 .orElseThrow(() -> new InvalidRequestException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));
+    }
+
+    /**
+     * A helper function to construct the appropriate MCP endpoint URL, based
+     * on the currently loaded host, registered organisation and endpoint to
+     * be reached.
+     *
+     * @param endpoint  The MCP endpoint to be reached
+     * @return the complete MCP endpoint URL
+     */
+    public String constructMcpDeviceEndpointUrl(String endpoint) {
+        return String.format("https://%s/x509/api/org/%s:%s/%s/", this.host, this.mcpOrgPrefix, this.organisation, endpoint);
+    }
+
+    /**
+     * A helper function to construct the appropriate device MRN, based on the
+     * provided device ID.
+     *
+     * @param deviceId  The ID of the device to construct the MRN from
+     * @return The constructed device MRN
+     */
+    public String constructMcpDeviceMrn(String deviceId) {
+        return Optional.ofNullable(deviceId).orElse("").startsWith(this.mcpDevicePrefix) ? deviceId : String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, deviceId);
     }
 
     /**
@@ -408,18 +419,6 @@ public class McpService {
             kin.close();
         }
         return keyStore;
-    }
-
-    /**
-     * A helper function to construct the appropriate MCP endpoint URL, based
-     * on the currently loaded host, registered organisation and endpoint to
-     * be reached.
-     *
-     * @param endpoint  The MCP endpoint to be reached
-     * @return the complete MCP endpoint URL
-     */
-    protected String constructMcpDeviceEndpointUrl(String endpoint) {
-        return String.format("https://%s/x509/api/org/%s:%s/%s/", this.host, this.mcpOrgPrefix, this.organisation, endpoint);
     }
 
     /**

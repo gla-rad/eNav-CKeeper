@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -313,6 +314,38 @@ class X509UtilsTest {
         assertTrue(privateKeyPem.startsWith("-----BEGIN EC PRIVATE KEY-----"));
         assertTrue(privateKeyPem.endsWith("-----END EC PRIVATE KEY-----\n"));
         assertTrue(privateKeyPem.length() > 100);
+    }
+
+    /**
+     * Test that we can reconstruct the public key object from it's PEM
+     * representation.
+     */
+    @Test
+    void testPublicKeyFromPem() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        // Create a keypair
+        KeyPair keyPair = X509Utils.generateKeyPair(null);
+
+        // Generate the PEM formatted string
+        String publicKeyPem = X509Utils.formatPublicKey(keyPair);
+        PublicKey publicKey = X509Utils.publicKeyFromPem(publicKeyPem);
+
+        assertNotNull(publicKey);
+    }
+
+    /**
+     * Test that we can reconstruct the private key object from it's PEM
+     * representation.
+     */
+    @Test
+    void testPrivateKeyFromPem() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, IOException, InvalidKeySpecException {
+        // Create a keypair
+        KeyPair keyPair = X509Utils.generateKeyPair(null);
+
+        // Generate the PEM formatted string
+        String privateKeyPem = X509Utils.formatPrivateKey(keyPair);
+        PrivateKey privateKey = X509Utils.privateKeyFromPem(privateKeyPem, null);
+
+        assertNotNull(privateKey);
     }
 
 }
