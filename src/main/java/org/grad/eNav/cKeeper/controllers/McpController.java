@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.services.McpService;
 import org.grad.eNav.cKeeper.utils.HeaderUtil;
@@ -71,22 +72,16 @@ public class McpController {
     public ResponseEntity<McpDeviceDto> createMcpDevice(@RequestBody McpDeviceDto mcpDevice) throws URISyntaxException {
         log.debug("REST request to create MCP device : {}", mcpDevice);
         if (mcpDevice.getId() != null) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mcpDevice", "idexists", "A new MCP device cannot already have an ID"))
-                    .build();
+            throw new InvalidRequestException("A new MCP device cannot already have an ID");
         } else if (mcpDevice.getMrn() == null) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mcpDevice", "nomrn", "Cannot create a new MCP device without an MRN"))
-                    .build();
+            throw new InvalidRequestException("Cannot create a new MCP device without an MRN");
         }
 
         // Save the MRN Entity
         try {
             mcpDevice = this.mcpService.createMcpDevice(mcpDevice);
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mcpDevice", ex.getMessage(), ex.toString()))
-                    .body(mcpDevice);
+        } catch (IOException ex) {
+            throw new InvalidRequestException(ex.getMessage());
         }
 
         // Build the response
@@ -108,22 +103,16 @@ public class McpController {
                                                         @RequestBody McpDeviceDto mcpDevice) {
         log.debug("REST request to update MCP device : {}", mcpDevice);
         if (mcpDevice.getId() == null) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mcpDevice", "noid", "Cannot update an MCP device without an ID"))
-                    .build();
+            throw new InvalidRequestException("Cannot update an MCP device without an ID");
         } else if (mcpDevice.getMrn() == null) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mcpDevice", "nomrn", "Cannot update an MCP device without an MRN"))
-                    .build();
+            throw new InvalidRequestException("Cannot update an MCP device without an MRN");
         }
 
         // Save the MRN Entity
         try {
             this.mcpService.updateMcpDevice(mrn, mcpDevice);
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mcpDevice", ex.getMessage(), ex.toString()))
-                    .body(mcpDevice);
+        } catch (IOException ex) {
+            throw new InvalidRequestException(ex.getMessage());
         }
 
         // Build the response
@@ -145,9 +134,8 @@ public class McpController {
         // Delete the MRN Entity
         try {
             this.mcpService.deleteMcpDevice(mrn);
-        } catch (Exception ex) {
-            return ResponseEntity.notFound()
-                    .build();
+        } catch (IOException ex) {
+            throw new InvalidRequestException(ex.getMessage());
         }
 
         // Build the response

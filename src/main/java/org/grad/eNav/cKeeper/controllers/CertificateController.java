@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.utils.HeaderUtil;
@@ -25,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.math.BigInteger;
 
 /**
@@ -55,10 +57,8 @@ public class CertificateController {
         try {
             return ResponseEntity.ok()
                     .body(this.certificateService.revoke(id));
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("certificate", ex.getMessage(), ex.toString()))
-                    .build();
+        } catch (IOException ex) {
+            throw new InvalidRequestException(ex.getMessage());
         }
     }
 

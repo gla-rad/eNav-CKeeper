@@ -31,6 +31,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.io.IOException;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -130,8 +131,6 @@ class McpControllerTest {
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpDevice)))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().exists("X-cKeeper-error"))
-                .andExpect(header().exists("X-cKeeper-params"))
                 .andReturn();
     }
 
@@ -150,8 +149,6 @@ class McpControllerTest {
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpDevice)))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().exists("X-cKeeper-error"))
-                .andExpect(header().exists("X-cKeeper-params"))
                 .andReturn();
     }
 
@@ -195,8 +192,6 @@ class McpControllerTest {
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpDevice)))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().exists("X-cKeeper-error"))
-                .andExpect(header().exists("X-cKeeper-params"))
                 .andReturn();
     }
 
@@ -217,8 +212,6 @@ class McpControllerTest {
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpDevice)))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().exists("X-cKeeper-error"))
-                .andExpect(header().exists("X-cKeeper-params"))
                 .andReturn();
     }
 
@@ -233,15 +226,13 @@ class McpControllerTest {
         this.mcpDevice.setId(BigInteger.ONE);
 
         // Mock a general Exception when saving the instance
-        doThrow(RuntimeException.class).when(this.mcpService).updateMcpDevice(any(), any());
+        doThrow(IOException.class).when(this.mcpService).updateMcpDevice(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(put("/api/mcp/devices/{mrn}", this.mcpDevice.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpDevice)))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().exists("X-cKeeper-error"))
-                .andExpect(header().exists("X-cKeeper-params"))
                 .andReturn();
     }
 

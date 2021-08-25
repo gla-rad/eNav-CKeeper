@@ -18,6 +18,9 @@ package org.grad.eNav.cKeeper.utils;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCSException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -149,7 +152,7 @@ class X509UtilsTest {
 
     /**
      * Test that we can correctly generate an X.509 certificate based on the
-     * provided arguments, in this case by using the SHA256WITH-ECDSA encryption
+     * provided arguments, in this case by using the SHA256WITHECDSA encryption
      * and hashing algorithms.
      *
      * @throws NoSuchAlgorithmException if the provided encryption algorithm is not found
@@ -180,6 +183,60 @@ class X509UtilsTest {
     }
 
     /**
+     * Test that we can correctly generate an X.509 certificate signing request
+     * based on the default arguments, in this case by using the default
+     * encryption and hashing algorithms.
+     *
+     * @throws InvalidAlgorithmParameterException if the provided encryption parameters are not valid
+     * @throws NoSuchAlgorithmException if the provided encryption algorithm is not found
+     * @throws OperatorCreationException if the certificate generation process fails
+     * @throws PKCSException if the provided signature does not match the CSR
+     */
+    @Test
+    void testGenerateX509CSRDefault() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, PKCSException {
+        // Create a keypair
+        KeyPair keyPair = X509Utils.generateKeyPair(null);
+
+        // Create the certificate
+        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, "CN=Test", null);
+
+        // Basic Assertions
+        assertNotNull(csr);
+        assertEquals("CN=Test", csr.getSubject().toString());
+
+        // Assert the CSR signature validity
+        assertTrue(csr.isSignatureValid(new JcaContentVerifierProviderBuilder()
+                .build(keyPair.getPublic())));
+    }
+
+    /**
+     * Test that we can correctly generate an X.509 certificate signing request
+     * based on the provided arguments, in this case by using the
+     * SHA256WITHECDSA encryption and hashing algorithms.
+     *
+     * @throws InvalidAlgorithmParameterException if the provided encryption parameters are not valid
+     * @throws NoSuchAlgorithmException if the provided encryption algorithm is not found
+     * @throws OperatorCreationException if the certificate generation process fails
+     * @throws PKCSException if the provided signature does not match the CSR
+     */
+    @Test
+    void testGenerateX509CSR() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, PKCSException {
+        // Create a keypair
+        KeyPair keyPair = X509Utils.generateKeyPair(null);
+
+        // Create the certificate
+        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, "CN=Test", "SHA256WITHECDSA");
+
+        // Basic Assertions
+        assertNotNull(csr);
+        assertEquals("CN=Test", csr.getSubject().toString());
+
+        // Assert the CSR signature validity
+        assertTrue(csr.isSignatureValid(new JcaContentVerifierProviderBuilder()
+                .build(keyPair.getPublic())));
+    }
+
+    /**
      * Test that we can correctly format the generated X.509 certificate from an
      * elliptic curve key pair.
      *
@@ -190,7 +247,7 @@ class X509UtilsTest {
      * @throws IOException for error during the PEM exporting operation
      */
     @Test
-    void testfFormatCrtFileContents() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException {
+    void testFormatCrtFileContents() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException {
         // Yesterday
         Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
         // Tomorrow
@@ -203,7 +260,7 @@ class X509UtilsTest {
         X509Certificate certificate = X509Utils.generateX509Certificate(keyPair, "CN=Test", validityBeginDate, validityEndDate, null);
 
         // Generate the PEM formatted string
-        String privateKeyPem = X509Utils.formatCrtFileContents(certificate);
+        String privateKeyPem = X509Utils.formatCertificate(certificate);
 
         // Basic Assertions
         assertNotNull(privateKeyPem);

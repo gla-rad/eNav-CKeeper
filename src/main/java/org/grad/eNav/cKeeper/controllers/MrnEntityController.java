@@ -17,6 +17,8 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
@@ -31,9 +33,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -115,19 +120,12 @@ public class MrnEntityController {
     public ResponseEntity<MrnEntityDto> createMrnEntity(@RequestBody MrnEntityDto entity) throws Exception, URISyntaxException {
         log.debug("REST request to save MRN Entity : {}", entity);
         if (entity.getId() != null) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mrnEntity", "idexists", "A new MRN entity cannot already have an ID"))
-                    .body(null);
+            throw new InvalidRequestException("A new MRN entity cannot already have an ID");
         }
 
         // Save the MRN Entity
-        try {
-            entity = this.mrnEntityService.save(entity);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mrnEntity", e.getMessage(), e.toString()))
-                    .body(entity);
-        }
+        entity = this.mrnEntityService.save(entity);
+
 
         // Build the response
         return ResponseEntity.created(new URI("/api/mrn-entities/" + entity.getId())).body(entity);
@@ -144,22 +142,10 @@ public class MrnEntityController {
     public ResponseEntity<MrnEntityDto> updateMrnEntity(@PathVariable BigInteger id,
                                                         @RequestBody MrnEntityDto entity) {
         log.debug("REST request to update MRN Entity : {}", entity);
-        if (id == null) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mrnEntity", "noid", "Cannot update an MRN entity without an ID"))
-                    .body(null);
-        } else {
-            entity.setId(id);
-        }
 
         // Save the MRN Entity
-        try {
-            this.mrnEntityService.save(entity);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("mrnEntity", e.getMessage(), e.toString()))
-                    .body(entity);
-        }
+        entity.setId(id);
+        this.mrnEntityService.save(entity);
 
         // Build the response
         return ResponseEntity.ok().body(entity);
@@ -191,7 +177,7 @@ public class MrnEntityController {
     public ResponseEntity<Set<CertificateDto>> getMrnEntityCertificates(@PathVariable BigInteger id) {
         log.debug("REST request to get MRN Entity certificates: {}", id);
         return ResponseEntity.ok()
-                .body(this.certificateService.findAllByMrn(id));
+                .body(this.certificateService.findAllByMrnEntityId(id));
     }
 
     /**
@@ -207,10 +193,8 @@ public class MrnEntityController {
         try {
             return ResponseEntity.ok()
                     .body(this.certificateService.generateMrnEntityCertificate(id));
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest()
-                    .headers(HeaderUtil.createFailureAlert("certificate", ex.getMessage(), ex.toString()))
-                    .build();
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | OperatorCreationException | IOException ex) {
+            throw new InvalidRequestException(ex.getMessage());
         }
     }
 

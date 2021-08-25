@@ -170,9 +170,9 @@ $(document).ready( function () {
                 certificatesTable.ajax.reload();
                 $modalDiv.modal('hide').removeClass('loading');
             },
-            error: (error) => {
-                console.error(error);
-                $modalDiv.modal('hide').removeClass('loading');
+            error: (jqXHR, textStatus, errorThrown)  => {
+                $modalDiv.removeClass('loading');
+                showError(jqXHR.responseJSON.message);
             }
         });
     });
@@ -194,9 +194,9 @@ $(document).ready( function () {
                 certificatesTable.ajax.reload();
                 $modalDiv.modal('hide').removeClass('loading');
             },
-            error: (error) => {
-                console.error(error);
-                $modalDiv.modal('hide').removeClass('loading');
+            error: (jqXHR, textStatus, errorThrown)  => {
+                $modalDiv.removeClass('loading');
+                showError(jqXHR.responseJSON.message);
             }
         });
     });

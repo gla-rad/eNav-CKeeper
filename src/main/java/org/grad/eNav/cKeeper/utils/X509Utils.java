@@ -28,7 +28,11 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
@@ -64,13 +68,24 @@ public class X509Utils {
     }
 
     /**
-     * It's annoying to have to wrap KeyPairs with Certificates, but this is
-     * "easier" for you to know who the key belongs to.
+     * Generates a new X.509 Certificate base don the provided arguments:
+     * <ul>
+     *     <li>Key Pair</li>
+     *     <li>X500 Name</li>
+     *     <li>Start Date</li>
+     *     <li>End Date</li>
+     *     <li>Optional Algorithm Name</li>
+     * </ul>
+     * The generated certificate is self-signed and should be used carefully.
      *
-     * @param keyPair A KeyPair to wrap
+     * @param keyPair       The key-pair to wrap into the certificate
+     * @param dirName       The X500 name of the certificate
+     * @param startDate     The validity start date of the certificate
+     * @param endDate       The validity end date of the certificate
+     * @param algorithm     The optional algorithm name to be used - leave NULL for default
      * @return A wrapped certificate with constant name
-     * @throws CertificateException
-     * @throws OperatorCreationException
+     * @throws CertificateException if the certificate generation fails
+     * @throws OperatorCreationException if the content signing operation fails
      */
     public static X509Certificate generateX509Certificate(KeyPair keyPair, String dirName, Date startDate, Date endDate, String algorithm) throws CertificateException, OperatorCreationException {
         // Sanity Checks
@@ -106,6 +121,38 @@ public class X509Utils {
     }
 
     /**
+     * Generates a certificate signing request (CSR) that can be then sent to
+     * a certificate provider to be signed and returned as an actual X.509
+     * certificate. In our case this is primarily the MCP MIR.
+     *
+     * @param keyPair       The key-pair to wrap into the certificate
+     * @param dirName       The X500 name of the certificate
+     * @param algorithm     The optional algorithm name to be used - leave NULL for default
+     * @return The generated certificate signing request
+     * @throws OperatorCreationException if the content signing operation fails
+     */
+    public static PKCS10CertificationRequest generateX509CSR(KeyPair keyPair, String dirName, String algorithm) throws OperatorCreationException {
+        // Sanity Checks
+        assert Objects.nonNull(keyPair);
+        assert StringUtils.isNotBlank(dirName);
+
+        // Create the Issuer/Subject Name
+        X500Principal principal = new X500Principal(dirName);
+
+        // Setup the Certificate Request Builder
+        PKCS10CertificationRequestBuilder p10Builder = new JcaPKCS10CertificationRequestBuilder(
+                principal, keyPair.getPublic());
+        
+        // Setup the Content Signer
+        ContentSigner signer = new JcaContentSignerBuilder(Optional.ofNullable(algorithm).orElse("SHA256withCVC-ECDSA")).
+                setProvider(new BouncyCastleProvider())
+                .build(keyPair.getPrivate());
+
+        // Return the certificate using Bouncy Castle
+        return p10Builder.build(signer);
+    }
+
+    /**
      * Returns the provided certificate in a PEM string format using the
      * Bouncy Castle PEMWriter functionality.
      *
@@ -113,10 +160,26 @@ public class X509Utils {
      * @return the PEM formatted string of the certificate
      * @throws IOException if the string export operation fails
      */
-    public static String formatCrtFileContents(final X509Certificate certificate) throws IOException {
+    public static String formatCertificate(final X509Certificate certificate) throws IOException {
         final StringWriter certWriter = new StringWriter();
         final JcaPEMWriter pemCertWriter = new JcaPEMWriter(certWriter);
         pemCertWriter.writeObject(certificate);
+        pemCertWriter.flush();
+        return certWriter.toString();
+    }
+
+    /**
+     * Returns the provided certificate signing request in a PEM string format
+     * using the Bouncy Castle PEMWriter functionality.
+     *
+     * @param csr           The certificate signing request to be formatted
+     * @return the PEM formatted string of the certificate
+     * @throws IOException if the string export operation fails
+     */
+    public static String formatCSR(final PKCS10CertificationRequest csr) throws IOException {
+        final StringWriter certWriter = new StringWriter();
+        final JcaPEMWriter pemCertWriter = new JcaPEMWriter(certWriter);
+        pemCertWriter.writeObject(csr);
         pemCertWriter.flush();
         return certWriter.toString();
     }

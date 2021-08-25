@@ -144,13 +144,20 @@ public class MrnEntityService {
     /**
      * Save an MRN entity.
      *
-     * @param entity the MRN Entity to save
-     * @return the persisted MRN Entity
+     * @param mrnEntity the MRN Entity DTO to be saved
+     * @return the persisted MRN Entity DTO
      */
     @Transactional
-    public MrnEntityDto save(@NotNull MrnEntityDto entity) {
-        log.debug("Request to save MRN Entity : {}", entity);
-        return Optional.of(entity)
+    public MrnEntityDto save(@NotNull MrnEntityDto mrnEntity) {
+        log.debug("Request to save MRN Entity : {}", mrnEntity);
+
+        // Sanity Check
+        if(Objects.nonNull(mrnEntity.getId()) && !this.mrnEntityRepo.existsById(mrnEntity.getId())) {
+            throw new DataNotFoundException(String.format("No MRN Entity found for the provided ID: %d", mrnEntity.getId()));
+        }
+
+        // Save the MRN Entity
+        return Optional.of(mrnEntity)
                 .map(MrnEntityDto::toMRNEntity)
                 .map(e -> {
                     McpDeviceDto mcpDevice = null;
@@ -194,25 +201,27 @@ public class MrnEntityService {
     @Transactional
     public void delete(@NotNull BigInteger id) {
         log.debug("Request to delete MRN Entity : {}", id);
-        if(this.mrnEntityRepo.existsById(id)) {
-            // Check and update the MCP Identity Registry
-            this.mrnEntityRepo.findById(id)
-                    .map(e -> {
-                        try {
-                            this.mcpService.deleteMcpDevice(e.getMrn());
-                        } catch (IOException ex) {
-                            return null;
-                        }
-                        return e.getId();
-                    })
-                    .orElseThrow(() ->
-                            new DeletingFailedException(String.format("Cannot delete invalid MRN Entity object"))
-                    );
-            // Finally, delete the station node
-            this.mrnEntityRepo.deleteById(id);
-        } else {
+
+        // Sanity Check
+        if(!this.mrnEntityRepo.existsById(id)) {
             throw new DataNotFoundException(String.format("No MRN Entity found for the provided ID: %d", id));
         }
+
+        // Check and update the MCP Identity Registry
+        this.mrnEntityRepo.findById(id)
+                .map(e -> {
+                    try {
+                        this.mcpService.deleteMcpDevice(e.getMrn());
+                    } catch (IOException ex) {
+                        return null;
+                    }
+                    return e.getId();
+                })
+                .orElseThrow(() ->
+                        new DeletingFailedException(String.format("Cannot delete invalid MRN Entity object"))
+                );
+        // Finally, delete the station node
+        this.mrnEntityRepo.deleteById(id);
     }
 
     /**

@@ -18,6 +18,7 @@ package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
+import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.*;
 import org.grad.eNav.cKeeper.services.CertificateService;
@@ -37,6 +38,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +50,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 @WebMvcTest(controllers = MrnEntityController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
@@ -83,6 +86,7 @@ class MrnEntityControllerTest {
     private Pageable pageable;
     private MrnEntityDto newEntity;
     private MrnEntityDto existingEntity;
+    private CertificateDto certificateDto;
 
     /**
      * Common setup for all the tests.
@@ -112,6 +116,12 @@ class MrnEntityControllerTest {
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
+
+        // Create a certificate to be assigned to the existing MRN entity
+        this.certificateDto = new CertificateDto();
+        this.certificateDto.setId(BigInteger.ONE);
+        this.certificateDto.setMrnEntityId(this.existingEntity.getId());
+        this.certificateDto.setPublicKey("PUBLIC KEY");
     }
 
     /**
@@ -236,7 +246,7 @@ class MrnEntityControllerTest {
 
     /**
      * Test that if we try to create an MRN entity with an existing ID field,
-     * an HTTP BAD_REQUEST response will be returns, with a description of
+     * an HTTP BAD_REQUEST response will be returned, with a description of
      * the error in the header.
      */
     @Test
@@ -246,8 +256,6 @@ class MrnEntityControllerTest {
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.existingEntity)))
                 .andExpect(status().isBadRequest())
-                .andExpect(header().exists("X-cKeeper-error"))
-                .andExpect(header().exists("X-cKeeper-params"))
                 .andReturn();
     }
 
@@ -274,26 +282,6 @@ class MrnEntityControllerTest {
     }
 
     /**
-     * Test that if we fail to update the provided MRN entity due to a general
-     * error, an HTTP BAD_REQUEST response will be returned, with a description
-     * of the error in the header.
-     */
-    @Test
-    void testUpdateMrnEntityFailure() throws Exception {
-        // Mock a general Exception when saving the instance
-        doThrow(RuntimeException.class).when(this.mrnEntityService).save(any());
-
-        // Perform the MVC request
-        this.mockMvc.perform(put("/api/mrn-entities/{id}", this.existingEntity.getId())
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .content(this.objectMapper.writeValueAsString(this.existingEntity)))
-                .andExpect(status().isBadRequest())
-                .andExpect(header().exists("X-cKeeper-error"))
-                .andExpect(header().exists("X-cKeeper-params"))
-                .andReturn();
-    }
-
-    /**
      * Test that we can correctly delete an existing MRN entity by using a valid
      * ID.
      */
@@ -317,6 +305,65 @@ class MrnEntityControllerTest {
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mrn-entities/{id}", this.existingEntity.getId()))
                 .andExpect(status().isNotFound());
+    }
+
+    /**
+     * Test that we can retrieve the certificates assigned to a given MRN entity
+     * using just the MRN entity ID.
+     */
+    @Test
+    void testGetMrnEntityCertificates()  throws Exception {
+        doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.existingEntity.getId());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mrn-entities/{id}/certificates", this.existingEntity.getId())
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.objectMapper.writeValueAsString(this.existingEntity)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andReturn();
+
+        // Parse and validate the response
+        CertificateDto[] result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), CertificateDto[].class);
+        assertEquals(1, result.length);
+        assertEquals(this.certificateDto, result[0]);
+    }
+
+    /**
+     * Test that we can generate a new X.509 certificate for the provided MRN
+     * entity, identified through it's MRN Entity ID.
+     */
+    @Test
+    void testPutMrnEntityCertificate() throws Exception {
+        doReturn(this.certificateDto).when(this.certificateService).generateMrnEntityCertificate(this.existingEntity.getId());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/mrn-entities/{id}/certificates", this.existingEntity.getId())
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.objectMapper.writeValueAsString(this.existingEntity)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andReturn();
+
+        // Parse and validate the response
+        CertificateDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), CertificateDto.class);
+        assertEquals(this.certificateDto, result);
+    }
+
+    /**
+     * Test that if we fail to generate a new X.509 certificate for the provided
+     * MRN entity, an HTTP BAD REQUEST will the returned.
+     */
+    @Test
+    void testPutMrnEntityCertificateFailure() throws Exception {
+        doThrow(IOException.class).when(this.certificateService).generateMrnEntityCertificate(this.existingEntity.getId());
+
+        // Perform the MVC request
+        this.mockMvc.perform(put("/api/mrn-entities/{id}/certificates", this.existingEntity.getId())
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.objectMapper.writeValueAsString(this.existingEntity)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
     }
 
 }
