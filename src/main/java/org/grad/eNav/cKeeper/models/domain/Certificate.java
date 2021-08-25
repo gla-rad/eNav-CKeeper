@@ -25,6 +25,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import java.math.BigInteger;
+import java.util.Date;
 import java.util.Objects;
 
 /**
@@ -63,6 +64,15 @@ public class Certificate {
     @Type(type="text")
     @Column(name = "privateKey")
     private String privateKey;
+
+    @Column(name = "startDate")
+    private Date startDate;
+
+    @Column(name = "endDate")
+    private Date endDate;
+
+    @Column(name = "mcpMirId")
+    private String mcpMirId;
 
     @Column(name = "revoked")
     private Boolean revoked;
@@ -148,13 +158,75 @@ public class Certificate {
         return privateKey;
     }
 
+    /**
+     * Sets private key.
+     *
+     * @param privateKey the private key
+     */
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
+    }
 
     /**
-     * Is revoked boolean.
+     * Gets start date.
      *
-     * @return the boolean
+     * @return the start date
      */
-    public Boolean isRevoked() {
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    /**
+     * Sets start date.
+     *
+     * @param startDate the start date
+     */
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    /**
+     * Gets end date.
+     *
+     * @return the end date
+     */
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    /**
+     * Sets end date.
+     *
+     * @param endDate the end date
+     */
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    /**
+     * Gets mcp mir id.
+     *
+     * @return the mcp mir id
+     */
+    public String getMcpMirId() {
+        return mcpMirId;
+    }
+
+    /**
+     * Sets mcp mir id.
+     *
+     * @param mcpMirId the mcp mir id
+     */
+    public void setMcpMirId(String mcpMirId) {
+        this.mcpMirId = mcpMirId;
+    }
+
+    /**
+     * Gets revoked.
+     *
+     * @return the revoked
+     */
+    public Boolean getRevoked() {
         return revoked;
     }
 
@@ -168,14 +240,11 @@ public class Certificate {
     }
 
     /**
-     * Sets private key.
+     * Overrides the equality operator of the class.
      *
-     * @param privateKey the private key
+     * @param o the object to check the equality
+     * @return whether the two objects are equal
      */
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -184,6 +253,11 @@ public class Certificate {
         return id.equals(that.id) && mrnEntity.equals(that.mrnEntity);
     }
 
+    /**
+     * Overrides the hashcode generation of the object.
+     *
+     * @return the generated hashcode
+     */
     @Override
     public int hashCode() {
         return Objects.hash(id, mrnEntity);

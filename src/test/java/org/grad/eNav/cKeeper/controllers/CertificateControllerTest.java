@@ -32,6 +32,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doReturn;
@@ -75,6 +76,9 @@ class CertificateControllerTest {
         this.certificateDto.setId(BigInteger.ONE);
         this.certificateDto.setMrnEntityId(BigInteger.TEN);
         this.certificateDto.setPublicKey("PUBLIC KEY");
+        this.certificateDto.setStartDate(new Date());
+        this.certificateDto.setEndDate(new Date());
+        this.certificateDto.setRevoked(Boolean.FALSE);
     }
 
     /**

@@ -19,6 +19,7 @@ package org.grad.eNav.cKeeper.models.dtos;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 
 import java.math.BigInteger;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -33,6 +34,8 @@ public class CertificateDto {
     private BigInteger id;
     private BigInteger mrnEntityId;
     private String publicKey;
+    private Date startDate;
+    private Date endDate;
     private Boolean revoked;
 
     /**
@@ -51,8 +54,10 @@ public class CertificateDto {
         this.id = certificate.getId();
         this.mrnEntityId = certificate.getMrnEntity().getId();
         this.publicKey = certificate.getPublicKey();
+        this.startDate = certificate.getStartDate();
+        this.endDate = certificate.getEndDate();
         this.revoked = Optional.of(certificate)
-                .map(Certificate::isRevoked)
+                .map(Certificate::getRevoked)
                 .orElse(Boolean.FALSE);
     }
 
@@ -110,13 +115,48 @@ public class CertificateDto {
         this.publicKey = publicKey;
     }
 
+    /**
+     * Gets start date.
+     *
+     * @return the start date
+     */
+    public Date getStartDate() {
+        return startDate;
+    }
 
     /**
-     * Is revoked boolean.
+     * Sets start date.
      *
-     * @return the boolean
+     * @param startDate the start date
      */
-    public Boolean isRevoked() {
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    /**
+     * Gets end date.
+     *
+     * @return the end date
+     */
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    /**
+     * Sets end date.
+     *
+     * @param endDate the end date
+     */
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    /**
+     * Gets revoked.
+     *
+     * @return the revoked
+     */
+    public Boolean getRevoked() {
         return revoked;
     }
 
@@ -126,7 +166,7 @@ public class CertificateDto {
      * @param revoked the revoked
      */
     public void setRevoked(Boolean revoked) {
-        this.revoked = revoked;
+        this.revoked = Optional.ofNullable(revoked).orElse(Boolean.FALSE);
     }
 
     /**
