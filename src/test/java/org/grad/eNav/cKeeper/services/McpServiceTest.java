@@ -23,10 +23,14 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
+import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,10 +41,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -296,6 +301,99 @@ class McpServiceTest {
         // Perform the service call
         assertThrows(DeletingFailedException.class, () ->
                 this.mcpService.deleteMcpDevice(this.mcpDevice.getMrn())
+        );
+    }
+
+    /**
+     * Test that we can successfully issue a new X.509 certificate through the
+     * MCP MIR by submitting a certificate signature request (CSR) for a
+     * given MCP device (based on its MRN).
+     */
+    @Test
+    void testIssueMcpDeviceCertificate() throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, CertificateException {
+        // Spin up a CSR and a generate X.509 certificate
+        final KeyPair keypair = X509Utils.generateKeyPair(null);
+        final PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keypair, "CN=Test", null);
+        final X509Certificate cert = X509Utils.generateX509Certificate(keypair, "CN=Test", new Date(), new Date(), null);
+
+        // Mock the HTTP request
+        this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
+        doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
+
+        // Mock the HTTP response
+        doReturn(HttpStatus.OK.value()).when(this.statusLine).getStatusCode();
+        doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
+        doReturn(IOUtils.toInputStream(X509Utils.formatCertificate(cert))).when(this.httpEntity).getContent();
+        doReturn(this.httpEntity).when(this.httpResponse).getEntity();
+        doReturn(this.httpResponse).when(this.httpClient).execute(any());
+
+        // Perform the service call
+        this.mcpService.issueMcpDeviceCertificate(this.mcpDevice.getMrn(), csr);
+    }
+
+    /**
+     * Test if we cannot successfully issue a new certificate through the
+     * provided CSR, and the response is invalid, an InvalidRequestException
+     * will be thrown.
+     */
+    @Test
+    void testIssueMcpDeviceCertificateFailure() throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, CertificateException {
+        // Spin up a CSR and a generate X.509 certificate
+        final KeyPair keypair = X509Utils.generateKeyPair(null);
+        final PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keypair, "CN=Test", null);
+
+        // Mock the HTTP request
+        this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
+        doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
+
+        // Mock the HTTP response
+        doReturn(HttpStatus.BAD_REQUEST.value()).when(this.statusLine).getStatusCode();
+        doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
+        doReturn(this.httpResponse).when(this.httpClient).execute(any());
+
+        // Perform the service call
+        assertThrows(InvalidRequestException.class, () ->
+            this.mcpService.issueMcpDeviceCertificate(this.mcpDevice.getMrn(), csr)
+        );
+    }
+
+    /**
+     * Test that we can successfully revoke an existing X.509 certificate
+     * through the MCP MIR.
+     */
+    @Test
+    void testRevokeMcpDeviceCertificate() throws IOException {
+        // Mock the HTTP request
+        this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
+        doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
+
+        // Mock the HTTP response
+        doReturn(HttpStatus.OK.value()).when(this.statusLine).getStatusCode();
+        doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
+        doReturn(this.httpResponse).when(this.httpClient).execute(any());
+
+        // Perform the service call
+        this.mcpService.revokeMcpDeviceCertificate(this.mcpDevice.getMrn(), BigInteger.ONE);
+    }
+
+    /**
+     * Test that if we fail to revoke an existing certificate from the MCP
+     * MIR for any reason, an InvalidRequestException will be thrown.
+     */
+    @Test
+    void testRevokeMcpDeviceCertificateFailure() throws IOException {
+        // Mock the HTTP request
+        this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
+        doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
+
+        // Mock the HTTP response
+        doReturn(HttpStatus.BAD_REQUEST.value()).when(this.statusLine).getStatusCode();
+        doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
+        doReturn(this.httpResponse).when(this.httpClient).execute(any());
+
+        // Perform the service call
+        assertThrows(InvalidRequestException.class, () ->
+            this.mcpService.revokeMcpDeviceCertificate(this.mcpDevice.getMrn(), BigInteger.ONE)
         );
     }
 
