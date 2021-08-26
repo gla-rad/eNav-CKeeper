@@ -311,8 +311,8 @@ class X509UtilsTest {
 
         // Basic Assertions
         assertNotNull(privateKeyPem);
-        assertTrue(privateKeyPem.startsWith("-----BEGIN EC PRIVATE KEY-----"));
-        assertTrue(privateKeyPem.endsWith("-----END EC PRIVATE KEY-----\n"));
+        assertTrue(privateKeyPem.startsWith("-----BEGIN PRIVATE KEY-----"));
+        assertTrue(privateKeyPem.endsWith("-----END PRIVATE KEY-----\n"));
         assertTrue(privateKeyPem.length() > 100);
     }
 

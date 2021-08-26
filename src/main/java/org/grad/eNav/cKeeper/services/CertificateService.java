@@ -36,13 +36,9 @@ import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
-import java.security.cert.CertificateException;
+import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.Date;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -211,6 +207,69 @@ public class CertificateService {
                 .orElseThrow(() ->
                         new SavingFailedException(String.format("Failed to revoke Certificate with ID: %d", id))
                 );
+    }
+
+    /**
+     * Performs the signing operation on the provided payload bytes using the
+     * private key of the certificate specified by the selected certificate ID.
+     *
+     * The algorithm used to generate the signature. This is by default the
+     * SHA256withCVC-ECDSA algorithm, but it can be controlled through the
+     * application.properties file.
+     *
+     * @param id            The ID of the certificate to use the private key of
+     * @param payload       The payload bytes to be signed
+     * @return The signed payload
+     * @throws NoSuchAlgorithmException if the selected certificate algorithm is not found
+     * @throws IOException for errors during the private key loading operation
+     * @throws InvalidKeySpecException if the provided key specification is invalid
+     * @throws SignatureException when the signature generation process fails
+     * @throws InvalidKeyException if the key provided for the signature is invalid
+     */
+    public byte[] signContent(BigInteger id, byte[] payload) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        // Pick up the certificate by the provided ID
+        Certificate certificate = this.certificateRepo.findById(id)
+                .orElseThrow(() ->
+                    new DataNotFoundException(String.format("No Certificate found for the provided ID: %d", id))
+                );
+
+        // Create a new signature to sign the provided content
+        Signature sign = Signature.getInstance(this.certAlgorithm);
+        sign.initSign(X509Utils.privateKeyFromPem(certificate.getPrivateKey(), this.keyPairCurve));
+        sign.update(payload);
+
+        // Sign and return the signature
+        return sign.sign();
+    }
+
+    /**
+     * Attempts to verify the provided content using the signature specified. The
+     * certificate used in this process is identified through the specified ID.
+     *
+     * @param id        The ID of the certificate to be used for the verification
+     * @param content       The content to be verified
+     * @param signature     The signature to verify the contect with
+     * @return Whether the contect verification was successful or not
+     * @throws NoSuchAlgorithmException if the selected certificate algorithm is not found
+     * @throws IOException for errors during the public key loading operation
+     * @throws InvalidKeySpecException  if the provided key specification is invalid
+     * @throws SignatureException when the signature generation process fails
+     * @throws InvalidKeyException if the key provided for the signature is invalid
+     */
+    public boolean verifyContent(BigInteger id, byte[] content, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        // Pick up the certificate by the provided ID
+        Certificate certificate = this.certificateRepo.findById(id)
+                .orElseThrow(() ->
+                        new DataNotFoundException(String.format("No Certificate found for the provided ID: %d", id))
+                );
+
+        // Create a new signature to sign the provided content
+        Signature sign = Signature.getInstance(this.certAlgorithm);
+        sign.initVerify(X509Utils.publicKeyFromPem(certificate.getPublicKey()));
+        sign.update(content);
+
+        // Sign and return the signature
+        return sign.verify(signature);
     }
 
 }

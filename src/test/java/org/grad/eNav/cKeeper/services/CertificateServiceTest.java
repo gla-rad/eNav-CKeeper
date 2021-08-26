@@ -16,6 +16,7 @@
 
 package org.grad.eNav.cKeeper.services;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
@@ -25,6 +26,7 @@ import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,11 +37,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
@@ -48,7 +49,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
 
 @ExtendWith(MockitoExtension.class)
 class CertificateServiceTest {
@@ -81,6 +82,14 @@ class CertificateServiceTest {
     // Test Variables
     private Certificate certificate;
     private MRNEntity mrnEntity;
+
+    /**
+     * Add the Bouncy Castle as a security provider for the unit tests.
+     */
+    @BeforeAll
+    static void addSecurityProvider() {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     /**
      * Common setup for all the tests.
@@ -265,6 +274,114 @@ class CertificateServiceTest {
         // Perform the service call
         assertThrows(SavingFailedException.class, () ->
                 this.certificateService.revoke(this.mrnEntity.getId())
+        );
+    }
+
+    /**
+     * Test that we can successfully right any byte array content using
+     * a certificate identified by the certificate ID.
+     */
+    @Test
+    void testSignContent() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        // Initialise the service parameters
+        this.certificateService.keyPairCurve="secp256r1";
+        this.certificateService.certAlgorithm="SHA256WITHECDSA";
+        this.certificateService.certDirName="CN=Test";
+
+        // Spin up a self-signed certificate
+        final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.certAlgorithm);
+
+        // Populate the mock certificate with the actual keys
+        this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
+        this.certificate.setPublicKey(X509Utils.formatPublicKey(keyPair));
+        this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair));
+
+        // Initialise the verification signature
+        final Signature sign = Signature.getInstance(this.certificateService.certAlgorithm);
+        sign.initVerify(keyPair.getPublic());
+
+        // Create a dummy payload
+        final byte[] payload = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
+
+        // Mock the service database call
+        doReturn(Optional.of(this.certificate)).when(this.certificateRepo).findById(this.certificate.getId());
+
+        // Perform the service call
+        final byte[] signature = this.certificateService.signContent(this.certificate.getId(), payload);
+
+        // Verify that the signature is correct
+        sign.update(payload);
+        assertTrue(sign.verify(signature));
+    }
+
+    /**
+     * Test that when we are signing a payload, we if the provided certificate
+     * ID does not match an entry in the database, a DataNotFoundException will
+     * be thrown.
+     */
+    @Test
+    void testSignContentCertificateNotFound() throws NoSuchAlgorithmException {
+        // Create a dummy payload
+        final byte[] payload = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
+
+        // Perform the service call
+        assertThrows(DataNotFoundException.class, () ->
+                this.certificateService.signContent(this.certificate.getId(), payload)
+        );
+    }
+
+    /**
+     * Test that we can successfully verify an appropriate content if the
+     * provided signature matched the specified certificate.
+     */
+    @Test
+    void testVerifyContent() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeyException, SignatureException, InvalidKeySpecException {
+        // Initialise the service parameters
+        this.certificateService.keyPairCurve="secp256r1";
+        this.certificateService.certAlgorithm="SHA256WITHECDSA";
+        this.certificateService.certDirName="CN=Test";
+
+        // Spin up a self-signed certificate
+        final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.certAlgorithm);
+
+        // Populate the mock certificate with the actual keys
+        this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
+        this.certificate.setPublicKey(X509Utils.formatPublicKey(keyPair));
+        this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair));
+
+        // Initialise the signing signature
+        final Signature sign = Signature.getInstance(this.certificateService.certAlgorithm);
+        sign.initSign(keyPair.getPrivate());
+
+        // Create a dummy payload
+        final byte[] payload = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
+
+        // Mock the service database call
+        doReturn(Optional.of(this.certificate)).when(this.certificateRepo).findById(this.certificate.getId());
+
+        // Create the signature bytes
+        sign.update(payload);
+        byte[] signature = sign.sign();
+
+        // Verify that the signature is correct
+        assertTrue(this.certificateService.verifyContent(certificate.getId(), payload, signature));
+    }
+
+    /**
+     * Test that when we are verifying a content, we if the provided certificate
+     * ID does not match an entry in the database, a DataNotFoundException will
+     * be thrown.
+     */
+    @Test
+    void testVerifyContentCertificateNotFound() throws NoSuchAlgorithmException {
+        // Create a dummy payload
+        final byte[] payload = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
+
+        // Perform the service call
+        assertThrows(DataNotFoundException.class, () ->
+                this.certificateService.verifyContent(this.certificate.getId(), payload, null)
         );
     }
 

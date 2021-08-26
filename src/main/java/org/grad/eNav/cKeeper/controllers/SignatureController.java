@@ -17,19 +17,13 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.SignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
 
 /**
  * REST controller for managing signatures.
@@ -48,37 +42,34 @@ public class SignatureController {
     SignatureService signatureService;
 
     /**
-     * POST /api/signatures/generate : Requests a signature for the provided payload
-     * based on the
+     * POST /api/signatures/atons/generate : Requests a signature for the
+     * provided payload based on the AtoN UID.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @PostMapping(value = "/generate", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    @PostMapping(value = "/atons/generate", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateAtoNSignature(@RequestParam("atonUID") String atonUID,
-                                                              @RequestBody byte[] signaturePayload) throws IOException {
+                                                        @RequestBody byte[] signaturePayload) {
         log.debug("REST request to get a signature for AtoN with UID : {}", atonUID);
-        try {
-            return ResponseEntity.ok()
-                    .body(signatureService.generateAtonSignature(atonUID, signaturePayload));
-        } catch(IOException | NoSuchAlgorithmException | SignatureException | InvalidKeyException | InvalidKeySpecException ex) {
-            throw new InvalidRequestException(ex.getMessage());
-        }
+        return ResponseEntity.ok()
+                .body(signatureService.generateAtonSignature(atonUID, signaturePayload));
+
     }
 
     /**
-     * POST /api/signatures/generate : Requests a signature for the provided payload
-     * based on the
+     * POST /api/signatures/atons/verify : Verify the provided content based on
+     * the provided AtoN UID.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @PostMapping(value = "/verify", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    @PostMapping(value = "/atons/verify", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<McpDeviceDto> verifyAtoNSignature(@RequestParam("atonUID") String atonUID,
-                                                            @RequestBody byte[] signedContent) throws IOException {
+                                                            @RequestBody SignatureVerificationRequestDto svr) {
         log.debug("REST request to get verify the signed content for AtoN with UID : {}", atonUID);
         // Verify the posted signature
-        if(this.signatureService.verifyAtonSignature(atonUID, signedContent)) {
+        if(this.signatureService.verifyAtonSignature(atonUID, svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
         }
         // Otherwise, always return a bad request
