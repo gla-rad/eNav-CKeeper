@@ -178,7 +178,8 @@ class WebSecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         "/css/**",          //css files
                         "/lib/**",          //js files
                         "/images/**",       //the images
-                        "/src/**"           //the javascript sources
+                        "/src/**",          //the javascript sources
+                        "/api/signatures/atons/verify" // Leave the verification open for all
                 ).permitAll()
                 .requestMatchers(EndpointRequest.to( //
                         InfoEndpoint.class,         //info endpoints
