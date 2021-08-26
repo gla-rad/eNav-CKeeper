@@ -46,6 +46,17 @@ public class MrnEntityDto {
     /**
      * Instantiates a new Mrn entity dto.
      *
+     * @param name the name
+     * @param mrn  the mrn
+     */
+    public MrnEntityDto(String name, String mrn) {
+        this.name = name;
+        this.mrn = mrn;
+    }
+
+    /**
+     * Instantiates a new Mrn entity dto.
+     *
      * @param mrnEntity the mrn entity
      */
     public MrnEntityDto(MRNEntity mrnEntity) {

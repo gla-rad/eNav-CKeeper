@@ -28,6 +28,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.openssl.jcajce.JcaPKCS8Generator;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -47,6 +48,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 import java.util.Objects;
@@ -71,8 +73,9 @@ public class X509Utils {
      * @throws InvalidAlgorithmParameterException if the provided algorithm parameters are not valid
      */
     public static KeyPair generateKeyPair(String curve) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
-        keyPairGenerator.initialize(new ECGenParameterSpec(Optional.ofNullable(curve).orElse("secp256r1")), new SecureRandom());
+        final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        final ECGenParameterSpec spec = new ECGenParameterSpec(Optional.ofNullable(curve).orElse("secp256r1"));
+        keyPairGenerator.initialize(spec, new SecureRandom());
         return keyPairGenerator.generateKeyPair();
     }
 
@@ -116,8 +119,8 @@ public class X509Utils {
         );
 
         // Setup the Content Signer
-        ContentSigner signer = new JcaContentSignerBuilder(Optional.ofNullable(algorithm).orElse("SHA256withCVC-ECDSA")).
-                setProvider(new BouncyCastleProvider())
+        ContentSigner signer = new JcaContentSignerBuilder(Optional.ofNullable(algorithm).orElse("SHA256withCVC-ECDSA"))
+                .setProvider(new BouncyCastleProvider())
                 .build(keyPair.getPrivate());
 
         // And sign the self-signed certificate
@@ -146,14 +149,14 @@ public class X509Utils {
         assert StringUtils.isNotBlank(dirName);
 
         // Create the Issuer/Subject Name
-        X500Principal principal = new X500Principal(dirName);
+        final X500Principal principal = new X500Principal(dirName);
 
         // Setup the Certificate Request Builder
-        PKCS10CertificationRequestBuilder p10Builder = new JcaPKCS10CertificationRequestBuilder(
+        final PKCS10CertificationRequestBuilder p10Builder = new JcaPKCS10CertificationRequestBuilder(
                 principal, keyPair.getPublic());
         
         // Setup the Content Signer
-        ContentSigner signer = new JcaContentSignerBuilder(Optional.ofNullable(algorithm).orElse("SHA256withCVC-ECDSA")).
+        final ContentSigner signer = new JcaContentSignerBuilder(Optional.ofNullable(algorithm).orElse("SHA256withCVC-ECDSA")).
                 setProvider(new BouncyCastleProvider())
                 .build(keyPair.getPrivate());
 
@@ -220,7 +223,13 @@ public class X509Utils {
     public static String formatPrivateKey(final KeyPair keyPair) throws IOException {
         final StringWriter keyWriter = new StringWriter();
         final JcaPEMWriter pemKeyWriter = new JcaPEMWriter(keyWriter);
-        pemKeyWriter.writeObject(keyPair.getPrivate());
+        /*
+             Generating the PEM directly uses the SEC1 format which cannot be correctly read.
+             Therefore, we better do this in PKCS8  format.
+             For more info: https://stackoverflow.com/questions/61589895/unable-to-read-bouncycastle-generated-privatekey-in-java
+         */
+        //pemKeyWriter.writeObject(keyPair.getPrivate(), null);
+        pemKeyWriter.writeObject(new JcaPKCS8Generator(keyPair.getPrivate(), null));
         pemKeyWriter.flush();
         return keyWriter.toString();
     }
@@ -236,11 +245,11 @@ public class X509Utils {
      * @throws IOException for exceptions while accessing the public key
      */
     public static PublicKey publicKeyFromPem(String publicKeyPem) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        KeyFactory factory = KeyFactory.getInstance("EC");
-        StringReader stringReader = new StringReader(publicKeyPem);
-        PemReader pemReader = new PemReader(stringReader);
-        PemObject pemObject = pemReader.readPemObject();
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pemObject.getContent());
+        final KeyFactory factory = KeyFactory.getInstance("EC");
+        final StringReader stringReader = new StringReader(publicKeyPem);
+        final PemReader pemReader = new PemReader(stringReader);
+        final PemObject pemObject = pemReader.readPemObject();
+        final X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pemObject.getContent());
         return factory.generatePublic(publicKeySpec);
     }
 
@@ -258,13 +267,19 @@ public class X509Utils {
      * @throws IOException for exceptions while accessing the public key
      */
     public static PrivateKey privateKeyFromPem(String privateKeyPem, String curve) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-        KeyFactory factory = KeyFactory.getInstance("EC");
-        StringReader stringReader = new StringReader(privateKeyPem);
-        PemReader pemReader = new PemReader(stringReader);
-        PemObject pemObject = pemReader.readPemObject();
-        ECParameterSpec spec = ECNamedCurveTable.getParameterSpec(Optional.ofNullable(curve).orElse("secp256r1"));
-        ECPrivateKeySpec ecPrivateKeySpec = new ECPrivateKeySpec(new BigInteger(1, pemObject.getContent()), spec);
-        return factory.generatePrivate(ecPrivateKeySpec);
+        final KeyFactory factory = KeyFactory.getInstance("EC");
+        final StringReader stringReader = new StringReader(privateKeyPem);
+        final PemReader pemReader = new PemReader(stringReader);
+        final PemObject pemObject = pemReader.readPemObject();
+        // The ECPrivateKeySpec loading of the key doesn't return the correct key for some reason!
+        /*
+            The ECPrivateKeySpec loading of the key doesn't return the correct key for some reason!
+            From more info: https://stackoverflow.com/questions/61589895/unable-to-read-bouncycastle-generated-privatekey-in-java
+         */
+        //ECParameterSpec spec = ECNamedCurveTable.getParameterSpec(Optional.ofNullable(curve).orElse("secp256r1"));
+        //ECPrivateKeySpec ecPrivateKeySpec = new ECPrivateKeySpec(new BigInteger(1, pemObject.getContent()), spec);
+        final PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(pemObject.getContent());
+        return factory.generatePrivate(pkcs8EncodedKeySpec);
     }
 
 }

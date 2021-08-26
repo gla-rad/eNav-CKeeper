@@ -17,26 +17,23 @@
 package org.grad.eNav.cKeeper.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
-import org.grad.eNav.cKeeper.models.domain.Certificate;
+import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
-import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
-import org.grad.eNav.cKeeper.repos.CertificateRepo;
-import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * The Signature Service Class
@@ -50,16 +47,16 @@ import java.util.Set;
 public class SignatureService {
 
     /**
-     * The MRN Entity Service.
-     */
-    @Autowired
-    MrnEntityService mrnEntityService;
-
-    /**
      * The MCP Service.
      */
     @Autowired
     McpService mcpService;
+
+    /**
+     * The MRN Entity Service.
+     */
+    @Autowired
+    MrnEntityService mrnEntityService;
 
     /**
      * The Certificate Service.
@@ -68,69 +65,77 @@ public class SignatureService {
     CertificateService certificateService;
 
     /**
-     * The Certificate Repo.
-     */
-    @Autowired
-    CertificateRepo certificateRepo;
-
-    /**
+     * Generates and returns a signature for the provided payload using the
+     * keys from the latest certificate assigned to the MRN entity identified
+     * by the MRN constructed from the AtoN UID provided.
      *
-     * @param atonUID
-     * @param payload
-     * @return
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
-     * @throws SignatureException
-     * @throws InvalidKeyException
-     * @throws InvalidKeySpecException
+     * @param atonUID       The AtoN UID to construct the MRN from
+     * @param payload       The payload to be signed
+     * @return The signature for the provided payload
      */
-    public byte[] generateAtonSignature(@NotNull String atonUID, @NotNull byte[] payload) throws IOException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, InvalidKeySpecException {
+    public byte[] generateAtonSignature(@NotNull String atonUID, @NotNull byte[] payload) {
+        // Translate the AtoN UID into an MRC based on the MCP rules
         final String atonMrn = this.mcpService.constructMcpDeviceMrn(atonUID);
-        final MrnEntityDto mrnEntityDto = Optional.of(atonUID)
-                .map(this.mcpService::constructMcpDeviceMrn)
-                .map(uid -> {
-                    try {
-                        return this.mrnEntityService.findOneByMrn(atonMrn);
-                    } catch (DataNotFoundException ex) {
-                        return null;
-                    }
-                }).orElseGet(() -> {
-                    // If not found, let's create it now through the MRN service
-                    MrnEntityDto newEntity = new MrnEntityDto();
-                    newEntity.setName(atonUID);
-                    newEntity.setMrn(atonMrn);
-                    return this.mrnEntityService.save(newEntity);
-                });
 
-        // Now get the latest certificate for it and if not exists, create a new
-        Certificate certificate = this.certificateRepo.findAllByMrnEntityId(mrnEntityDto.getId())
-                .stream()
-                .filter(c -> Objects.nonNull(c.getStartDate()))
-                .max(Comparator.comparing(Certificate::getStartDate))
+        // Get a matching MRN entity if it exists or create a new one
+        final MrnEntityDto mrnEntityDto = Optional.of(atonMrn)
+                .map(this.mrnEntityService::findOneByMrn)
                 .orElseGet(() -> {
                     try {
-                        CertificateDto certificateDto = this.certificateService.generateMrnEntityCertificate(mrnEntityDto.getId());
-                        return this.certificateRepo.findById(certificateDto.getId()).orElse(null);
+                        return this.mrnEntityService.save(new MrnEntityDto(atonUID, atonUID));
                     } catch (Exception ex) {
-                        log.error(ex.getMessage());
-                        return null;
+                        throw new SavingFailedException(ex.getMessage());
                     }
                 });
 
-        // And now sign
-        if(Objects.nonNull(certificate)) {
-            // Sign using the private key
-            Signature signature = Signature.getInstance("SHA256withECDSA");
-            signature.initSign(X509Utils.privateKeyFromPem(certificate.getPrivateKey(), null));
-            signature.update(payload);
-            return signature.sign();
-        }
+        // Now get the latest certificate for it if it exists, or create a new one
+        CertificateDto certificateDto = this.certificateService.findAllByMrnEntityId(mrnEntityDto.getId())
+                .stream()
+                .filter(c -> Objects.nonNull(c.getStartDate()))
+                .max(Comparator.comparing(CertificateDto::getStartDate))
+                .orElseGet(() -> {
+                    try {
+                        return this.certificateService.generateMrnEntityCertificate(mrnEntityDto.getId());
+                    } catch (Exception ex) {
+                        throw new SavingFailedException(ex.getMessage());
+                    }
+                });
 
-        // If we reached this point, just throw an exception
-        throw new InvalidRequestException("Failed to sign the provided payload");
+        // Finally, sing the payload
+        try {
+            return this.certificateService.signContent(certificateDto.getId(), payload);
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException |  InvalidKeyException ex) {
+            throw new InvalidRequestException(ex.getMessage());
+        }
     }
 
-    public boolean verifyAtonSignature(String atonUID, byte[] content) {
-        return false;
+    /**
+     * Verify that for the MRN constructed for the provided AtoN UID, the
+     * signature is a valid one for the specified content.
+     *
+     * @param atonUID       The AtoN UID to get the certificate for
+     * @param content       The content to be verified
+     * @param signature     The signature to verify the content with
+     * @return Whether the verification was successful or not
+     */
+    public boolean verifyAtonSignature(String atonUID, byte[] content, byte[] signature) {
+        return Optional.of(atonUID)
+                .map(this.mcpService::constructMcpDeviceMrn)
+                .map(this.mrnEntityService::findOneByMrn)
+                .map(MrnEntityDto::getId)
+                .map(this.certificateService::findAllByMrnEntityId)
+                .orElseGet(() -> Collections.emptySet())
+                .stream()
+                .filter(c -> Objects.nonNull(c.getStartDate()))
+                .max(Comparator.comparing(CertificateDto::getStartDate))
+                .map(CertificateDto::getId)
+                .map(id -> {
+                    try {
+                        return this.certificateService.verifyContent(id, content, signature);
+                    } catch (Exception ex) {
+                        return false;
+                    }
+                })
+                .orElse(Boolean.FALSE);
     }
 }
