@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
@@ -79,7 +80,9 @@ public class SignatureService {
 
         // Get a matching MRN entity if it exists or create a new one
         final MrnEntityDto mrnEntityDto = Optional.of(atonMrn)
-                .map(this.mrnEntityService::findOneByMrn)
+                .map(mrn -> {
+                    try { return this.mrnEntityService.findOneByMrn(mrn); } catch (DataNotFoundException ex) { return null; }
+                })
                 .orElseGet(() -> {
                     try {
                         return this.mrnEntityService.save(new MrnEntityDto(atonUID, atonUID));
