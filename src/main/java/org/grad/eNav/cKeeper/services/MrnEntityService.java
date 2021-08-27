@@ -167,20 +167,22 @@ public class MrnEntityService {
                         // update it
                         try {
                             mcpDevice = this.mcpService.getMcpDevice(e.getMrn());
+
+                            // We can only update the name of the MRN device
+                            Optional.ofNullable(mcpDevice).ifPresent(md -> md.setName(e.getName()));
                         } catch(DataNotFoundException ex) {
                             this.log.warn("MCP entry for the MRN device with MRN {} not found", e.getMrn());
                         }
 
                         // Choose whether to create or update
                         if(Objects.isNull(mcpDevice)) {
-                            this.mcpService.createMcpDevice(new McpDeviceDto(e.getName(), e.getMrn()));
+                            mcpDevice = this.mcpService.createMcpDevice(new McpDeviceDto(e.getName(), e.getMrn()));
                         } else {
-                            // We can only update the name of the MRN device
-                            mcpDevice.setName(e.getName());
                             mcpDevice = this.mcpService.updateMcpDevice(mcpDevice.getMrn(), mcpDevice);
-                            // Always read the MRN from the MCP MIR
-                            e.setMrn(mcpDevice.getMrn());
                         }
+
+                        // Always read the MRN from the MCP MIR
+                        e.setMrn(mcpDevice.getMrn());
                     } catch (IOException ex) {
                         return null;
                     }
