@@ -107,7 +107,10 @@ public class SignatureService {
 
         // Finally, sing the payload
         try {
-            return this.certificateService.signContent(certificateDto.getId(), payload);
+            this.log.debug("Signing payload: {paylod}", new String(Base64.encode(payload)));
+            byte[] signature = this.certificateService.signContent(certificateDto.getId(), payload);
+            this.log.debug("Signature generated: {signature}", new String(Base64.encode(signature)));
+            return signature;
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException |  InvalidKeyException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
