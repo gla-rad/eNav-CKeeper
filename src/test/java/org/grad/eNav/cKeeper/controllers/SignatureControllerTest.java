@@ -1,6 +1,7 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.jersey.core.util.Base64;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.SignatureService;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,8 +57,8 @@ class SignatureControllerTest {
     void setUp() throws NoSuchAlgorithmException {
         this.atonUID = "test_aton";
         this.svr = new SignatureVerificationRequestDto();
-        this.svr.setContent(MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes()));
-        this.svr.setSignature(MessageDigest.getInstance("SHA-256").digest(("That's the signature?").getBytes()));
+        this.svr.setContent(Base64.encode(MessageDigest.getInstance("SHA-256").digest("Hello World".getBytes())).toString());
+        this.svr.setSignature(Base64.encode("That's the signature?".getBytes()).toString());
     }
 
     /**
@@ -66,7 +67,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateAtoNSignature() throws Exception {
-        doReturn(this.svr.getSignature()).when(this.signatureService).generateAtonSignature(any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateAtonSignature(any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signatures/atons/generate?atonUID={atonUID}", this.atonUID)
@@ -76,8 +77,9 @@ class SignatureControllerTest {
                 .andReturn();
 
         // Assert the signature equality byte by byte
-        for(int i=0; i<this.svr.getContent().length; i++) {
-            assertEquals(this.svr.getSignature()[i], mvcResult.getResponse().getContentAsByteArray()[i]);
+        byte[] signatureBytes = this.svr.getSignature().getBytes();
+        for(int i=0; i<signatureBytes.length; i++) {
+            assertEquals(signatureBytes[i], mvcResult.getResponse().getContentAsByteArray()[i]);
         }
     }
 

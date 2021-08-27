@@ -125,7 +125,7 @@ public class SignatureService {
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyAtonSignature(String atonUID, byte[] b64Content, byte[] b64Signature) {
+    public boolean verifyAtonSignature(String atonUID, String b64Content, String b64Signature) {
         return Optional.of(atonUID)
                 .map(this.mcpService::constructMcpDeviceMrn)
                 .map(this.mrnEntityService::findOneByMrn)
@@ -138,7 +138,7 @@ public class SignatureService {
                 .map(CertificateDto::getId)
                 .map(id -> {
                     try {
-                        return this.certificateService.verifyContent(id, Base64.decode(b64Content), Base64.decode(b64Signature));
+                        return this.certificateService.verifyContent(id, Base64.decode(b64Content.getBytes()), Base64.decode(b64Signature.getBytes()));
                     } catch (Exception ex) {
                         return false;
                     }

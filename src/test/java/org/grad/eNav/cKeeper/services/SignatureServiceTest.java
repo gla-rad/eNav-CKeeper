@@ -154,7 +154,7 @@ class SignatureServiceTest {
         doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertTrue(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), Base64.encode(this.content), Base64.encode(this.signature)));
+        assertTrue(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), new String(Base64.encode(this.content)), new String(Base64.encode(this.signature))));
     }
 
     /**
@@ -168,7 +168,7 @@ class SignatureServiceTest {
         doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertFalse(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), Base64.encode(this.content), Base64.encode(this.signature)));
+        assertFalse(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), Base64.encode(this.content).toString(), Base64.encode(this.signature).toString()));
     }
 
 }
