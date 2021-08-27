@@ -85,7 +85,7 @@ public class SignatureService {
                 })
                 .orElseGet(() -> {
                     try {
-                        return this.mrnEntityService.save(new MrnEntityDto(atonUID, atonUID));
+                        return this.mrnEntityService.save(new MrnEntityDto(atonUID, atonMrn));
                     } catch (Exception ex) {
                         throw new SavingFailedException(ex.getMessage());
                     }

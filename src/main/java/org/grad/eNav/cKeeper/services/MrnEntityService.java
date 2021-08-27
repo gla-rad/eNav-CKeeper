@@ -212,7 +212,9 @@ public class MrnEntityService {
                 .map(e -> {
                     try {
                         this.mcpService.deleteMcpDevice(e.getMrn());
-                    } catch (IOException ex) {
+                    } catch(DeletingFailedException ex) {
+                        // Not found? Not problem!
+                    } catch(IOException ex) {
                         return null;
                     }
                     return e.getId();
