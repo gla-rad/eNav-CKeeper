@@ -16,6 +16,7 @@
 
 package org.grad.eNav.cKeeper.services;
 
+import com.sun.jersey.core.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
@@ -116,12 +117,15 @@ public class SignatureService {
      * Verify that for the MRN constructed for the provided AtoN UID, the
      * signature is a valid one for the specified content.
      *
+     * Note that the content and signature need to be Base64 encoded, coming
+     * from the controller.
+     *
      * @param atonUID       The AtoN UID to get the certificate for
-     * @param content       The content to be verified
-     * @param signature     The signature to verify the content with
+     * @param b64Content    The Base64 encoded content to be verified
+     * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyAtonSignature(String atonUID, byte[] content, byte[] signature) {
+    public boolean verifyAtonSignature(String atonUID, byte[] b64Content, byte[] b64Signature) {
         return Optional.of(atonUID)
                 .map(this.mcpService::constructMcpDeviceMrn)
                 .map(this.mrnEntityService::findOneByMrn)
@@ -134,7 +138,7 @@ public class SignatureService {
                 .map(CertificateDto::getId)
                 .map(id -> {
                     try {
-                        return this.certificateService.verifyContent(id, content, signature);
+                        return this.certificateService.verifyContent(id, Base64.decode(b64Content), Base64.decode(b64Signature));
                     } catch (Exception ex) {
                         return false;
                     }

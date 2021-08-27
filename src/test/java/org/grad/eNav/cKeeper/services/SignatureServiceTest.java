@@ -1,5 +1,6 @@
 package org.grad.eNav.cKeeper.services;
 
+import com.sun.jersey.core.util.Base64;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
@@ -153,7 +154,7 @@ class SignatureServiceTest {
         doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertTrue(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), this.content, this.signature));
+        assertTrue(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), Base64.encode(this.content), Base64.encode(this.signature)));
     }
 
     /**
@@ -167,7 +168,7 @@ class SignatureServiceTest {
         doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertFalse(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), this.content, this.signature));
+        assertFalse(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), Base64.encode(this.content), Base64.encode(this.signature)));
     }
 
 }
