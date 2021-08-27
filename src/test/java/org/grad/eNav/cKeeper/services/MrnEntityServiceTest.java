@@ -79,7 +79,8 @@ class MrnEntityServiceTest {
     // Test Variables
     private List<MRNEntity> entities;
     private Pageable pageable;
-    private McpDeviceDto mcpDevice;
+    private McpDeviceDto newMcpDevice;
+    private McpDeviceDto existingMcpDevice;
     private MRNEntity newEntity;
     private MRNEntity existingEntity;
 
@@ -113,7 +114,8 @@ class MrnEntityServiceTest {
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
 
         // Create an MCP Device DTO
-        this.mcpDevice = new McpDeviceDto(this.existingEntity.getName(), this.existingEntity.getMrn());
+        this.newMcpDevice = new McpDeviceDto(this.newEntity.getName(), this.newEntity.getMrn());
+        this.existingMcpDevice = new McpDeviceDto(this.existingEntity.getName(), this.existingEntity.getMrn());
     }
 
     /**
@@ -232,8 +234,10 @@ class MrnEntityServiceTest {
      * checks are successful.
      */
     @Test
-    void testCreate() {
+    void testCreate() throws IOException {
+        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpDevice(any());
         doReturn(this.newEntity).when(this.mrnEntityRepo).save(any());
+        doReturn(this.newMcpDevice).when(this.mcpService).createMcpDevice(any());
 
         // Perform the service call
         MrnEntityDto result = this.mrnEntityService.save(new MrnEntityDto(this.newEntity));
@@ -254,8 +258,8 @@ class MrnEntityServiceTest {
     @Test
     void testUpdate() throws IOException {
         doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());
-        doReturn(this.mcpDevice).when(this.mcpService).getMcpDevice(this.existingEntity.getMrn());
-        doReturn(this.mcpDevice).when(this.mcpService).updateMcpDevice(this.mcpDevice.getMrn(), this.mcpDevice);
+        doReturn(this.existingMcpDevice).when(this.mcpService).getMcpDevice(this.existingEntity.getMrn());
+        doReturn(this.existingMcpDevice).when(this.mcpService).updateMcpDevice(this.existingMcpDevice.getMrn(), this.existingMcpDevice);
         doReturn(this.existingEntity).when(this.mrnEntityRepo).save(any());
 
         // Perform the service call
