@@ -48,6 +48,7 @@ class SignatureControllerTest {
 
     // Test Variables
     private String atonUID;
+    private Integer mmsi;
     private SignatureVerificationRequestDto svr;
 
     /**
@@ -56,6 +57,7 @@ class SignatureControllerTest {
     @BeforeEach
     void setUp() throws NoSuchAlgorithmException {
         this.atonUID = "test_aton";
+        this.mmsi = 123456789;
         this.svr = new SignatureVerificationRequestDto();
         this.svr.setContent(Base64.encode(MessageDigest.getInstance("SHA-256").digest("Hello World".getBytes())).toString());
         this.svr.setSignature(Base64.encode("That's the signature?".getBytes()).toString());
@@ -67,10 +69,10 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateAtoNSignature() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateAtonSignature(any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateAtonSignature(any(), any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/signatures/atons/generate?atonUID={atonUID}", this.atonUID)
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signatures/atons/generate?atonUID={atonUID}&mmsi={mmsi}", this.atonUID, this.mmsi)
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -92,7 +94,7 @@ class SignatureControllerTest {
         doReturn(Boolean.TRUE).when(this.signatureService).verifyAtonSignature(any(), any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/signatures/atons/verify?atonUID={atonUID}", this.atonUID)
+        this.mockMvc.perform(post("/api/signatures/atons/verify?mmsi={mmsi}", this.mmsi)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.svr)))
                 .andExpect(status().isOk())
@@ -108,7 +110,7 @@ class SignatureControllerTest {
         doReturn(Boolean.FALSE).when(this.signatureService).verifyAtonSignature(any(), any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/signatures/atons/verify?atonUID={atonUID}", this.atonUID)
+        this.mockMvc.perform(post("/api/signatures/atons/verify?mmsi={mmsi}", this.mmsi)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.svr)))
                 .andExpect(status().isBadRequest())

@@ -72,10 +72,11 @@ public class SignatureService {
      * by the MRN constructed from the AtoN UID provided.
      *
      * @param atonUID       The AtoN UID to construct the MRN from
+     * @param mmsi          The AtoN MMSI number
      * @param payload       The payload to be signed
      * @return The signature for the provided payload
      */
-    public byte[] generateAtonSignature(@NotNull String atonUID, @NotNull byte[] payload) {
+    public byte[] generateAtonSignature(@NotNull String atonUID, Integer mmsi, @NotNull byte[] payload) {
         // Translate the AtoN UID into an MRC based on the MCP rules
         final String atonMrn = this.mcpService.constructMcpDeviceMrn(atonUID);
 
@@ -86,7 +87,7 @@ public class SignatureService {
                 })
                 .orElseGet(() -> {
                     try {
-                        return this.mrnEntityService.save(new MrnEntityDto(atonUID, atonMrn));
+                        return this.mrnEntityService.save(new MrnEntityDto(atonUID, atonMrn, mmsi));
                     } catch (Exception ex) {
                         throw new SavingFailedException(ex.getMessage());
                     }
@@ -117,21 +118,20 @@ public class SignatureService {
     }
 
     /**
-     * Verify that for the MRN constructed for the provided AtoN UID, the
+     * Verify that for the MRN constructed for the provided AtoN MMSI, the
      * signature is a valid one for the specified content.
      *
      * Note that the content and signature need to be Base64 encoded, coming
      * from the controller.
      *
-     * @param atonUID       The AtoN UID to get the certificate for
+     * @param atonMmsi      The AtoN MMSI to get the certificate for
      * @param b64Content    The Base64 encoded content to be verified
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyAtonSignature(String atonUID, String b64Content, String b64Signature) {
-        return Optional.of(atonUID)
-                .map(this.mcpService::constructMcpDeviceMrn)
-                .map(this.mrnEntityService::findOneByMrn)
+    public boolean verifyAtonSignature(Integer atonMmsi, String b64Content, String b64Signature) {
+        return Optional.of(atonMmsi)
+                .map(this.mrnEntityService::findOneByMmsi)
                 .map(MrnEntityDto::getId)
                 .map(this.certificateService::findAllByMrnEntityId)
                 .orElseGet(() -> Collections.emptySet())

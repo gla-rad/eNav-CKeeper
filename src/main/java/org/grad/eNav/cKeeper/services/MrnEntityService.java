@@ -142,6 +142,22 @@ public class MrnEntityService {
     }
 
     /**
+     * Get one MRN Entity by MMSI.
+     *
+     * @param mmsi the MMSI of the node
+     * @return the node
+     */
+    @Transactional(readOnly = true)
+    public MrnEntityDto findOneByMmsi(@NotNull Integer mmsi) {
+        log.debug("Request to get MRN Entity with MMSI : {}", mmsi);
+        return this.mrnEntityRepo.findByMmsi(mmsi)
+                .map(MrnEntityDto::new)
+                .orElseThrow(() ->
+                        new DataNotFoundException(String.format("No MRN Entity found for the provided MRN: %s", mmsi))
+                );
+    }
+
+    /**
      * Save an MRN entity.
      *
      * @param mrnEntity the MRN Entity DTO to be saved

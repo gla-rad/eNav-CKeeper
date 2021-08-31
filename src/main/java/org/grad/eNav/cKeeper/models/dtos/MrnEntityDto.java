@@ -35,6 +35,7 @@ public class MrnEntityDto {
     private String name;
     @NotNull
     private String mrn;
+    private Integer mmsi;
 
     /**
      * Instantiates a new Mrn entity dto.
@@ -49,9 +50,10 @@ public class MrnEntityDto {
      * @param name the name
      * @param mrn  the mrn
      */
-    public MrnEntityDto(String name, String mrn) {
+    public MrnEntityDto(String name, String mrn, Integer mmsi) {
         this.name = name;
         this.mrn = mrn;
+        this.mmsi = mmsi;
     }
 
     /**
@@ -69,6 +71,7 @@ public class MrnEntityDto {
         this.id = mrnEntity.getId();
         this.name = mrnEntity.getName();
         this.mrn = mrnEntity.getMrn();
+        this.mmsi = mrnEntity.getMmsi();
     }
 
     /**
@@ -126,6 +129,24 @@ public class MrnEntityDto {
     }
 
     /**
+     * Gets mmsi.
+     *
+     * @return the mmsi
+     */
+    public Integer getMmsi() {
+        return mmsi;
+    }
+
+    /**
+     * Sets mmsi.
+     *
+     * @param mmsi the mmsi
+     */
+    public void setMmsi(Integer mmsi) {
+        this.mmsi = mmsi;
+    }
+
+    /**
      * Overrides the equality operator of the class.
      *
      * @param o the object to check the equality
@@ -159,6 +180,7 @@ public class MrnEntityDto {
         entity.setId(this.id);
         entity.setName(this.name);
         entity.setMrn(this.mrn);
+        entity.setMmsi(this.mmsi);
         return entity;
     }
 

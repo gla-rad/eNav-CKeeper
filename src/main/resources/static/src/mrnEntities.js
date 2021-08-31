@@ -26,7 +26,12 @@ var mrnEntitiesColumnDefs = [{
     hoverMsg: "MRN of the entity",
     placeholder: "MRN of the entity",
     required: true,
-}];
+}, {
+       data: "mmsi",
+       title: "MMSI",
+       hoverMsg: "MMSI of the entity",
+       placeholder: "MMSI of the entity"
+ }];
 
 /**
  * The MRN Entities Table Column Definitions
@@ -148,7 +153,8 @@ $(document).ready( function () {
                 data: JSON.stringify({
                     id: rowdata["id"],
                     name: rowdata["name"],
-                    mrn: rowdata["mrn"]
+                    mrn: rowdata["mrn"],
+                    mmsi: rowdata["mmsi"]
                 }),
                 success: success,
                 error: error
@@ -171,7 +177,8 @@ $(document).ready( function () {
                 data: JSON.stringify({
                     id: rowdata["id"],
                     name: rowdata["name"],
-                    mrn: rowdata["mrn"]
+                    mrn: rowdata["mrn"],
+                    mmsi: rowdata["mmsi"]
                 }),
                 success: success,
                 error: error
