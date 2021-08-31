@@ -27,10 +27,10 @@ var mrnEntitiesColumnDefs = [{
     placeholder: "MRN of the entity",
     required: true,
 }, {
-       data: "mmsi",
-       title: "MMSI",
-       hoverMsg: "MMSI of the entity",
-       placeholder: "MMSI of the entity"
+    data: "mmsi",
+    title: "MMSI",
+    hoverMsg: "MMSI of the entity",
+    placeholder: "MMSI of the entity"
  }];
 
 /**
