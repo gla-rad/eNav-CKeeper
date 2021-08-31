@@ -20,6 +20,7 @@ import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.search.annotations.*;
+import org.hibernate.search.bridge.builtin.LongBridge;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -64,6 +65,7 @@ public class MRNEntity implements Serializable {
     @Field()
     @Field(name = "mmsi_sort", analyze = Analyze.NO)
     @SortableField(forField = "mmsi_sort")
+    @FieldBridge(impl = LongBridge.class)
     @Column(name = "mmsi", unique=true)
     private Integer mmsi;
 
