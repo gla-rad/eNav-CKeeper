@@ -61,6 +61,12 @@ public class MRNEntity implements Serializable {
     @Column(name = "mrn")
     private String mrn;
 
+    @Field()
+    @Field(name = "mmsi_sort", analyze = Analyze.NO)
+    @SortableField(forField = "mmsi_sort")
+    @Column(name = "mmsi", unique=true)
+    private Integer mmsi;
+
     @OneToMany(mappedBy = "mrnEntity", cascade = CascadeType.REMOVE)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     private Set<Certificate> certificates = new HashSet<>();
@@ -141,6 +147,24 @@ public class MRNEntity implements Serializable {
      */
     public void setCertificates(Set<Certificate> certificates) {
         this.certificates = certificates;
+    }
+
+    /**
+     * Gets mmsi.
+     *
+     * @return the mmsi
+     */
+    public Integer getMmsi() {
+        return mmsi;
+    }
+
+    /**
+     * Sets mmsi.
+     *
+     * @param mmsi the mmsi
+     */
+    public void setMmsi(Integer mmsi) {
+        this.mmsi = mmsi;
     }
 
     /**

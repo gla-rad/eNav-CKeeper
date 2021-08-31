@@ -67,6 +67,7 @@ class SignatureServiceTest {
         this.mrnEntityDto = new MrnEntityDto();
         this.mrnEntityDto.setId(BigInteger.ONE);
         this.mrnEntityDto.setName("mrn_entiity");
+        this.mrnEntityDto.setMmsi(123456789);
 
         // Create a new Certificate DTO
         this.certificateDto = new CertificateDto();
@@ -96,7 +97,7 @@ class SignatureServiceTest {
         doReturn(this.signature).when(this.certificateService).signContent(mrnEntityDto.getId(), this.content);
 
         // Perform the service call
-        final byte[] result = this.signatureService.generateAtonSignature(this.mrnEntityDto.getName(), this.content);
+        final byte[] result = this.signatureService.generateAtonSignature(this.mrnEntityDto.getName(), this.mrnEntityDto.getMmsi(), this.content);
 
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
@@ -118,7 +119,7 @@ class SignatureServiceTest {
         doReturn(this.signature).when(this.certificateService).signContent(mrnEntityDto.getId(), this.content);
 
         // Perform the service call
-        final byte[] result = this.signatureService.generateAtonSignature(this.mrnEntityDto.getName(), this.content);
+        final byte[] result = this.signatureService.generateAtonSignature(this.mrnEntityDto.getName(), this.mrnEntityDto.getMmsi(), this.content);
 
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
@@ -139,36 +140,36 @@ class SignatureServiceTest {
 
         // Perform the service call
         assertThrows(InvalidRequestException.class, () ->
-            this.signatureService.generateAtonSignature(this.mrnEntityDto.getName(), this.content)
+            this.signatureService.generateAtonSignature(this.mrnEntityDto.getName(), this.mrnEntityDto.getMmsi(), this.content)
         );
     }
 
     /**
      * Test that we can correctly verify a signature for the provided AtoN
-     * UID and the content we submit.
+     * MMSI and the content we submit.
      */
     @Test
     void testVerifyAtonSignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMrn(this.mrnEntityDto.getMrn());
+        doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMmsi(this.mrnEntityDto.getMmsi());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertTrue(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), new String(Base64.encode(this.content)), new String(Base64.encode(this.signature))));
+        assertTrue(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getMmsi(), new String(Base64.encode(this.content)), new String(Base64.encode(this.signature))));
     }
 
     /**
      * Test that we can correctly detect when a signature for the provided AtoN
-     * UID and the content we submit is NOT valid.
+     * MMSI and the content we submit is NOT valid.
      */
     @Test
     void testVerifyAtonSignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMrn(this.mrnEntityDto.getMrn());
+        doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMmsi(this.mrnEntityDto.getMmsi());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertFalse(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getName(), Base64.encode(this.content).toString(), Base64.encode(this.signature).toString()));
+        assertFalse(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getMmsi(), Base64.encode(this.content).toString(), Base64.encode(this.signature).toString()));
     }
 
 }

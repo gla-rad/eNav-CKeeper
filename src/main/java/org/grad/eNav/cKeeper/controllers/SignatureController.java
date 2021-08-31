@@ -50,26 +50,27 @@ public class SignatureController {
      */
     @PostMapping(value = "/atons/generate", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateAtoNSignature(@RequestParam("atonUID") String atonUID,
+                                                        @RequestParam("mmsi") Integer mmsi,
                                                         @RequestBody byte[] signaturePayload) {
         log.debug("REST request to get a signature for AtoN with UID : {}", atonUID);
         return ResponseEntity.ok()
-                .body(signatureService.generateAtonSignature(atonUID, signaturePayload));
+                .body(signatureService.generateAtonSignature(atonUID, mmsi, signaturePayload));
 
     }
 
     /**
      * POST /api/signatures/atons/verify : Verify the provided content based on
-     * the provided AtoN UID.
+     * the provided AtoN MMSI.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @PostMapping(value = "/atons/verify", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<McpDeviceDto> verifyAtoNSignature(@RequestParam("atonUID") String atonUID,
+    @PostMapping(value = "/atons/verify", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<McpDeviceDto> verifyAtoNSignature(@RequestParam("mmsi") Integer mmsi,
                                                             @RequestBody SignatureVerificationRequestDto svr) {
-        log.debug("REST request to get verify the signed content for AtoN with UID : {}", atonUID);
+        log.debug("REST request to get verify the signed content for AtoN with MMSI : {}", mmsi);
         // Verify the posted signature
-        if(this.signatureService.verifyAtonSignature(atonUID, svr.getContent(), svr.getSignature())) {
+        if(this.signatureService.verifyAtonSignature(mmsi, svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
         }
         // Otherwise, always return a bad request
