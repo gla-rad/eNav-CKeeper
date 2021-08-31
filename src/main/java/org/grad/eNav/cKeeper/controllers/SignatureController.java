@@ -59,18 +59,18 @@ public class SignatureController {
     }
 
     /**
-     * POST /api/signatures/atons/verify : Verify the provided content based on
-     * the provided AtoN MMSI.
+     * POST /api/signatures/mmsi/verify : Verify the provided content based on
+     * the provided MMSI.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @PostMapping(value = "/atons/verify", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<McpDeviceDto> verifyAtoNSignature(@RequestParam("mmsi") Integer mmsi,
+    @PostMapping(value = "/mmsi/verify/{mmsi}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<McpDeviceDto> verifyMmsiSignature(@PathVariable Integer mmsi,
                                                             @RequestBody SignatureVerificationRequestDto svr) {
         log.debug("REST request to get verify the signed content for AtoN with MMSI : {}", mmsi);
         // Verify the posted signature
-        if(this.signatureService.verifyAtonSignature(mmsi, svr.getContent(), svr.getSignature())) {
+        if(this.signatureService.verifyMmsiSignature(mmsi, svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
         }
         // Otherwise, always return a bad request

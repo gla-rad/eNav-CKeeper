@@ -118,19 +118,19 @@ public class SignatureService {
     }
 
     /**
-     * Verify that for the MRN constructed for the provided AtoN MMSI, the
+     * Verify that for the MRN constructed for the provided entity MMSI, the
      * signature is a valid one for the specified content.
      *
      * Note that the content and signature need to be Base64 encoded, coming
      * from the controller.
      *
-     * @param atonMmsi      The AtoN MMSI to get the certificate for
+     * @param mmsi          The entity MMSI to get the certificate for
      * @param b64Content    The Base64 encoded content to be verified
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyAtonSignature(Integer atonMmsi, String b64Content, String b64Signature) {
-        return Optional.of(atonMmsi)
+    public boolean verifyMmsiSignature(Integer mmsi, String b64Content, String b64Signature) {
+        return Optional.of(mmsi)
                 .map(this.mrnEntityService::findOneByMmsi)
                 .map(MrnEntityDto::getId)
                 .map(this.certificateService::findAllByMrnEntityId)
