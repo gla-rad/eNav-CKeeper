@@ -145,31 +145,31 @@ class SignatureServiceTest {
     }
 
     /**
-     * Test that we can correctly verify a signature for the provided AtoN
+     * Test that we can correctly verify a signature for the provided entity
      * MMSI and the content we submit.
      */
     @Test
-    void testVerifyAtonSignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    void testVerifyMmsiSignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMmsi(this.mrnEntityDto.getMmsi());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertTrue(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getMmsi(), new String(Base64.encode(this.content)), new String(Base64.encode(this.signature))));
+        assertTrue(this.signatureService.verifyMmsiSignature(this.mrnEntityDto.getMmsi(), new String(Base64.encode(this.content)), new String(Base64.encode(this.signature))));
     }
 
     /**
-     * Test that we can correctly detect when a signature for the provided AtoN
-     * MMSI and the content we submit is NOT valid.
+     * Test that we can correctly detect when a signature for the provided
+     * entity MMSI and the content we submit is NOT valid.
      */
     @Test
-    void testVerifyAtonSignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    void testVerifyMmsiSignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMmsi(this.mrnEntityDto.getMmsi());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertFalse(this.signatureService.verifyAtonSignature(this.mrnEntityDto.getMmsi(), Base64.encode(this.content).toString(), Base64.encode(this.signature).toString()));
+        assertFalse(this.signatureService.verifyMmsiSignature(this.mrnEntityDto.getMmsi(), Base64.encode(this.content).toString(), Base64.encode(this.signature).toString()));
     }
 
 }

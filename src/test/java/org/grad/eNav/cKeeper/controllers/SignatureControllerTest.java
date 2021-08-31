@@ -87,14 +87,14 @@ class SignatureControllerTest {
 
     /**
      * Test that we can correctly verify that some content matches the provided
-     * signature, for a given AtoN.
+     * signature, for a given MMSI.
      */
     @Test
     void testVerifyAtoNSignature() throws Exception {
-        doReturn(Boolean.TRUE).when(this.signatureService).verifyAtonSignature(any(), any(), any());
+        doReturn(Boolean.TRUE).when(this.signatureService).verifyMmsiSignature(any(), any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/signatures/atons/verify?mmsi={mmsi}", this.mmsi)
+        this.mockMvc.perform(post("/api/signatures/mmsi/verify/{mmsi}", this.mmsi)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.svr)))
                 .andExpect(status().isOk())
@@ -107,10 +107,10 @@ class SignatureControllerTest {
      */
     @Test
     void testVerifyAtoNSignatureFail() throws Exception {
-        doReturn(Boolean.FALSE).when(this.signatureService).verifyAtonSignature(any(), any(), any());
+        doReturn(Boolean.FALSE).when(this.signatureService).verifyMmsiSignature(any(), any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/signatures/atons/verify?mmsi={mmsi}", this.mmsi)
+        this.mockMvc.perform(post("/api/signatures/mmsi/verify/{mmsi}", this.mmsi)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.svr)))
                 .andExpect(status().isBadRequest())

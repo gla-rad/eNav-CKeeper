@@ -79,7 +79,8 @@ public class MrnEntityService {
     // Service Variables
     private final String[] searchFields = new String[] {
             "name",
-            "mrn"
+            "mrn",
+            "mmsi"
     };
 
     /**
