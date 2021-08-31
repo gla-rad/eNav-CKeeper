@@ -182,7 +182,8 @@ public class DtPagingRequest {
         // Create the Lucene sorting and direction
         List<org.apache.lucene.search.SortField> sortFields = this.getOrder().stream()
                 .map(dtOrder -> new org.apache.lucene.search.SortField(
-                        this.getColumns().get(dtOrder.getColumn()).getData() + "_sort", SortField.Type.STRING,
+                        this.getColumns().get(dtOrder.getColumn()).getData() + "_sort",
+                        this.getColumns().get(dtOrder.getColumn()).getData().equalsIgnoreCase("mmsi") ? SortField.Type.INT : SortField.Type.STRING,
                         dtOrder.getDir() == DtDirection.desc))
                 .collect(Collectors.toList());
         return new org.apache.lucene.search.Sort(sortFields.toArray(new org.apache.lucene.search.SortField[]{}));
