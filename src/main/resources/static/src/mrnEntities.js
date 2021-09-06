@@ -98,10 +98,10 @@ var certificatesColumnDefs = [{
 // Run when the document is ready
 $(document).ready( function () {
     mrnEntitiesTable = $('#mrn_entities_table').DataTable({
-        //"processing": true,
-        //"language": {
-        //    processing: '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>',
-        //},
+        "processing": true,
+        "language": {
+            processing: '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>',
+        },
         "serverSide": true,
         ajax: {
             "type": "POST",
@@ -115,7 +115,7 @@ $(document).ready( function () {
             }
         },
         columns: mrnEntitiesColumnDefs,
-        dom: 'Bfrltip',
+        dom: "<'row'<'col-lg-2 col-md-4'B><'col-lg-2 col-md-4'l><'col-lg-8 col-md-4'f>><'row'<'col-md-12'rt>><'row'<'col-md-6'i><'col-md-6'p>>",
         select: 'single',
         lengthMenu: [10, 25, 50, 75, 100],
         responsive: true,
@@ -191,7 +191,7 @@ $(document).ready( function () {
     // with jQuery.
     mrnEntitiesTable.buttons('.certificates-toggle')
         .nodes()
-        .attr({ "data-toggle": "modal", "data-target": "#certificatesPanel" });
+        .attr({ "data-bs-toggle": "modal", "data-bs-target": "#certificatesPanel" });
 
     // On confirmation of the certificate generation, we need to make an AJAX
     // call back to the service to generate a new certificate
@@ -283,7 +283,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
             }
         },
         columns: certificatesColumnDefs,
-        dom: 'Bfrltip',
+        dom: "<'row'<'col-lg-2 col-md-4'B><'col-lg-2 col-md-4'l><'col-lg-8 col-md-4'f>><'row'<'col-md-12'rt>><'row'<'col-md-6'i><'col-md-6'p>>",
         select: 'single',
         autoWidth: false,
         lengthMenu: [10, 25, 50, 75, 100],
