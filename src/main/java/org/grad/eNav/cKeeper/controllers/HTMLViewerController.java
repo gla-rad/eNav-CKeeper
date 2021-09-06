@@ -80,6 +80,7 @@ public class HTMLViewerController {
      */
     @GetMapping("/index.html")
     public String index(Model model) {
+        model.addAttribute("appName", this.appName);
         model.addAttribute("appOperatorUrl", this.appOperatorUrl);
         model.addAttribute("appCopyright", this.appCopyright);
         // Return the rendered index

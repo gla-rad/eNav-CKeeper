@@ -22,29 +22,27 @@
     <body>
         <div class="d-flex flex-column vh-100">
             <div th:replace="fragments/general.html :: navbar"></div>
-            <div class="flex-fill flex-grow-1 flex-shrink-0">
+            <div class="flex-fill flex-grow-1 flex-shrink-0 sky-bg">
                 <div id="main-content" class="container mt-3">
                     <div class="card shadow" sec:authorize="isAuthenticated()">
                         <div class="card-header">
-                            <h2>VDES Controller Information</h2>
+                            <h2>[[${appName}]] Information</h2>
                         </div>
-                        <div class="card-body">
-                            <div class="row p-1">
-                                <h5>Name:</h5>&nbsp
-                                <span>[[${appName}]]</span>
-                            </div>
-                            <div class="row p-1">
-                                <h5>Version:</h5>&nbsp
-                                <span>[[${appVersion}]]</span>
-                            </div>
-                            <div class="row p-1">
-                                <h5>Operator Name:</h5>&nbsp
-                                <span>[[${appOperatorName}]]</span>
-                            </div>
-                            <div class="row p-1">
-                                <h5>Contact:</h5>&nbsp
-                                <span>[[${appOperatorContact}]]</span>
-                            </div>
+                        <div class="row p-1">
+                            <div class="col-sm-2"><h5>Name:</h5></div>
+                            <div class="col-sm-10"><span>&nbsp;[[${appName}]]</span></div>
+                        </div>
+                        <div class="row p-1">
+                            <div class="col-sm-2"><h5>Version:</h5></div>
+                            <div class="col-sm-10"><span>&nbsp;[[${appVersion}]]</span></div>
+                        </div>
+                        <div class="row p-1">
+                            <div class="col-sm-2"><h5>Operator Name:</h5></div>
+                            <div class="col-sm-10"><span>&nbsp;[[${appOperatorName}]]</span></div>
+                        </div>
+                        <div class="row p-1">
+                            <div class="col-sm-2"><h5>Contact:</h5></div>
+                            <div class="col-sm-10"><span>&nbsp;[[${appOperatorContact}]]</span></div>
                         </div>
                     </div>
                 </div>
