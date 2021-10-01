@@ -50,36 +50,38 @@
     <body>
         <div th:fragment="navbar">
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-                <span class="navbar-brand mb-0 h1">e-Nav Certificate Keeper</span>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown"
-                        aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNavDropdown">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item" sec:authorize="isAuthenticated()">
-                            <a class="nav-link" href="/index.html">
-                                Home
-                            </a>
-                        </li>
-                        <li class="nav-item" sec:authorize="isAuthenticated()">
-                            <a class="nav-link" href="/about">
-                                About
-                            </a>
-                        </li>
-                    </ul>
-                    <ul class="nav navbar-nav navbar-right">
-                        <li class="nav-item" sec:authorize="!isAuthenticated()">
-                            <a class="nav-link" href="/login" th:href="@{/login}">
-                                <i class="fas fa-sign-in-alt"></i>&nbsp;Sign in
-                            </a>
-                        </li>
-                        <li sec:authorize="isAuthenticated()">
-                            <a class="nav-link" href="/logout" th:href="@{/logout}">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </li>
-                    </ul>
+                <div class="container-fluid">
+                    <span class="navbar-brand mb-0 h1">e-Nav Certificate Keeper</span>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown"
+                            aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item" sec:authorize="isAuthenticated()">
+                                <a class="nav-link" href="/index.html">
+                                    Home
+                                </a>
+                            </li>
+                            <li class="nav-item" sec:authorize="isAuthenticated()">
+                                <a class="nav-link" href="/about">
+                                    About
+                                </a>
+                            </li>
+                        </ul>
+                        <ul class="nav navbar-nav navbar-right">
+                            <li class="nav-item" sec:authorize="!isAuthenticated()">
+                                <a class="nav-link" href="/login" th:href="@{/login}">
+                                    <i class="fas fa-sign-in-alt"></i>&nbsp;Sign in
+                                </a>
+                            </li>
+                            <li sec:authorize="isAuthenticated()">
+                                <a class="nav-link" href="/logout" th:href="@{/logout}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </nav>
         </div>
