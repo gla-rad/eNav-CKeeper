@@ -16,7 +16,6 @@
 
 package org.grad.eNav.cKeeper.services;
 
-import com.sun.jersey.core.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
@@ -32,10 +31,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * The Signature Service Class
@@ -108,9 +104,9 @@ public class SignatureService {
 
         // Finally, sing the payload
         try {
-            this.log.debug("Signature service signing payload: {}", new String(Base64.encode(payload)));
+            this.log.debug("Signature service signing payload: {}", Base64.getEncoder().encodeToString(payload));
             final byte[] signature = this.certificateService.signContent(certificateDto.getId(), payload);
-            this.log.debug("Signature service generated signature: {}", new String(Base64.encode(signature)));
+            this.log.debug("Signature service generated signature: {}", Base64.getEncoder().encodeToString(signature));
             return signature;
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException |  InvalidKeyException ex) {
             throw new InvalidRequestException(ex.getMessage());
@@ -141,7 +137,7 @@ public class SignatureService {
                 .map(CertificateDto::getId)
                 .map(id -> {
                     try {
-                        return this.certificateService.verifyContent(id, Base64.decode(b64Content.getBytes()), Base64.decode(b64Signature.getBytes()));
+                        return this.certificateService.verifyContent(id, Base64.getDecoder().decode(b64Content), Base64.getDecoder().decode(b64Signature));
                     } catch (Exception ex) {
                         return false;
                     }

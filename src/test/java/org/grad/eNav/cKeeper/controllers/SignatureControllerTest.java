@@ -1,7 +1,6 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.jersey.core.util.Base64;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.SignatureService;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -59,8 +59,8 @@ class SignatureControllerTest {
         this.atonUID = "test_aton";
         this.mmsi = 123456789;
         this.svr = new SignatureVerificationRequestDto();
-        this.svr.setContent(Base64.encode(MessageDigest.getInstance("SHA-256").digest("Hello World".getBytes())).toString());
-        this.svr.setSignature(Base64.encode("That's the signature?".getBytes()).toString());
+        this.svr.setContent(Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest("Hello World".getBytes())));
+        this.svr.setSignature(Base64.getEncoder().encodeToString("That's the signature?".getBytes()));
     }
 
     /**

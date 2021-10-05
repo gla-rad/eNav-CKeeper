@@ -1,6 +1,5 @@
 package org.grad.eNav.cKeeper.services;
 
-import com.sun.jersey.core.util.Base64;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
@@ -13,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Base64;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
@@ -155,7 +155,7 @@ class SignatureServiceTest {
         doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertTrue(this.signatureService.verifyMmsiSignature(this.mrnEntityDto.getMmsi(), new String(Base64.encode(this.content)), new String(Base64.encode(this.signature))));
+        assertTrue(this.signatureService.verifyMmsiSignature(this.mrnEntityDto.getMmsi(), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString((this.signature))));
     }
 
     /**
@@ -169,7 +169,7 @@ class SignatureServiceTest {
         doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(mrnEntityDto.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertFalse(this.signatureService.verifyMmsiSignature(this.mrnEntityDto.getMmsi(), Base64.encode(this.content).toString(), Base64.encode(this.signature).toString()));
+        assertFalse(this.signatureService.verifyMmsiSignature(this.mrnEntityDto.getMmsi(), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString(this.signature)));
     }
 
 }
