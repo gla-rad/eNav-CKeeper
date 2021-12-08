@@ -225,7 +225,7 @@ public class McpService {
 
         // Construct and return the MCP device object through JSON
         return Optional.of(httpResponse)
-                .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
+                .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.CREATED.value())
                 .map(HttpResponse::getEntity)
                 .map(e -> {
                     try {
