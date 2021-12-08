@@ -185,7 +185,7 @@ public class DtPagingRequest {
         List<org.apache.lucene.search.SortField> sortFields = this.getOrder().stream()
                 .map(dtOrder -> {
                     String field = this.getColumns().get(dtOrder.getColumn()).getData();
-                    if(field.compareTo("id") == 0 || field.compareTo("mmsi") == 0) {
+                    if(field.compareTo("id") == 0) {
                         return new SortedNumericSortField(field, SortField.Type.INT,  dtOrder.getDir() == DtDirection.desc);
                     } else {
                         return new SortedSetSortField(field, dtOrder.getDir() == DtDirection.desc);

@@ -98,7 +98,7 @@ class MrnEntityServiceTest {
             entity.setId(BigInteger.valueOf(i));
             entity.setName("Entity Name");
             entity.setMrn("urn:mrn:mcp:device:mcc:grad:test" + i);
-            entity.setMmsi(Long.valueOf(i).intValue());
+            entity.setMmsi(String.valueOf(i));
             this.entities.add(entity);
         }
 
@@ -109,14 +109,14 @@ class MrnEntityServiceTest {
         this.newEntity = new MRNEntity();
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
-        this.newEntity.setMmsi(123456789);
+        this.newEntity.setMmsi("123456789");
 
         // Create an existing MRN entity
         this.existingEntity = new MRNEntity();
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
-        this.existingEntity.setMmsi(123456790);
+        this.existingEntity.setMmsi("123456790");
 
         // Create an MCP Device DTO
         this.newMcpDevice = new McpDeviceDto(this.newEntity.getName(), this.newEntity.getMrn());

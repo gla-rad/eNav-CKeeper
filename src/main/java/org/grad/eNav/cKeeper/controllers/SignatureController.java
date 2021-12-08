@@ -50,7 +50,7 @@ public class SignatureController {
      */
     @PostMapping(value = "/atons/generate", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateAtoNSignature(@RequestParam("atonUID") String atonUID,
-                                                        @RequestParam("mmsi") Integer mmsi,
+                                                        @RequestParam("mmsi") String mmsi,
                                                         @RequestBody byte[] signaturePayload) {
         log.debug("REST request to get a signature for AtoN with UID : {}", atonUID);
         return ResponseEntity.ok()
@@ -66,7 +66,7 @@ public class SignatureController {
      * status 400 (Bad Request)
      */
     @PostMapping(value = "/mmsi/verify/{mmsi}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<McpDeviceDto> verifyMmsiSignature(@PathVariable Integer mmsi,
+    public ResponseEntity<McpDeviceDto> verifyMmsiSignature(@PathVariable String mmsi,
                                                             @RequestBody SignatureVerificationRequestDto svr) {
         log.debug("REST request to get verify the signed content for AtoN with MMSI : {}", mmsi);
         // Verify the posted signature

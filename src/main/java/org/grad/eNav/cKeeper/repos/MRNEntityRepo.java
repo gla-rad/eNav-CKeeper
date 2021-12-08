@@ -41,6 +41,6 @@ public interface MRNEntityRepo extends JpaRepository<MRNEntity, BigInteger> {
      *
      * @return The Entity matching the MMSI
      */
-    Optional<MRNEntity> findByMmsi(Integer mmsi);
+    Optional<MRNEntity> findByMmsi(String mmsi);
 
 }

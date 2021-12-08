@@ -41,7 +41,8 @@ public class MRNEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "mrn_entity_generator")
+    @SequenceGenerator(name="mrn_entity_generator", sequenceName = "mrn_entity_seq")
     private BigInteger id;
 
     @NotNull
@@ -54,9 +55,9 @@ public class MRNEntity implements Serializable {
     @Column(name = "mrn")
     private String mrn;
 
-    @GenericField(sortable = Sortable.YES)
+    @KeywordField(sortable = Sortable.YES)
     @Column(name = "mmsi", unique=true)
-    private Integer mmsi;
+    private String mmsi;
 
     @OneToMany(mappedBy = "mrnEntity", cascade = CascadeType.REMOVE)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
@@ -145,7 +146,7 @@ public class MRNEntity implements Serializable {
      *
      * @return the mmsi
      */
-    public Integer getMmsi() {
+    public String getMmsi() {
         return mmsi;
     }
 
@@ -154,7 +155,7 @@ public class MRNEntity implements Serializable {
      *
      * @param mmsi the mmsi
      */
-    public void setMmsi(Integer mmsi) {
+    public void setMmsi(String mmsi) {
         this.mmsi = mmsi;
     }
 
