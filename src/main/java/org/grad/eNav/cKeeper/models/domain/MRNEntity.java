@@ -41,6 +41,7 @@ public class MRNEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
+    @ScaledNumberField(name = "id_sort", decimalScale=0, sortable = Sortable.YES)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "mrn_entity_generator")
     @SequenceGenerator(name="mrn_entity_generator", sequenceName = "mrn_entity_seq")
     private BigInteger id;

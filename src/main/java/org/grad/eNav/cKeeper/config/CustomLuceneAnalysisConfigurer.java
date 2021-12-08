@@ -23,13 +23,23 @@ import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilterFactory;
 import org.apache.lucene.analysis.snowball.SnowballPorterFilterFactory;
 import org.apache.lucene.analysis.standard.StandardTokenizerFactory;
 import org.hibernate.search.backend.lucene.analysis.LuceneAnalysisConfigurationContext;
+import org.hibernate.search.backend.lucene.analysis.LuceneAnalysisConfigurer;
 
 /**
- * The Lucene Analysis Configurer
+ * The Custom Lucene Analysis Configurer
+ *
+ * Defines the custom Lucence analysis configuration used for this service,
+ * by adding certain analysers and normalisers.
  *
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-public class LuceneAnalysisConfigurer implements org.hibernate.search.backend.lucene.analysis.LuceneAnalysisConfigurer {
+public class CustomLuceneAnalysisConfigurer implements LuceneAnalysisConfigurer {
+
+    /**
+     * Implements the Lucene analysis configuration.
+     *
+     * @param context the Lucene analysis configuration context
+     */
     @Override
     public void configure(LuceneAnalysisConfigurationContext context) {
         context.analyzer( "english" ).custom()
@@ -44,4 +54,5 @@ public class LuceneAnalysisConfigurer implements org.hibernate.search.backend.lu
                 .tokenFilter( LowerCaseFilterFactory.class )
                 .tokenFilter( ASCIIFoldingFilterFactory.class );
     }
+
 }
