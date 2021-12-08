@@ -183,7 +183,7 @@ class McpServiceTest {
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
 
         // Mock the HTTP response
-        doReturn(HttpStatus.OK.value()).when(this.statusLine).getStatusCode();
+        doReturn(HttpStatus.CREATED.value()).when(this.statusLine).getStatusCode();
         doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
         doReturn(IOUtils.toInputStream(this.objectMapper.writeValueAsString(this.mcpDevice))).when(this.httpEntity).getContent();
         doReturn(this.httpEntity).when(this.httpResponse).getEntity();
