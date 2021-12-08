@@ -24,6 +24,7 @@ import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
+import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
@@ -145,16 +146,16 @@ public class CertificateService {
         PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, this.certAlgorithm);
 
         // Get the X509 certificate signed by the MCP
-        X509Certificate x509Certificate = this.mcpService.issueMcpDeviceCertificate(mrnEntity.getMrn(), csr);
+        Pair<String, X509Certificate> certificateInfo = this.mcpService.issueMcpDeviceCertificate(mrnEntity.getMrn(), csr);
 
         // Populate the new certificate object
         Certificate certificate = new Certificate();
-        certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
+        certificate.setCertificate(X509Utils.formatCertificate(certificateInfo.getValue()));
         certificate.setPublicKey(X509Utils.formatPublicKey(keyPair));
         certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair));
-        certificate.setStartDate(x509Certificate.getNotBefore());
-        certificate.setEndDate(x509Certificate.getNotAfter());
-        certificate.setMcpMirId(null); // TODO: We need to wait for MIR to return the generated ID
+        certificate.setStartDate(certificateInfo.getValue().getNotBefore());
+        certificate.setEndDate(certificateInfo.getValue().getNotAfter());
+        certificate.setMcpMirId(certificateInfo.getKey());
         certificate.setMrnEntity(mrnEntity);
 
         // Save the certificate into the database
@@ -195,7 +196,7 @@ public class CertificateService {
                 );
 
         // Mark as revoked in the MCP
-        this.mcpService.revokeMcpDeviceCertificate(certificate.getMrnEntity().getMrn(), certificate.getId());
+        this.mcpService.revokeMcpDeviceCertificate(certificate.getMrnEntity().getMrn(), certificate.getMcpMirId());
 
         // And if successful, make it locally as well
         certificate.setRevoked(true);

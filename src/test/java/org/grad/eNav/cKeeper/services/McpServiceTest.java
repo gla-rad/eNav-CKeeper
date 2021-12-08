@@ -18,6 +18,7 @@ package org.grad.eNav.cKeeper.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -41,9 +42,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
@@ -74,6 +75,7 @@ class McpServiceTest {
     private CloseableHttpClient httpClient;
     private CloseableHttpResponse httpResponse;
     private StatusLine statusLine;
+    private Header locationHeader;
     private HttpEntity httpEntity;
 
     /**
@@ -100,6 +102,9 @@ class McpServiceTest {
         // Mock the HTTP response status line
         this.statusLine = mock(StatusLine.class);
 
+        // Mock the HTTP response header
+        this.locationHeader = mock(Header.class);
+
         // Mock the HTTP entity
         this.httpEntity = mock(HttpEntity.class);
     }
@@ -109,7 +114,7 @@ class McpServiceTest {
      * X.509 certificate for accessing the MIR functionality.
      */
     @Test
-    void testInit() throws UnrecoverableKeyException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    void testInit() throws UnrecoverableKeyException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, CertificateException {
         this.mcpService.keyStore = "cKeeperKeystore";
         this.mcpService.keyStorePass = "password";
         this.mcpService.init();
@@ -311,6 +316,9 @@ class McpServiceTest {
      */
     @Test
     void testIssueMcpDeviceCertificate() throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, CertificateException {
+        // Initialise the service certificate factory
+        this.mcpService.certificateFactory = CertificateFactory.getInstance("X.509");
+
         // Spin up a CSR and a generate X.509 certificate
         final KeyPair keypair = X509Utils.generateKeyPair(null);
         final PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keypair, "CN=Test", null);
@@ -321,8 +329,10 @@ class McpServiceTest {
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
 
         // Mock the HTTP response
-        doReturn(HttpStatus.OK.value()).when(this.statusLine).getStatusCode();
+        doReturn(HttpStatus.CREATED.value()).when(this.statusLine).getStatusCode();
         doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
+        doReturn("https://api-x509.maritimeconnectivity.net/x509/api/org/urn:mrn:mcp:org:mcc:grad/device/urn:mrn:mcp:device:mcc:grad:test/certificate/1234567890").when(locationHeader).getValue();
+        doReturn(locationHeader).when(this.httpResponse).getFirstHeader("Location");
         doReturn(IOUtils.toInputStream(X509Utils.formatCertificate(cert))).when(this.httpEntity).getContent();
         doReturn(this.httpEntity).when(this.httpResponse).getEntity();
         doReturn(this.httpResponse).when(this.httpClient).execute(any());
@@ -338,6 +348,9 @@ class McpServiceTest {
      */
     @Test
     void testIssueMcpDeviceCertificateFailure() throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, CertificateException {
+        // Initialise the service certificate factory
+        this.mcpService.certificateFactory = CertificateFactory.getInstance("X.509");
+
         // Spin up a CSR and a generate X.509 certificate
         final KeyPair keypair = X509Utils.generateKeyPair(null);
         final PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keypair, "CN=Test", null);
@@ -373,7 +386,7 @@ class McpServiceTest {
         doReturn(this.httpResponse).when(this.httpClient).execute(any());
 
         // Perform the service call
-        this.mcpService.revokeMcpDeviceCertificate(this.mcpDevice.getMrn(), BigInteger.ONE);
+        this.mcpService.revokeMcpDeviceCertificate(this.mcpDevice.getMrn(), "1234567890");
     }
 
     /**
@@ -393,7 +406,7 @@ class McpServiceTest {
 
         // Perform the service call
         assertThrows(InvalidRequestException.class, () ->
-            this.mcpService.revokeMcpDeviceCertificate(this.mcpDevice.getMrn(), BigInteger.ONE)
+            this.mcpService.revokeMcpDeviceCertificate(this.mcpDevice.getMrn(), "1234567890")
         );
     }
 
