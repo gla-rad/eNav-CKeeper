@@ -22,6 +22,7 @@ import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
+import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
@@ -105,6 +106,7 @@ class CertificateServiceTest {
         // Create an existing certificate object
         this.certificate = new Certificate();
         this.certificate.setId(BigInteger.ONE);
+        this.certificate.setMcpMirId("1234567890");
         this.certificate.setMrnEntity(this.mrnEntity);
         this.certificate.setCertificate("CERTIFICATE");
         this.certificate.setPublicKey("PUBLIC KEY");
@@ -143,7 +145,7 @@ class CertificateServiceTest {
         X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), null);
 
         doReturn(Optional.of(this.mrnEntity)).when(this.mrnEntityRepo).findById(this.mrnEntity.getId());
-        doReturn(x509Certificate).when(this.mcpService).issueMcpDeviceCertificate(eq(this.mrnEntity.getMrn()), any());
+        doReturn(new Pair<>(this.certificate.getMcpMirId(), x509Certificate)).when(this.mcpService).issueMcpDeviceCertificate(eq(this.mrnEntity.getMrn()), any());
         doReturn(this.certificate).when(this.certificateRepo).save(any());
 
         // Perform the service call
@@ -186,7 +188,7 @@ class CertificateServiceTest {
         X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), null);
 
         doReturn(Optional.of(this.mrnEntity)).when(this.mrnEntityRepo).findById(this.mrnEntity.getId());
-        doReturn(x509Certificate).when(this.mcpService).issueMcpDeviceCertificate(eq(this.mrnEntity.getMrn()), any());
+        doReturn(new Pair<>(this.certificate.getMcpMirId(), x509Certificate)).when(this.mcpService).issueMcpDeviceCertificate(eq(this.mrnEntity.getMrn()), any());
 
         // Perform the service call
         assertThrows(SavingFailedException.class, () ->

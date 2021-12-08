@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -27,6 +28,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -40,6 +42,7 @@ import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,11 +56,11 @@ import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -117,6 +120,9 @@ public class McpService {
     protected SSLContext sslContext;
     protected HttpClientBuilder clientBuilder;
 
+    // Certificate Factory
+    protected CertificateFactory certificateFactory;
+
     /**
      * Once the service has been initialised, it needs to register the
      * MCP keystore with our MCP X.509 certificate into the Java truststore.
@@ -127,7 +133,7 @@ public class McpService {
      * For more information see: https://www.baeldung.com/java-ssl
      */
     @PostConstruct
-    public void init() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, UnrecoverableKeyException {
+    public void init() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, UnrecoverableKeyException, CertificateException {
         //Loading the Keystore file
         SSLContextBuilder SSLBuilder = SSLContexts.custom();
         ClassPathResource keyStoreResource = new ClassPathResource(this.keyStore);
@@ -144,6 +150,9 @@ public class McpService {
         //Creating HttpClientBuilder
         this.clientBuilder = HttpClients.custom();
         this.clientBuilder = clientBuilder.setSSLSocketFactory(sslConSocFactory);
+
+        // Initialise the certificate factory
+        this.certificateFactory = CertificateFactory.getInstance("X.509");
     }
 
     /**
@@ -315,7 +324,7 @@ public class McpService {
      * @return the signed X.509 certificate
      * @throws IOException if the PEM generation of the csr or the HTTP request fail
      */
-    public X509Certificate issueMcpDeviceCertificate(String mrn, PKCS10CertificationRequest csr) throws IOException {
+    public Pair<String, X509Certificate> issueMcpDeviceCertificate(String mrn, PKCS10CertificationRequest csr) throws IOException {
         this.log.debug("Request to issue a new certificate for the  MCP Device with MRN {}", mrn);
 
         // Make sure the MCP device MRN has the right prefix
@@ -335,12 +344,20 @@ public class McpService {
 
         // Construct and return the MCP device object through JSON
         return Optional.of(httpResponse)
-                .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
-                .map(HttpResponse::getEntity)
-                .map(e -> {
+                .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.CREATED.value())
+                .filter(r -> Objects.nonNull(r.getFirstHeader("Location")))
+                .map(response -> {
+                    // Get the MCP MIR ID of the generated certificate from the location header
+                    String location = response.getFirstHeader("Location").getValue();
+                    String[] locationPath = location.split("/");
+                    String mcpMirId = locationPath[locationPath.length-1];
+
+                    // Build the output with the ID and the certificate
                     try {
-                        return (X509Certificate) CertificateFactory.getInstance("X.509")
-                                .generateCertificate(e.getContent());
+                        return new Pair<>(
+                                mcpMirId,
+                                (X509Certificate) this.certificateFactory.generateCertificate(response.getEntity().getContent())
+                        );
                     } catch (CertificateException | IOException ex) {
                         throw new  InvalidRequestException(ex.getMessage());
                     }
@@ -353,10 +370,10 @@ public class McpService {
      * on the provided MCP device MRN and the certificate ID.
      *
      * @param mrn       The MRN of the MCP device to revoke the certificate for
-     * @param certId    The ID of the certificate to be revoked
+     * @param mcpMirId  The MCP MIR ID of the certificate to be revoked
      * @throws IOException if the HTTP request fails
      */
-    public void revokeMcpDeviceCertificate(String mrn, BigInteger certId) throws IOException {
+    public void revokeMcpDeviceCertificate(String mrn, String mcpMirId) throws IOException {
         this.log.debug("Request to revoke a certificate for the  MCP Device with MRN {}", mrn);
 
         // Make sure the MCP device MRN has the right prefix
@@ -364,7 +381,13 @@ public class McpService {
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/" + certId + "/revoke");
+        HttpPost httpPost = new HttpPost(this.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/" + mcpMirId + "/revoke");
+
+        // Add the request body
+        ObjectNode jsonNode = this.objectMapper.createObjectNode();
+        jsonNode.put("revokationReason", "unspecified");
+        jsonNode.put("revokedAt", String.format("%d", System.currentTimeMillis()));
+        httpPost.setEntity(new StringEntity(jsonNode.toString(), ContentType.APPLICATION_JSON));
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpPost);

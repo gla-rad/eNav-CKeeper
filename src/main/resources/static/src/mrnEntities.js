@@ -160,12 +160,14 @@ $(document).ready( function () {
                 error: error
             });
         },
-        onDeleteRow: function (datatable, rowdata, success, error) {
-            $.ajax({
-                url: `/api/mrn-entities/${rowdata["id"]}`,
-                type: 'DELETE',
-                success: success,
-                error: error
+        onDeleteRow: function (datatable, selectedRows, success, error) {
+            selectedRows.every(function (rowIdx, tableLoop, rowLoop) {
+                $.ajax({
+                    url: `/api/mrn-entities/${this.data()["id"]}`,
+                    type: 'DELETE',
+                    success: success,
+                    error: error
+                });
             });
         },
         onEditRow: function (datatable, rowdata, success, error) {
@@ -310,13 +312,15 @@ function loadMrnEntityCertificates(event, table, button, config) {
                 $('#confirm-revoke-certificate').modal('show');
             }
         }],
-        onDeleteRow: function (datatable, rowdata, success, error) {
-            $.ajax({
-                url: `/api/certificates/${rowdata["id"]}`,
-                type: 'DELETE',
-                success: success,
-                error: error
+        onDeleteRow: function (datatable, selectedRows, success, error) {
+            selectedRows.every(function (rowIdx, tableLoop, rowLoop) {
+                $.ajax({
+                    url: `/api/certificates/${this.data()["id"]}`,
+                    type: 'DELETE',
+                    success: success,
+                    error: error
+                });
             });
-        }
+        },
     });
 }
