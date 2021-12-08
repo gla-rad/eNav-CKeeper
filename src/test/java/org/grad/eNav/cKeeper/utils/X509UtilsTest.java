@@ -99,7 +99,7 @@ class X509UtilsTest {
      */
     @Test
     void testGenerateKeyPair() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        KeyPair keyPair = X509Utils.generateKeyPair("secp192r1");
+        KeyPair keyPair = X509Utils.generateKeyPair("secp256r1");
 
         // Basic Assertions
         assertNotNull(keyPair);
