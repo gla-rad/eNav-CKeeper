@@ -67,7 +67,7 @@ class SignatureServiceTest {
         this.mrnEntityDto = new MrnEntityDto();
         this.mrnEntityDto.setId(BigInteger.ONE);
         this.mrnEntityDto.setName("mrn_entiity");
-        this.mrnEntityDto.setMmsi(123456789);
+        this.mrnEntityDto.setMmsi("123456789");
 
         // Create a new Certificate DTO
         this.certificateDto = new CertificateDto();

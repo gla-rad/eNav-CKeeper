@@ -33,6 +33,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
@@ -117,7 +118,7 @@ public class MrnEntityController {
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<MrnEntityDto> createMrnEntity(@RequestBody MrnEntityDto entity) throws Exception, URISyntaxException {
+    public ResponseEntity<MrnEntityDto> createMrnEntity(@RequestBody @Valid MrnEntityDto entity) throws Exception, URISyntaxException {
         log.debug("REST request to save MRN Entity : {}", entity);
         if (entity.getId() != null) {
             throw new InvalidRequestException("A new MRN entity cannot already have an ID");
@@ -140,7 +141,7 @@ public class MrnEntityController {
      */
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<MrnEntityDto> updateMrnEntity(@PathVariable BigInteger id,
-                                                        @RequestBody MrnEntityDto entity) {
+                                                        @RequestBody @Valid MrnEntityDto entity) {
         log.debug("REST request to update MRN Entity : {}", entity);
 
         // Save the MRN Entity

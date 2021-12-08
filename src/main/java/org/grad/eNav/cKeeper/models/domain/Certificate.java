@@ -41,7 +41,8 @@ public class Certificate {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "certificate_generator")
+    @SequenceGenerator(name="certificate_generator", sequenceName = "certificate_seq")
     private BigInteger id;
 
     @JsonIgnore

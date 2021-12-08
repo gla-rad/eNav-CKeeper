@@ -19,6 +19,7 @@ package org.grad.eNav.cKeeper.models.dtos;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.math.BigInteger;
 import java.util.Objects;
 
@@ -35,7 +36,8 @@ public class MrnEntityDto {
     private String name;
     @NotNull
     private String mrn;
-    private Integer mmsi;
+    @Pattern(regexp="^(0|[1-9][0-9]*)$")
+    private String mmsi;
 
     /**
      * Instantiates a new Mrn entity dto.
@@ -50,7 +52,7 @@ public class MrnEntityDto {
      * @param name the name
      * @param mrn  the mrn
      */
-    public MrnEntityDto(String name, String mrn, Integer mmsi) {
+    public MrnEntityDto(String name, String mrn, String mmsi) {
         this.name = name;
         this.mrn = mrn;
         this.mmsi = mmsi;
@@ -133,7 +135,7 @@ public class MrnEntityDto {
      *
      * @return the mmsi
      */
-    public Integer getMmsi() {
+    public String getMmsi() {
         return mmsi;
     }
 
@@ -142,7 +144,7 @@ public class MrnEntityDto {
      *
      * @param mmsi the mmsi
      */
-    public void setMmsi(Integer mmsi) {
+    public void setMmsi(String mmsi) {
         this.mmsi = mmsi;
     }
 

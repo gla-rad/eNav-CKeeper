@@ -80,7 +80,8 @@ public class MrnEntityService {
     // Service Variables
     private final String[] searchFields = new String[] {
             "name",
-            "mrn"
+            "mrn",
+            "mmsi"
     };
 
     /**
@@ -149,7 +150,7 @@ public class MrnEntityService {
      * @return the node
      */
     @Transactional(readOnly = true)
-    public MrnEntityDto findOneByMmsi(@NotNull Integer mmsi) {
+    public MrnEntityDto findOneByMmsi(@NotNull String mmsi) {
         log.debug("Request to get MRN Entity with MMSI : {}", mmsi);
         return this.mrnEntityRepo.findByMmsi(mmsi)
                 .map(MrnEntityDto::new)

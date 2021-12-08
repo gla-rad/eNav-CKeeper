@@ -72,7 +72,7 @@ public class SignatureService {
      * @param payload       The payload to be signed
      * @return The signature for the provided payload
      */
-    public byte[] generateAtonSignature(@NotNull String atonUID, Integer mmsi, @NotNull byte[] payload) {
+    public byte[] generateAtonSignature(@NotNull String atonUID, String mmsi, @NotNull byte[] payload) {
         // Translate the AtoN UID into an MRC based on the MCP rules
         final String atonMrn = this.mcpService.constructMcpDeviceMrn(atonUID);
 
@@ -125,7 +125,7 @@ public class SignatureService {
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyMmsiSignature(Integer mmsi, String b64Content, String b64Signature) {
+    public boolean verifyMmsiSignature(String mmsi, String b64Content, String b64Signature) {
         return Optional.of(mmsi)
                 .map(this.mrnEntityService::findOneByMmsi)
                 .map(MrnEntityDto::getId)
