@@ -286,10 +286,11 @@ public class MrnEntityService {
      * search test. This query will be based solely on the stations table and
      * will include the following fields:
      * - Name
-     * - IP Address
+     * - MRN
      * - MMSI
      *
      * @param searchText the text to be searched
+     * @param sort the sorting selection for the search query
      * @return the full text query
      */
     protected SearchQuery<MRNEntity> searchMRNEntitiesQuery(String searchText, Sort sort) {
