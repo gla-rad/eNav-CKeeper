@@ -22,7 +22,9 @@ import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.*;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
-import org.hibernate.search.jpa.FullTextQuery;
+import org.hibernate.search.engine.search.query.SearchQuery;
+import org.hibernate.search.engine.search.query.SearchResult;
+import org.hibernate.search.engine.search.query.SearchResultTotal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -377,9 +379,14 @@ class MrnEntityServiceTest {
         dtPagingRequest.setSearch(dtSearch);
 
         // Mock the full text query
-        FullTextQuery mockedQuery = mock(FullTextQuery.class);
-        doReturn(this.entities.subList(0, 5)).when(mockedQuery).getResultList();
-        doReturn(mockedQuery).when(this.mrnEntityService).searchStationsQuery(any());
+        SearchQuery mockedQuery = mock(SearchQuery.class);
+        SearchResult mockedResult = mock(SearchResult.class);
+        SearchResultTotal mockedResultTotal = mock(SearchResultTotal.class);
+        doReturn(5L).when(mockedResultTotal).hitCount();
+        doReturn(mockedResultTotal).when(mockedResult).total();
+        doReturn(this.entities.subList(0, 5)).when(mockedResult).hits();
+        doReturn(mockedResult).when(mockedQuery).fetch(any(), any());
+        doReturn(mockedQuery).when(this.mrnEntityService).searchMRNEntitiesQuery(any(), any());
 
         // Perform the service call
         DtPage<MrnEntityDto> result = this.mrnEntityService.handleDatatablesPagingRequest(dtPagingRequest);

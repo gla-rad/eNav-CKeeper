@@ -16,10 +16,10 @@
 
 package org.grad.eNav.cKeeper.models.domain;
 
-import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.search.annotations.*;
+import org.hibernate.search.engine.backend.types.Sortable;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -36,34 +36,25 @@ import java.util.Set;
 @Table(name = "mrn_entity")
 @Cacheable
 @Indexed
-@NormalizerDef(name = "lowercase", filters = @TokenFilterDef(factory = LowerCaseFilterFactory.class))
 public class MRNEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Field(name = "id_sort", analyze = Analyze.NO, normalizer = @Normalizer(definition = "lowercase"))
-    @SortableField(forField = "id_sort")
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private BigInteger id;
 
     @NotNull
-    @Field()
-    @Field(name = "name_sort", analyze = Analyze.NO, normalizer = @Normalizer(definition = "lowercase"))
-    @SortableField(forField = "name_sort")
+    @KeywordField(sortable = Sortable.YES)
     @Column(name = "name")
     private String name;
 
     @NotNull
-    @Field()
-    @Field(name = "mrn_sort", analyze = Analyze.NO, normalizer = @Normalizer(definition = "lowercase"))
-    @SortableField(forField = "mrn_sort")
+    @KeywordField(sortable = Sortable.YES)
     @Column(name = "mrn")
     private String mrn;
 
-    @Field()
-    @Field(name = "mmsi_sort", analyze = Analyze.NO, normalizer = @Normalizer(definition = "lowercase"))
-    @SortableField(forField = "mmsi_sort")
+    @GenericField(sortable = Sortable.YES)
     @Column(name = "mmsi", unique=true)
     private Integer mmsi;
 

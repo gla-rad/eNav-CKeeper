@@ -19,6 +19,7 @@
 	<properties>
 		<java.version>11</java.version>
 		<spring-cloud.version>2020.0.3</spring-cloud.version>
+		<hibernate.search-orm.version>6.1.0.Alpha1</hibernate.search-orm.version>
 		<keycloak.version>15.0.1</keycloak.version>
 		<springdoc.version>1.5.10</springdoc.version>
 		<bootstrap.version>5.1.0</bootstrap.version>
@@ -97,9 +98,14 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-search-orm</artifactId>
-			<version>5.11.9.Final</version>
+			<groupId>org.hibernate.search</groupId>
+			<artifactId>hibernate-search-mapper-orm</artifactId>
+			<version>${hibernate.search-orm.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate.search</groupId>
+			<artifactId>hibernate-search-backend-lucene</artifactId>
+			<version>${hibernate.search-orm.version}</version>
 		</dependency>
 
 		<dependency>
