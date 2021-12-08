@@ -17,6 +17,8 @@
 package org.grad.eNav.cKeeper.models.dtos.datatables;
 
 import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortedNumericSortField;
+import org.apache.lucene.search.SortedSetSortField;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
@@ -181,10 +183,14 @@ public class DtPagingRequest {
     public org.apache.lucene.search.Sort getLucenceSort() {
         // Create the Lucene sorting and direction
         List<org.apache.lucene.search.SortField> sortFields = this.getOrder().stream()
-                .map(dtOrder -> new org.apache.lucene.search.SortField(
-                        this.getColumns().get(dtOrder.getColumn()).getData() + "_sort",
-                        this.getColumns().get(dtOrder.getColumn()).getData().equalsIgnoreCase("mmsi") ? SortField.Type.INT : SortField.Type.STRING,
-                        dtOrder.getDir() == DtDirection.desc))
+                .map(dtOrder -> {
+                    String field = this.getColumns().get(dtOrder.getColumn()).getData();
+                    if(field.compareTo("id") == 0 || field.compareTo("mmsi") == 0) {
+                        return new SortedNumericSortField(field, SortField.Type.INT,  dtOrder.getDir() == DtDirection.desc);
+                    } else {
+                        return new SortedSetSortField(field, dtOrder.getDir() == DtDirection.desc);
+                    }
+                })
                 .collect(Collectors.toList());
         return new org.apache.lucene.search.Sort(sortFields.toArray(new org.apache.lucene.search.SortField[]{}));
     }
