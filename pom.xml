@@ -25,6 +25,7 @@
 		<bootstrap.version>5.1.0</bootstrap.version>
 		<jquery.version>3.5.1</jquery.version>
 		<fa.version>5.11.2</fa.version>
+		<log4j2.version>2.17.0</log4j2.version>
 	</properties>
 
 	<build>
