@@ -16,7 +16,6 @@
 
 package org.grad.eNav.cKeeper.models.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.*;
 import org.hibernate.annotations.Cache;
 
