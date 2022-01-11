@@ -43,6 +43,7 @@ import javax.persistence.EntityManager;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -82,6 +83,9 @@ public class MrnEntityService {
             "name",
             "mrn",
             "mmsi"
+    };
+    private final String[] searchFieldsWithSort = new String[] {
+            "id"
     };
 
     /**
@@ -268,7 +272,7 @@ public class MrnEntityService {
         // Create the search query
         SearchQuery searchQuery = this.searchMRNEntitiesQuery(
                 dtPagingRequest.getSearch().getValue(),
-                dtPagingRequest.getLucenceSort()
+                dtPagingRequest.getLucenceSort(Arrays.asList(searchFieldsWithSort))
         );
 
         // Perform the search query and return the datatables page result

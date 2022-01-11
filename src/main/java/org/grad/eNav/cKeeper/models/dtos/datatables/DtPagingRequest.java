@@ -21,7 +21,9 @@ import org.apache.lucene.search.SortedNumericSortField;
 import org.apache.lucene.search.SortedSetSortField;
 import org.springframework.data.domain.PageRequest;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -180,13 +182,14 @@ public class DtPagingRequest {
      *
      * @return the Springboot sort definition
      */
-    public org.apache.lucene.search.Sort getLucenceSort() {
+    public org.apache.lucene.search.Sort getLucenceSort(List<String> diffSortFields) {
         // Create the Lucene sorting and direction
         List<org.apache.lucene.search.SortField> sortFields = this.getOrder().stream()
                 .map(dtOrder -> {
                     String field = this.getColumns().get(dtOrder.getColumn()).getData();
-                    if(field.compareTo("id") == 0) {
-                        return new SortedNumericSortField(field, SortField.Type.INT,  dtOrder.getDir() == DtDirection.desc);
+                    field = Optional.ofNullable(diffSortFields).orElseGet(() -> Collections.emptyList()).contains(field) ? field + "_sort" : field;
+                    if(field.compareTo("id_sort") == 0) {
+                        return new SortedNumericSortField(field, SortField.Type.LONG,  dtOrder.getDir() == DtDirection.desc);
                     } else {
                         return new SortedSetSortField(field, dtOrder.getDir() == DtDirection.desc);
                     }
