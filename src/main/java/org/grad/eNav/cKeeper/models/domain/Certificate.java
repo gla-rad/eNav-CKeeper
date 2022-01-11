@@ -42,14 +42,8 @@ public class Certificate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "certificate_generator")
-    @SequenceGenerator(name="certificate_generator", sequenceName = "certificate_seq")
+    @SequenceGenerator(name="certificate_generator", sequenceName = "certificate_seq",  allocationSize = 1)
     private BigInteger id;
-
-    @JsonIgnore
-    @ManyToOne()
-    @JoinColumn(name = "mrnEntityId", nullable = false)
-    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-    private MRNEntity mrnEntity;
 
     @NotNull
     @Type(type="text")
@@ -78,6 +72,11 @@ public class Certificate {
     @Column(name = "revoked")
     private Boolean revoked;
 
+    @ManyToOne()
+    @JoinColumn(name = "mrnEntityId", nullable = false)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private MRNEntity mrnEntity;
+
     /**
      * Gets id.
      *
@@ -94,24 +93,6 @@ public class Certificate {
      */
     public void setId(BigInteger id) {
         this.id = id;
-    }
-
-    /**
-     * Gets mrn entity.
-     *
-     * @return the mrn entity
-     */
-    public MRNEntity getMrnEntity() {
-        return mrnEntity;
-    }
-
-    /**
-     * Sets mrn entity.
-     *
-     * @param mrnEntity the mrn entity
-     */
-    public void setMrnEntity(MRNEntity mrnEntity) {
-        this.mrnEntity = mrnEntity;
     }
 
     /**
@@ -238,6 +219,24 @@ public class Certificate {
      */
     public void setRevoked(Boolean revoked) {
         this.revoked = revoked;
+    }
+
+    /**
+     * Gets mrn entity.
+     *
+     * @return the mrn entity
+     */
+    public MRNEntity getMrnEntity() {
+        return mrnEntity;
+    }
+
+    /**
+     * Sets mrn entity.
+     *
+     * @param mrnEntity the mrn entity
+     */
+    public void setMrnEntity(MRNEntity mrnEntity) {
+        this.mrnEntity = mrnEntity;
     }
 
     /**

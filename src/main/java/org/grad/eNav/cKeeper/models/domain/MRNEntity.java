@@ -43,7 +43,7 @@ public class MRNEntity implements Serializable {
     @Id
     @ScaledNumberField(name = "id_sort", decimalScale=0, sortable = Sortable.YES)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "mrn_entity_generator")
-    @SequenceGenerator(name="mrn_entity_generator", sequenceName = "mrn_entity_seq")
+    @SequenceGenerator(name = "mrn_entity_generator", sequenceName = "mrn_entity_seq", allocationSize = 1)
     private BigInteger id;
 
     @NotNull
@@ -63,12 +63,6 @@ public class MRNEntity implements Serializable {
     @OneToMany(mappedBy = "mrnEntity", cascade = CascadeType.REMOVE)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     private Set<Certificate> certificates = new HashSet<>();
-
-    /**
-     * Instantiates a new Entity.
-     */
-    public MRNEntity() {
-    }
 
     /**
      * Gets id.
