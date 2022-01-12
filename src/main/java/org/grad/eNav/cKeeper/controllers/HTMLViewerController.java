@@ -78,7 +78,7 @@ public class HTMLViewerController {
      * @param model The application UI model
      * @return The index page
      */
-    @GetMapping("/index.html")
+    @GetMapping("/index")
     public String index(Model model) {
         model.addAttribute("appName", this.appName);
         model.addAttribute("appOperatorUrl", this.appOperatorUrl);
