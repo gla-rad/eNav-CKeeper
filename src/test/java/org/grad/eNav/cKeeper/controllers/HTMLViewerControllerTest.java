@@ -54,7 +54,7 @@ class HTMLViewerControllerTest {
     void testGetIndex() throws Exception {
 
         // Perform the MVC request
-        this.mockMvc.perform(get("/index.html")
+        this.mockMvc.perform(get("/index")
                         .contentType(MediaType.TEXT_HTML))
                 .andExpect(status().isOk());
     }
