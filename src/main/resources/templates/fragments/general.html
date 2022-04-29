@@ -72,12 +72,12 @@
                         <ul class="nav navbar-nav navbar-right">
                             <li class="nav-item" sec:authorize="!isAuthenticated()">
                                 <a class="nav-link" th:href="@{login}">
-                                    <i class="fas fa-sign-in-alt"></i>&nbsp;Sign in
+                                    <i class="fa-solid fa-right-to-bracket"></i>&nbsp;Sign in
                                 </a>
                             </li>
                             <li sec:authorize="isAuthenticated()">
                                 <a class="nav-link" th:href="@{logout}">
-                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                    <i class="fa-solid fa-right-from-bracket"></i> Logout
                                 </a>
                             </li>
                         </ul>
@@ -97,7 +97,7 @@
                 <div class="row">
                     <div class="d-flex justify-content-center">
                         <button type="button" class="btn btn-primary" title="Sign In" onclick="window.location.href='login'">
-                            <i class="fas fa-sign-in-alt"></i>&nbsp;
+                            <i class="fa-solid fa-right-to-bracket"></i>&nbsp;
                             <span class="btn-label">Sign In</span>
                         </button>
                     </div>

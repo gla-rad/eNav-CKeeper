@@ -87,7 +87,7 @@ var certificatesColumnDefs = [{
         false: "false"
     },
     render: function (data, type, row) {
-        return (data ? '<i class="fas fa-check" style="color:red"></i>' : '<i class="fas fa-times-circle" style="color:green"></i>');
+        return (data ? '<i class="fa-solid fa-circle-check" style="color:red"></i>' : '<i class="fa-solid fa-circle-xmark" style="color:green"></i>');
     },
     className: "dt-body-center",
     hoverMsg: "Revoked",
@@ -126,17 +126,17 @@ $(document).ready( function () {
             name: 'add' // do not change name
         }, {
             extend: 'selected', // Bind to Selected row
-            text: '<i class="fas fa-edit"></i>',
+            text: '<i class="fa-solid fa-plus"></i>',
             titleAttr: 'Edit Entity',
             name: 'edit' // do not change name
         }, {
             extend: 'selected', // Bind to Selected row
-            text: '<i class="fas fa-trash-alt"></i>',
+            text: '<i class="fa-solid fa-trash"></i>',
             titleAttr: 'Delete Entity',
             name: 'delete' // do not change name
         }, {
             extend: 'selected', // Bind to Selected row
-            text: '<i class="fas fa-certificate"></i>',
+            text: '<i class="fa-solid fa-certificate"></i>',
             titleAttr: 'View Entity Certificates',
             name: 'certificates', // do not change name
             className: 'certificates-toggle',
@@ -292,7 +292,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
         responsive: true,
         altEditor: true, // Enable altEditor
         buttons: [{
-            text: '<i class="fas fa-cogs"></i>',
+            text: '<i class="fa-solid fa-gears"></i>',
             titleAttr: 'Generate New Certificate',
             name: 'generateCertificate', // do not change name
             action: (e, dt, node, config) => {
@@ -300,12 +300,12 @@ function loadMrnEntityCertificates(event, table, button, config) {
             }
         }, {
             extend: 'selected', // Bind to Selected row
-            text: '<i class="fas fa-trash-alt"></i>',
+            text: '<i class="fa-solid fa-trash"></i>',
             titleAttr: 'Delete Certificate',
             name: 'delete' // do not change name
         }, {
             extend: 'selected', // Bind to Selected row
-            text: '<i class="fas fa-minus-square"></i>',
+            text: '<i class="fa-solid fa-square-minus"></i>',
             titleAttr: 'Revoke Certificate',
             name: 'revokeCertificate', // do not change name
             action: (e, dt, node, config) => {
