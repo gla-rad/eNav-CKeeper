@@ -18,7 +18,6 @@ package org.grad.eNav.cKeeper.config;
 
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.keycloak.adapters.springsecurity.KeycloakSecurityComponents;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider;
 import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter;
@@ -92,19 +91,6 @@ class WebSecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
         filterRegistrationBean.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.ASYNC, DispatcherType.ERROR);
         filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return filterRegistrationBean;
-    }
-
-    /**
-     * On multi-tenant scenarios, Keycloak will defer the resolution of a
-     * KeycloakDeployment to the target application at the request-phase.
-     *
-     * A Request object is passed to the resolver and callers expect a complete
-     * KeycloakDeployment. Based on this KeycloakDeployment, Keycloak will
-     * resume authenticating and authorizing the request.
-     */
-    @Bean
-    public KeycloakSpringBootConfigResolver KeycloakConfigResolver() {
-        return new KeycloakSpringBootConfigResolver();
     }
 
     /**
@@ -182,7 +168,7 @@ class WebSecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                         "/", "/index",      // The main index page
                         "/api/signatures/mmsi/verify/**" // Leave the verification open for all
                 ).permitAll()
-                .requestMatchers(EndpointRequest.to( //
+                .requestMatchers(EndpointRequest.to(
                         InfoEndpoint.class,         //info endpoints
                         HealthEndpoint.class        //health endpoints
                 )).permitAll()
