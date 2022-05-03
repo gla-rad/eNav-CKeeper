@@ -137,6 +137,7 @@ public class SignatureService {
                 .map(CertificateDto::getId)
                 .map(id -> {
                     try {
+                        this.log.debug("Signature service verifying payload: {}\n with signature: {}", b64Content, b64Signature);
                         return this.certificateService.verifyContent(id, Base64.getDecoder().decode(b64Content), Base64.getDecoder().decode(b64Signature));
                     } catch (Exception ex) {
                         return false;
