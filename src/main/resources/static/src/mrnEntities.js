@@ -121,12 +121,12 @@ $(document).ready( function () {
         responsive: true,
         altEditor: true, // Enable altEditor
         buttons: [{
-            text: '<i class="fas fa-plus-circle"></i>',
+            text: '<i class="fa-solid fa-plus"></i>',
             titleAttr: 'Add Entity',
             name: 'add' // do not change name
         }, {
             extend: 'selected', // Bind to Selected row
-            text: '<i class="fa-solid fa-plus"></i>',
+            text: '<i class="fa-solid fa-pen-to-square"></i>',
             titleAttr: 'Edit Entity',
             name: 'edit' // do not change name
         }, {
