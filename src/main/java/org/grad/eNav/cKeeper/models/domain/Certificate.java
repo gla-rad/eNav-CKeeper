@@ -16,6 +16,7 @@
 
 package org.grad.eNav.cKeeper.models.domain;
 
+import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.hibernate.annotations.*;
 import org.hibernate.annotations.Cache;
 
@@ -23,7 +24,9 @@ import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Objects;
 
@@ -54,7 +57,6 @@ public class Certificate {
     @Column(name = "publicKey")
     private String publicKey;
 
-    @NotNull
     @Type(type="text")
     @Column(name = "privateKey")
     private String privateKey;
@@ -75,6 +77,28 @@ public class Certificate {
     @JoinColumn(name = "mrnEntityId", nullable = false)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     private MRNEntity mrnEntity;
+
+    /**
+     * Empty Constructor
+     */
+    public Certificate() {
+
+    }
+
+    /**
+     * Certificate based on an X.509 certificate issues by the MCP Identity
+     * Registry.
+     *
+     * @param x509Certificate the X.509 certificate
+     */
+    public Certificate(String mcpMirId, X509Certificate x509Certificate) throws IOException {
+        this.setCertificate(X509Utils.formatCertificate(x509Certificate));
+        this.setPublicKey(X509Utils.formatPublicKey(x509Certificate.getPublicKey()));
+        this.setPrivateKey(null);
+        this.setStartDate(x509Certificate.getNotBefore());
+        this.setEndDate(x509Certificate.getNotAfter());
+        this.setMcpMirId(mcpMirId);
+    }
 
     /**
      * Gets id.

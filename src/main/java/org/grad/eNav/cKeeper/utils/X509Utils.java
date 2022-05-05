@@ -200,14 +200,14 @@ public class X509Utils {
      * Returns the provided key-pair public key in a PEM string format using the
      * Bouncy Castle PEMWriter functionality.
      *
-     * @param keyPair   The key-pair to be formatted
+     * @param publicKey   The public key to be formatted
      * @return the PEM formatted string of the key-pair public key
      * @throws IOException if the string export operation fails
      */
-    public static String formatPublicKey(final KeyPair keyPair) throws IOException {
+    public static String formatPublicKey(final PublicKey publicKey) throws IOException {
         final StringWriter keyWriter = new StringWriter();
         final JcaPEMWriter pemKeyWriter = new JcaPEMWriter(keyWriter);
-        pemKeyWriter.writeObject(keyPair.getPublic());
+        pemKeyWriter.writeObject(publicKey);
         pemKeyWriter.flush();
         return keyWriter.toString();
     }
@@ -216,11 +216,11 @@ public class X509Utils {
      * Returns the provided key-pair private key in a PEM string format using the
      * Bouncy Castle PEMWriter functionality.
      *
-     * @param keyPair   The key-pair to be formatted
+     * @param privateKey   The private key to be formatted
      * @return the PEM formatted string of the key-pair private key
      * @throws IOException if the string export operation fails
      */
-    public static String formatPrivateKey(final KeyPair keyPair) throws IOException {
+    public static String formatPrivateKey(final PrivateKey privateKey) throws IOException {
         final StringWriter keyWriter = new StringWriter();
         final JcaPEMWriter pemKeyWriter = new JcaPEMWriter(keyWriter);
         /*
@@ -229,7 +229,7 @@ public class X509Utils {
              For more info: https://stackoverflow.com/questions/61589895/unable-to-read-bouncycastle-generated-privatekey-in-java
          */
         //pemKeyWriter.writeObject(keyPair.getPrivate(), null);
-        pemKeyWriter.writeObject(new JcaPKCS8Generator(keyPair.getPrivate(), null));
+        pemKeyWriter.writeObject(new JcaPKCS8Generator(privateKey, null));
         pemKeyWriter.flush();
         return keyWriter.toString();
     }

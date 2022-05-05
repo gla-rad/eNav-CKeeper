@@ -284,7 +284,7 @@ class X509UtilsTest {
         KeyPair keyPair = X509Utils.generateKeyPair(null);
 
         // Generate the PEM formatted string
-        String publicKeyPem = X509Utils.formatPublicKey(keyPair);
+        String publicKeyPem = X509Utils.formatPublicKey(keyPair.getPublic());
 
         // Basic Assertions
         assertNotNull(publicKeyPem);
@@ -307,7 +307,7 @@ class X509UtilsTest {
         KeyPair keyPair = X509Utils.generateKeyPair(null);
 
         // Generate the PEM formatted string
-        String privateKeyPem = X509Utils.formatPrivateKey(keyPair);
+        String privateKeyPem = X509Utils.formatPrivateKey(keyPair.getPrivate());
 
         // Basic Assertions
         assertNotNull(privateKeyPem);
@@ -326,7 +326,7 @@ class X509UtilsTest {
         KeyPair keyPair = X509Utils.generateKeyPair(null);
 
         // Generate the PEM formatted string
-        String publicKeyPem = X509Utils.formatPublicKey(keyPair);
+        String publicKeyPem = X509Utils.formatPublicKey(keyPair.getPublic());
         PublicKey publicKey = X509Utils.publicKeyFromPem(publicKeyPem);
 
         assertNotNull(publicKey);
@@ -342,7 +342,7 @@ class X509UtilsTest {
         KeyPair keyPair = X509Utils.generateKeyPair(null);
 
         // Generate the PEM formatted string
-        String privateKeyPem = X509Utils.formatPrivateKey(keyPair);
+        String privateKeyPem = X509Utils.formatPrivateKey(keyPair.getPrivate());
         PrivateKey privateKey = X509Utils.privateKeyFromPem(privateKeyPem, null);
 
         assertNotNull(privateKey);

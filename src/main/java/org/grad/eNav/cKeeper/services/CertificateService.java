@@ -26,6 +26,7 @@ import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
 import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
+import org.grad.eNav.cKeeper.models.dtos.McpCertitifateDto;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
@@ -34,15 +35,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 /**
  * The Certificate Service Class
@@ -108,13 +111,80 @@ public class CertificateService {
     }
 
     /**
+     * This function can be used to sync the certificate status of a given
+     * MRN entity with the MCP MSR.
+     *
+     * @param mrnEntityId the MRN Entity ID
+     */
+    public void syncMrnEntityWithMcpMir(@NotNull BigInteger mrnEntityId) {
+        // First check that the MRN Entity exists and get its MIR certificates
+        final MRNEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
+                .orElse(null);
+        // Get all local certificates
+        final Set<Certificate> localCertificates = Optional.ofNullable(mrnEntity)
+                .map(MRNEntity::getId)
+                .map(this.certificateRepo::findAllByMrnEntityId)
+                .orElse(Collections.emptySet());
+        // And get the MCP current state
+        final Set<Pair<String, X509Certificate>> mcpCertificates = Optional.ofNullable(mrnEntity)
+                .map(MRNEntity::getMrn)
+                .map(mrn -> {
+                    try {
+                        return mcpService.retrieveMcpDeviceCertificates(mrn);
+                    } catch (IOException ex) {
+                        return null;
+                    }
+                })
+                .orElse(Collections.emptySet());
+
+        // Now update the database with any new entrys
+        if(!mcpCertificates.isEmpty()) {
+            // Revoke all the certificates that are not found
+            localCertificates.stream()
+                    .filter(cert -> !Objects.equals(cert.getRevoked(), Boolean.TRUE))
+                    .filter(cert -> !(mcpCertificates.stream()
+                            .map(Pair::getKey)
+                            .toList()
+                            .contains(cert.getMcpMirId())))
+                    .map(cert -> {
+                        cert.setRevoked(Boolean.TRUE);
+                        return cert;
+                    })
+                    .forEach(this.certificateRepo::save);
+
+            // And save all new entries
+            mcpCertificates.stream()
+                    .filter(pair -> localCertificates.stream()
+                            .filter(local -> Objects.equals(local.getMcpMirId(), pair.getKey()))
+                            .findFirst()
+                            .isEmpty())
+                    .map(pair -> {
+                        try {
+                            Certificate certificate = new Certificate(pair.getKey(), pair.getValue());
+                            certificate.setMrnEntity(mrnEntity);
+                            return certificate;
+                        } catch (IOException ex) {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .forEach(this.certificateRepo::save);
+        }
+    }
+
+    /**
      * Returns all the certificates assigned to the MRN entity specified by
      * the MRN Entity ID. The result will be translated into DTO objects.
      *
      * @param mrnEntityId   The ID of the MRN entity to retrieve the certificates for
      * @return the set of certificates assigned to the provided MRN entity
      */
+    @Transactional
     public Set<CertificateDto> findAllByMrnEntityId(@NotNull BigInteger mrnEntityId) {
+        // First always try to check the MCP MSR
+        this.syncMrnEntityWithMcpMir(mrnEntityId);
+
+        // And then lookup the local database
         return this.certificateRepo.findAllByMrnEntityId(mrnEntityId)
                 .stream()
                 .map(CertificateDto::new)
@@ -149,13 +219,8 @@ public class CertificateService {
         Pair<String, X509Certificate> certificateInfo = this.mcpService.issueMcpDeviceCertificate(mrnEntity.getMrn(), csr);
 
         // Populate the new certificate object
-        Certificate certificate = new Certificate();
-        certificate.setCertificate(X509Utils.formatCertificate(certificateInfo.getValue()));
-        certificate.setPublicKey(X509Utils.formatPublicKey(keyPair));
-        certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair));
-        certificate.setStartDate(certificateInfo.getValue().getNotBefore());
-        certificate.setEndDate(certificateInfo.getValue().getNotAfter());
-        certificate.setMcpMirId(certificateInfo.getKey());
+        Certificate certificate = new Certificate(certificateInfo.getKey(), certificateInfo.getValue());
+        certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
         certificate.setMrnEntity(mrnEntity);
 
         // Save the certificate into the database
