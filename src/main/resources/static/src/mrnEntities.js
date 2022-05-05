@@ -314,12 +314,18 @@ function loadMrnEntityCertificates(event, table, button, config) {
         }],
         onDeleteRow: function (datatable, selectedRows, success, error) {
             selectedRows.every(function (rowIdx, tableLoop, rowLoop) {
-                $.ajax({
-                    url: `./api/certificates/${this.data()["id"]}`,
-                    type: 'DELETE',
-                    success: success,
-                    error: error
-                });
+                if(!this.data()["revoked"] || this.data()["revoked"]=="false") {
+                    $(datatable.modal_selector).modal('hide');
+                    $('.reveal-overlay').hide();
+                    showError("You can only delete a certificate if it has first been revoked.\nPlease revoke it and try again...");
+                } else {
+                    $.ajax({
+                        url: `./api/certificates/${this.data()["id"]}`,
+                        type: 'DELETE',
+                        success: success,
+                        error: error
+                    });
+                }
             });
         },
     });

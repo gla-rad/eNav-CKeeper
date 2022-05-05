@@ -16,9 +16,11 @@
 
 package org.grad.eNav.cKeeper.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -37,12 +39,14 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.http.util.EntityUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Pair;
+import org.grad.eNav.cKeeper.models.dtos.McpCertitifateDto;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,8 +64,13 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 /**
  * The MRN Entity Service Class
@@ -315,11 +324,65 @@ public class McpService {
     }
 
     /**
+     * This method can be used to retrieve all the certificates available for
+     * a specific MCP device registered in the MCP Identity Registry. This way
+     * we can keep the local MCP certificate up to date with the MIR database.
+     *
+     * @param mrn           The MCP device MRN to retrieve the certificates for
+     * @return the list of available certificates
+     * @throws IOException if the response parsing operation fails
+     */
+    public Set<Pair<String, X509Certificate>> retrieveMcpDeviceCertificates(String mrn) throws IOException {
+        this.log.debug("Request to retrieve an existing certificate for the  MCP Device with MRN {}", mrn);
+
+        // Make sure the MCP device MRN has the right prefix
+        mrn = this.constructMcpDeviceMrn(mrn);
+
+        //Building the CloseableHttpClient
+        CloseableHttpClient httpClient = this.clientBuilder.build();
+        HttpGet httpGet = new HttpGet(this.constructMcpDeviceEndpointUrl("device") + mrn);
+
+        //Executing the request
+        HttpResponse httpResponse = httpClient.execute(httpGet);
+
+        // Construct and return the MCP certificate objects through JSON
+        JsonNode jsonCertificates = Optional.of(httpResponse)
+                .map(HttpResponse::getEntity)
+                .map(entity -> {
+                    try {
+                        return objectMapper.readTree(EntityUtils.toString(entity))
+                                .get("certificates");
+                    } catch (IOException ex) {
+                        throw new InvalidRequestException(ex.getMessage());
+                    }
+                })
+                .orElseThrow(() -> new InvalidRequestException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));
+
+        // Now map JSON into MCP Certificate Objects for easier handling
+        return Arrays.asList(this.objectMapper.readerForArrayOf(McpCertitifateDto.class).readValue(jsonCertificates))
+                .stream()
+                .filter(McpCertitifateDto.class::isInstance)
+                .map(McpCertitifateDto.class::cast)
+                .filter(not(McpCertitifateDto::isRevoked))
+                .map(c -> {
+                    try {
+                        return new Pair<>(
+                                c.getSerialNumber(),
+                                (X509Certificate) this.certificateFactory.generateCertificate(IOUtils.toInputStream(c.getCertificate().replace("\\n","\n")))
+                        );
+                    } catch (CertificateException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * Requests the MCP MIR to issue a new X509 certificate based on the
      * provided certificate signing operation. This certificate will be attached
      * to the specified MCP device, based on the provided MRN.
      *
-     * @param mrn           The MCP device MRN to attach the new certificate tp
+     * @param mrn           The MCP device MRN to attach the new certificate to
      * @param csr           The certificate signing request to issue the certificate from
      * @return the signed X.509 certificate
      * @throws IOException if the PEM generation of the csr or the HTTP request fail
@@ -359,7 +422,7 @@ public class McpService {
                                 (X509Certificate) this.certificateFactory.generateCertificate(response.getEntity().getContent())
                         );
                     } catch (CertificateException | IOException ex) {
-                        throw new  InvalidRequestException(ex.getMessage());
+                        throw new InvalidRequestException(ex.getMessage());
                     }
                 })
                 .orElseThrow(() -> new InvalidRequestException(this.parseMCPStatusLineError(httpResponse.getStatusLine())));

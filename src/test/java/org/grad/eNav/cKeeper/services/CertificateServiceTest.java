@@ -296,8 +296,8 @@ class CertificateServiceTest {
 
         // Populate the mock certificate with the actual keys
         this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
-        this.certificate.setPublicKey(X509Utils.formatPublicKey(keyPair));
-        this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair));
+        this.certificate.setPublicKey(X509Utils.formatPublicKey(keyPair.getPublic()));
+        this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
 
         // Initialise the verification signature
         final Signature sign = Signature.getInstance(this.certificateService.certAlgorithm);
@@ -350,8 +350,8 @@ class CertificateServiceTest {
 
         // Populate the mock certificate with the actual keys
         this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
-        this.certificate.setPublicKey(X509Utils.formatPublicKey(keyPair));
-        this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair));
+        this.certificate.setPublicKey(X509Utils.formatPublicKey(keyPair.getPublic()));
+        this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
 
         // Initialise the signing signature
         final Signature sign = Signature.getInstance(this.certificateService.certAlgorithm);
