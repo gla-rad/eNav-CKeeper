@@ -118,6 +118,7 @@ public class CertificateService {
         // First check that the MRN Entity exists and get its MIR certificates
         final MRNEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElse(null);
+
         // And get the MCP current state
         final Set<Pair<String, X509Certificate>> mcpCertificates = Optional.ofNullable(mrnEntity)
                 .map(MRNEntity::getMrn)
@@ -129,42 +130,43 @@ public class CertificateService {
                         return null;
                     }
                 })
-                .orElse(Collections.emptySet());
+                .orElse(null);
+
+        // Revoke all the certificates that are not found
+        Optional.ofNullable(mrnEntity)
+                .map(MRNEntity::getCertificates)
+                .orElse(Collections.emptySet())
+                .stream()
+                .filter(cert -> !Objects.equals(cert.getRevoked(), Boolean.TRUE))
+                .filter(cert -> !(mcpCertificates.stream()
+                        .map(Pair::getKey)
+                        .toList()
+                        .contains(cert.getMcpMirId())))
+                .map(cert -> {
+                    cert.setRevoked(Boolean.TRUE);
+                    return cert;
+                })
+                .forEach(this.certificateRepo::save);
 
         // Now update the database with any new entries
-        if(!mcpCertificates.isEmpty()) {
-            // Revoke all the certificates that are not found
-            mrnEntity.getCertificates()
-                    .stream()
-                    .filter(cert -> !Objects.equals(cert.getRevoked(), Boolean.TRUE))
-                    .filter(cert -> !(mcpCertificates.stream()
-                            .map(Pair::getKey)
-                            .toList()
-                            .contains(cert.getMcpMirId())))
-                    .map(cert -> {
-                        cert.setRevoked(Boolean.TRUE);
-                        return cert;
-                    })
-                    .forEach(this.certificateRepo::save);
-
-            // And save all new entries
-            mcpCertificates.stream()
-                    .filter(pair -> mrnEntity.getCertificates().stream()
-                            .filter(local -> Objects.equals(local.getMcpMirId(), pair.getKey()))
-                            .findFirst()
-                            .isEmpty())
-                    .map(pair -> {
-                        try {
-                            Certificate certificate = new Certificate(pair.getKey(), pair.getValue());
-                            certificate.setMrnEntity(mrnEntity);
-                            return certificate;
-                        } catch (IOException ex) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .forEach(this.certificateRepo::save);
-        }
+        Optional.ofNullable(mcpCertificates)
+                .orElse(Collections.emptySet())
+                .stream()
+                .filter(pair -> mrnEntity.getCertificates().stream()
+                        .filter(local -> Objects.equals(local.getMcpMirId(), pair.getKey()))
+                        .findFirst()
+                        .isEmpty())
+                .map(pair -> {
+                    try {
+                        Certificate certificate = new Certificate(pair.getKey(), pair.getValue());
+                        certificate.setMrnEntity(mrnEntity);
+                        return certificate;
+                    } catch (IOException ex) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .forEach(this.certificateRepo::save);
     }
 
     /**
