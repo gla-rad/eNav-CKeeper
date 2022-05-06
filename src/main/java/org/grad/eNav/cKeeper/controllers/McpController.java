@@ -18,6 +18,7 @@ package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.services.McpService;
 import org.grad.eNav.cKeeper.utils.HeaderUtil;
@@ -53,10 +54,14 @@ public class McpController {
      * status 400 (Bad Request)
      */
     @GetMapping(value = "/devices/{mrn}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<McpDeviceDto> getMcpDevice(@PathVariable String mrn) throws IOException {
+    public ResponseEntity<McpDeviceDto> getMcpDevice(@PathVariable String mrn) {
         log.debug("REST request to get MCP device : {}", mrn);
-        return ResponseEntity.ok()
-                .body(this.mcpService.getMcpDevice(mrn));
+        try {
+            return ResponseEntity.ok()
+                    .body(this.mcpService.getMcpDevice(mrn));
+        } catch (IOException | McpConnectivityException ex) {
+            throw new InvalidRequestException(ex.getMessage());
+        }
     }
 
     /**
@@ -80,7 +85,7 @@ public class McpController {
         // Save the MRN Entity
         try {
             mcpDevice = this.mcpService.createMcpDevice(mcpDevice);
-        } catch (IOException ex) {
+        } catch (IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
 
@@ -111,7 +116,7 @@ public class McpController {
         // Save the MRN Entity
         try {
             this.mcpService.updateMcpDevice(mrn, mcpDevice);
-        } catch (IOException ex) {
+        } catch (IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
 
@@ -134,7 +139,7 @@ public class McpController {
         // Delete the MRN Entity
         try {
             this.mcpService.deleteMcpDevice(mrn);
-        } catch (IOException ex) {
+        } catch (IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
 

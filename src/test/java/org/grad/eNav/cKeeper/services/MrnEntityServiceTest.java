@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.services;
 
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
@@ -276,7 +277,7 @@ class MrnEntityServiceTest {
      * checks are successful.
      */
     @Test
-    void testCreate() throws IOException {
+    void testCreate() throws IOException, McpConnectivityException {
         doThrow(DataNotFoundException.class).when(this.mcpService).getMcpDevice(any());
         doReturn(this.newEntity).when(this.mrnEntityRepo).save(any());
         doReturn(this.newMcpDevice).when(this.mcpService).createMcpDevice(any());
@@ -299,7 +300,7 @@ class MrnEntityServiceTest {
      * validation checks are successful.
      */
     @Test
-    void testUpdate() throws IOException {
+    void testUpdate() throws IOException, McpConnectivityException {
         doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());
         doReturn(this.existingMcpDevice).when(this.mcpService).getMcpDevice(this.existingEntity.getMrn());
         doReturn(this.existingMcpDevice).when(this.mcpService).updateMcpDevice(this.existingMcpDevice.getMrn(), this.existingMcpDevice);
@@ -322,7 +323,7 @@ class MrnEntityServiceTest {
      * Test that we can successfully delete an existing station.
      */
     @Test
-    void testDelete() throws IOException {
+    void testDelete() throws IOException, McpConnectivityException {
         doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findById(this.existingEntity.getId());
         doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpDevice(this.existingEntity.getMrn());
         doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());

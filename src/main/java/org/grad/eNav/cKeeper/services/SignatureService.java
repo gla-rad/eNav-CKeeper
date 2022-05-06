@@ -45,12 +45,6 @@ import java.util.*;
 public class SignatureService {
 
     /**
-     * The MCP Service.
-     */
-    @Autowired
-    McpService mcpService;
-
-    /**
      * The MRN Entity Service.
      */
     @Autowired
@@ -61,6 +55,12 @@ public class SignatureService {
      */
     @Autowired
     CertificateService certificateService;
+
+    /**
+     * The MCP Config Service.
+     */
+    @Autowired
+    McpConfigService mcpConfigService;
 
     /**
      * Generates and returns a signature for the provided payload using the
@@ -74,7 +74,7 @@ public class SignatureService {
      */
     public byte[] generateAtonSignature(@NotNull String atonUID, String mmsi, @NotNull byte[] payload) {
         // Translate the AtoN UID into an MRC based on the MCP rules
-        final String atonMrn = this.mcpService.constructMcpDeviceMrn(atonUID);
+        final String atonMrn = this.mcpConfigService.constructMcpDeviceMrn(atonUID);
 
         // Get a matching MRN entity if it exists or create a new one
         final MrnEntityDto mrnEntityDto = Optional.of(atonMrn)

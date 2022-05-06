@@ -18,6 +18,7 @@ package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.services.McpService;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,6 +95,34 @@ class McpControllerTest {
     }
 
     /**
+     * Test that if the service receives a failure when requesting the MCP MIR
+     * retrieve an MRN entity, an HTTP BAD_REQUEST response will be returned.
+     */
+    @Test
+    void testGetMrnEntityFailed() throws Exception {
+        doThrow(IOException.class).when(this.mcpService).getMcpDevice(this.mcpDevice.getMrn());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/devices/{mcp}", this.mcpDevice.getMrn()))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    /**
+     * Test that if the service fails to connect to the MCP MIR to retrieve an
+     * MRN entity, an HTTP BAD_REQUEST response  will be returned.
+     */
+    @Test
+    void testGetMrnEntityMcpConnectivityFailed() throws Exception {
+        doThrow(IOException.class).when(this.mcpService).getMcpDevice(this.mcpDevice.getMrn());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/devices/{mcp}", this.mcpDevice.getMrn()))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    /**
      * Test that we can create a new MCN device correctly through a POST request.
      * The incoming MRN entity should NOT have an ID, while the returned
      * value will have the ID field populated.
@@ -143,6 +172,38 @@ class McpControllerTest {
     void testCreateMcpDeviceWithoutMRN() throws Exception {
         // To invalidate set an ID to the MCP device
         this.mcpDevice.setMrn(null);
+
+        // Perform the MVC request
+        this.mockMvc.perform(post("/api/mcp/devices")
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.objectMapper.writeValueAsString(this.mcpDevice)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    /**
+     * Test that if the service receives a failure when requesting the MCP MIR
+     * create an MRN entity, an HTTP BAD_REQUEST response will be returned.
+     */
+    @Test
+    void testCreateMcpDeviceFailed() throws Exception {
+        doThrow(IOException.class).when(this.mcpService).createMcpDevice(this.mcpDevice);
+
+        // Perform the MVC request
+        this.mockMvc.perform(post("/api/mcp/devices")
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.objectMapper.writeValueAsString(this.mcpDevice)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    /**
+     * Test that if the service fails to connect to the MCP MIR to create an
+     * MRN entity, an HTTP BAD_REQUEST response  will be returned.
+     */
+    @Test
+    void testCreateMcpDeviceMcpConnectivityFailed() throws Exception {
+        doThrow(McpConnectivityException.class).when(this.mcpService).createMcpDevice(this.mcpDevice);
 
         // Perform the MVC request
         this.mockMvc.perform(post("/api/mcp/devices")
@@ -237,6 +298,26 @@ class McpControllerTest {
     }
 
     /**
+     * Test that if the service fails to connect to the MCP MIR to update an
+     * MRN entity, an HTTP BAD_REQUEST response  will be returned.
+     */
+    @Test
+    void testUpdateMcpDeviceMcpConnectivityFailure() throws Exception {
+        // For an update set an ID in the MCP device
+        this.mcpDevice.setId(BigInteger.ONE);
+
+        // Mock a general Exception when saving the instance
+        doThrow(McpConnectivityException.class).when(this.mcpService).updateMcpDevice(any(), any());
+
+        // Perform the MVC request
+        this.mockMvc.perform(put("/api/mcp/devices/{mrn}", this.mcpDevice.getMrn())
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.objectMapper.writeValueAsString(this.mcpDevice)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    /**
      * Test that we can correctly delete an existing MCP device by using a valid
      * MRN.
      */
@@ -262,6 +343,36 @@ class McpControllerTest {
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/devices/{mrn}", this.mcpDevice.getMrn()))
                 .andExpect(status().isNotFound());
+    }
+
+    /**
+     * Test that if the service receives a failure when requesting the MCP MIR
+     * delete an MRN entity, an HTTP BAD_REQUEST response will be returned.
+     */
+    @Test
+    void testDeleteMcpDeviceFailed() throws Exception {
+        doThrow(IOException.class).when(this.mcpService).deleteMcpDevice(any());
+
+        // Perform the MVC request
+        this.mockMvc.perform(delete("/api/mcp/devices/{mrn}", this.mcpDevice.getMrn())
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    /**
+     * Test that if the service fails to connect to the MCP MIR to delete an
+     * MRN entity, an HTTP BAD_REQUEST response  will be returned.
+     */
+    @Test
+    void testDeleteMcpDeviceMcpConnectivityFailed() throws Exception {
+        doThrow(McpConnectivityException.class).when(this.mcpService).deleteMcpDevice(any());
+
+        // Perform the MVC request
+        this.mockMvc.perform(delete("/api/mcp/devices/{mrn}", this.mcpDevice.getMrn())
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isBadRequest())
+                .andReturn();
     }
 
 }

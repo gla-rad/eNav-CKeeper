@@ -2,6 +2,7 @@ package org.grad.eNav.cKeeper.services;
 
 import org.bouncycastle.operator.OperatorCreationException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,12 +36,6 @@ class SignatureServiceTest {
     SignatureService signatureService;
 
     /**
-     * The MCP Service mock.
-     */
-    @Mock
-    McpService mcpService;
-
-    /**
      * The MRN Entity Service mock.
      */
     @Mock
@@ -51,6 +46,12 @@ class SignatureServiceTest {
      */
     @Mock
     CertificateService certificateService;
+
+    /**
+     * The MCP Base Service mock.
+     */
+    @Mock
+    McpConfigService mcpConfigService;
 
     // Test Variables
     private MrnEntityDto mrnEntityDto;
@@ -66,8 +67,9 @@ class SignatureServiceTest {
         // Create a new MRN entity DTO
         this.mrnEntityDto = new MrnEntityDto();
         this.mrnEntityDto.setId(BigInteger.ONE);
-        this.mrnEntityDto.setName("mrn_entiity");
+        this.mrnEntityDto.setName("mrn_entity");
         this.mrnEntityDto.setMmsi("123456789");
+        this.mrnEntityDto.setMrn("mcp:prefix:" + this.mrnEntityDto.getName());
 
         // Create a new Certificate DTO
         this.certificateDto = new CertificateDto();
@@ -79,11 +81,6 @@ class SignatureServiceTest {
         // Generate a dummy content and signature
         this.content = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
         this.signature = MessageDigest.getInstance("SHA-256").digest(("That's the signature?").getBytes());
-
-        // Always do the real MCP service call for generating AtoN MRNs
-        doCallRealMethod().when(this.mcpService).constructMcpDeviceMrn(any());
-        this.mcpService.mcpDevicePrefix="mcp:prefix:";
-        this.mrnEntityDto.setMrn(this.mcpService.constructMcpDeviceMrn(this.mrnEntityDto.getName()));
     }
 
     /**
@@ -92,6 +89,7 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateAtonSignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpDeviceMrn(any());
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMrn(this.mrnEntityDto.getMrn());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(this.signature).when(this.certificateService).signContent(mrnEntityDto.getId(), this.content);
@@ -112,7 +110,8 @@ class SignatureServiceTest {
      * the fly.
      */
     @Test
-    void testGenerateAtonSignatureAutoCreate() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, OperatorCreationException {
+    void testGenerateAtonSignatureAutoCreate() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, OperatorCreationException, McpConnectivityException {
+        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpDeviceMrn(any());
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).save(any());
         doReturn(Collections.emptySet()).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(this.certificateDto).when(this.certificateService).generateMrnEntityCertificate(any());
@@ -134,6 +133,7 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateAtonSignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpDeviceMrn(any());
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMrn(this.mrnEntityDto.getMrn());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doThrow(SignatureException.class).when(this.certificateService).signContent(mrnEntityDto.getId(), this.content);

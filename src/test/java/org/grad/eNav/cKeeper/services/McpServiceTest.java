@@ -26,10 +26,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
-import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
-import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
-import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.exceptions.*;
+import org.grad.eNav.cKeeper.models.domain.Pair;
+import org.grad.eNav.cKeeper.models.dtos.McpCertitifateDto;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
 import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,19 +38,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class McpServiceTest {
@@ -64,14 +69,18 @@ class McpServiceTest {
     McpService mcpService;
 
     /**
-     * The MRN Entity Service mock.
+     * The MCP Base Service Mock.
      */
     @Mock
-    MrnEntityService mrnEntityService;
+    McpConfigService mcpConfigService;
 
     // Test Variables
     private ObjectMapper objectMapper;
     private McpDeviceDto mcpDevice;
+    private KeyPair keypair;
+    private PKCS10CertificationRequest csr;
+    private X509Certificate cert;
+    private McpCertitifateDto mcpCertitifateDto;
     private CloseableHttpClient httpClient;
     private CloseableHttpResponse httpResponse;
     private StatusLine statusLine;
@@ -82,16 +91,24 @@ class McpServiceTest {
      * Common setup for all the tests.
      */
     @BeforeEach
-    void setUp() {
+    void setUp() throws McpConnectivityException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException {
         // Setup an MCP device for testing
         this.mcpDevice = new McpDeviceDto("Test","urn:mrn:mcp:device:mcc:grad:test");
+
+        // Create a new MCP Certificate DTO object
+        this.keypair = X509Utils.generateKeyPair(null);
+        this.csr = X509Utils.generateX509CSR(keypair, "CN=Test", null);
+        this.cert = X509Utils.generateX509Certificate(this.keypair, "CN=Test", new Date(), new Date(), null);
+        this.mcpCertitifateDto = new McpCertitifateDto();
+        this.mcpCertitifateDto.setId(BigInteger.ONE);
+        this.mcpCertitifateDto.setSerialNumber(String.valueOf(cert.getSerialNumber()));
+        this.mcpCertitifateDto.setStart(cert.getNotBefore());
+        this.mcpCertitifateDto.setEnd(cert.getNotAfter());
+        this.mcpCertitifateDto.setCertificate(X509Utils.formatCertificate(this.cert));
 
         // Add a real object mapper to the service
         this.objectMapper = new ObjectMapper();
         this.mcpService.objectMapper = this.objectMapper;
-
-        // Initialise the absolutely necessary parameters
-        this.mcpService.mcpDevicePrefix = "urn:mrn:mcp:device:mcc:";
 
         // Mock an HTTP client returning from the builder
         this.httpClient = mock(CloseableHttpClient.class);
@@ -130,7 +147,14 @@ class McpServiceTest {
      * on your organisation.
      */
     @Test
-    void testGetMcpDevice() throws IOException {
+    void testGetMcpDevice() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:org:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -155,7 +179,14 @@ class McpServiceTest {
      * a valid result, the service will throw a DataNotFoundException.
      */
     @Test
-    void testGetMcpDeviceNotFound() throws IOException {
+    void testGetMcpDeviceNotFound() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:org:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -177,7 +208,14 @@ class McpServiceTest {
      * to be populated.
      */
     @Test
-    void testCreateMcpDevice() throws IOException {
+    void testCreateMcpDevice() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:org:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -194,7 +232,14 @@ class McpServiceTest {
 
         // Make sure the response is correct
         assertNotNull(result);
-        assertEquals(this.mcpDevice, result);
+        assertEquals(this.mcpDevice.getId(), result.getId());
+        assertEquals(this.mcpDevice.getCreatedAt(), result.getCreatedAt());
+        assertEquals(this.mcpDevice.getUpdatedAt(), result.getUpdatedAt());
+        assertEquals(this.mcpDevice.getName(), result.getName());
+        assertEquals(this.mcpDevice.getMrn(), result.getMrn());
+        assertEquals(this.mcpDevice.getHomeMMSUrl(), result.getHomeMMSUrl());
+        assertEquals(this.mcpDevice.getIdOrganization(), result.getIdOrganization());
+        assertEquals(this.mcpDevice.getPermissions(), result.getPermissions());
     }
 
     /**
@@ -202,7 +247,14 @@ class McpServiceTest {
      * provided object, the service will throw a SavingFailedException.
      */
     @Test
-    void testCreateMcpDeviceFailure() throws IOException {
+    void testCreateMcpDeviceFailure() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -224,7 +276,14 @@ class McpServiceTest {
      * required to be populated.
      */
     @Test
-    void testUpdateMcpDevice() throws IOException {
+    void testUpdateMcpDevice() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -250,7 +309,14 @@ class McpServiceTest {
      * SavingFailedException.
      */
     @Test
-    void testUpdateMcpDeviceFailure() throws IOException {
+    void testUpdateMcpDeviceFailure() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -271,7 +337,14 @@ class McpServiceTest {
      * provided MRN.
      */
     @Test
-    void testDeleteMcpDevice() throws IOException {
+    void testDeleteMcpDevice() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -293,7 +366,14 @@ class McpServiceTest {
      * on the provided MRN, the service will throw a  DeletingFailedException.
      */
     @Test
-    void testDeleteMcpDeviceFailure() throws IOException {
+    void testDeleteMcpDeviceFailure() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -310,19 +390,100 @@ class McpServiceTest {
     }
 
     /**
+     * Test that we can correctly retrieve and translate the X509 certificates
+     * from the MCP Identity Registry, for a specified MRN entity.
+     */
+    @Test
+    void testGetMcpDeviceCertificates() throws IOException, McpConnectivityException, CertificateException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
+        // Initialise the service certificate factory
+        this.mcpService.certificateFactory = CertificateFactory.getInstance("X.509");
+
+        // Mock the HTTP request
+        this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
+        doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
+
+        // Mock the HTTP response
+        doReturn(HttpStatus.OK.value()).when(this.statusLine).getStatusCode();
+        doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
+        doReturn(IOUtils.toInputStream(this.objectMapper.writeValueAsString(Collections.singletonMap("certificates", Collections.singleton(this.mcpCertitifateDto))))).when(this.httpEntity).getContent();
+        doReturn(this.httpEntity).when(this.httpResponse).getEntity();
+        doReturn(this.httpResponse).when(this.httpClient).execute(any());
+
+        // Perform the service call
+        Set<Pair<String, X509Certificate>> certificates = this.mcpService.getMcpDeviceCertificates(this.mcpDevice.getMrn());
+
+        // Make sure the result looks OK
+        assertNotNull(certificates);
+        assertEquals(1, certificates.size());
+
+        // Assert the retrieved certificates
+        Pair<String, X509Certificate> pair = certificates.iterator().next();
+        assertEquals(this.mcpCertitifateDto.getSerialNumber(), pair.getKey());
+        assertEquals(this.mcpCertitifateDto.getStart(), pair.getValue().getNotBefore());
+        assertEquals(this.mcpCertitifateDto.getEnd(), pair.getValue().getNotAfter());
+        assertEquals(this.mcpCertitifateDto.getCertificate(), X509Utils.formatCertificate(pair.getValue()));
+    }
+
+    /**
+     * Test if we cannot successfully retrieve and translate the certificates
+     * from the MCP Identity Registry, for a specified MRN entity, and the
+     * response is invalid, an InvalidRequestException will be  thrown.
+     */
+    @Test
+    void testGetMcpDeviceCertificatesFailure() throws IOException, McpConnectivityException, CertificateException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
+        // Initialise the service certificate factory
+        this.mcpService.certificateFactory = CertificateFactory.getInstance("X.509");
+
+        // Mock the HTTP request
+        this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
+        doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
+
+        // Mess up a bit the certificate test
+        this.mcpCertitifateDto.setCertificate("INVALID");
+
+        // Mock the HTTP response
+        doReturn(HttpStatus.OK.value()).when(this.statusLine).getStatusCode();
+        doReturn(this.statusLine).when(this.httpResponse).getStatusLine();
+        doReturn(IOUtils.toInputStream(this.objectMapper.writeValueAsString(Collections.singletonMap("certificates", Collections.singleton(this.mcpCertitifateDto))))).when(this.httpEntity).getContent();
+        doReturn(this.httpEntity).when(this.httpResponse).getEntity();
+        doReturn(this.httpResponse).when(this.httpClient).execute(any());
+
+        // Perform the service call
+        assertThrows(InvalidRequestException.class, () ->
+                this.mcpService.getMcpDeviceCertificates(this.mcpDevice.getMrn())
+        );
+    }
+
+    /**
      * Test that we can successfully issue a new X.509 certificate through the
      * MCP MIR by submitting a certificate signature request (CSR) for a
      * given MCP device (based on its MRN).
      */
     @Test
-    void testIssueMcpDeviceCertificate() throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, CertificateException {
+    void testIssueMcpDeviceCertificate() throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, CertificateException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Initialise the service certificate factory
         this.mcpService.certificateFactory = CertificateFactory.getInstance("X.509");
-
-        // Spin up a CSR and a generate X.509 certificate
-        final KeyPair keypair = X509Utils.generateKeyPair(null);
-        final PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keypair, "CN=Test", null);
-        final X509Certificate cert = X509Utils.generateX509Certificate(keypair, "CN=Test", new Date(), new Date(), null);
 
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
@@ -338,7 +499,7 @@ class McpServiceTest {
         doReturn(this.httpResponse).when(this.httpClient).execute(any());
 
         // Perform the service call
-        this.mcpService.issueMcpDeviceCertificate(this.mcpDevice.getMrn(), csr);
+        this.mcpService.issueMcpDeviceCertificate(this.mcpDevice.getMrn(), this.csr);
     }
 
     /**
@@ -347,13 +508,16 @@ class McpServiceTest {
      * will be thrown.
      */
     @Test
-    void testIssueMcpDeviceCertificateFailure() throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, CertificateException {
+    void testIssueMcpDeviceCertificateFailure() throws IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, CertificateException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Initialise the service certificate factory
         this.mcpService.certificateFactory = CertificateFactory.getInstance("X.509");
-
-        // Spin up a CSR and a generate X.509 certificate
-        final KeyPair keypair = X509Utils.generateKeyPair(null);
-        final PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keypair, "CN=Test", null);
 
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
@@ -366,7 +530,7 @@ class McpServiceTest {
 
         // Perform the service call
         assertThrows(InvalidRequestException.class, () ->
-            this.mcpService.issueMcpDeviceCertificate(this.mcpDevice.getMrn(), csr)
+            this.mcpService.issueMcpDeviceCertificate(this.mcpDevice.getMrn(), this.csr)
         );
     }
 
@@ -375,7 +539,14 @@ class McpServiceTest {
      * through the MCP MIR.
      */
     @Test
-    void testRevokeMcpDeviceCertificate() throws IOException {
+    void testRevokeMcpDeviceCertificate() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -394,7 +565,14 @@ class McpServiceTest {
      * MIR for any reason, an InvalidRequestException will be thrown.
      */
     @Test
-    void testRevokeMcpDeviceCertificateFailure() throws IOException {
+    void testRevokeMcpDeviceCertificateFailure() throws IOException, McpConnectivityException {
+        // Don't check for the MCP Identify Registry connectivity
+        doNothing().when(this.mcpService).checkMcpMirConnectivity();
+
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+        doAnswer(inv -> inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+
         // Mock the HTTP request
         this.mcpService.clientBuilder = mock(HttpClientBuilder.class);
         doReturn(this.httpClient).when(this.mcpService.clientBuilder).build();
@@ -411,39 +589,44 @@ class McpServiceTest {
     }
 
     /**
-     * Test that we correctly construct the endpoint URLs for the MCP.
+     * Test that we can correctly check the connectivity to the MCP environment.
      */
     @Test
-    void testConstructMcpDeviceEndpointUrl() {
-        // First set the host and the organization registered to the MCP
-        this.mcpService.host = "localhost";
-        this.mcpService.mcpOrgPrefix = "urn:mrn:mcp:org:mcc";
-        this.mcpService.organisation = "grad";
+    void testCheckMcpMirConnectivity() throws McpConnectivityException {
+        // Mock some data
+        this.mcpService.restTemplate = mock(RestTemplate.class);
+        MultiValueMap<String, String> params= new LinkedMultiValueMap<>();
+        params.add("test", "test");
 
-        // Make the assertions
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/null/", this.mcpService.constructMcpDeviceEndpointUrl(null));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad//", this.mcpService.constructMcpDeviceEndpointUrl(""));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test/", this.mcpService.constructMcpDeviceEndpointUrl("test"));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test2/", this.mcpService.constructMcpDeviceEndpointUrl("test2"));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test3/", this.mcpService.constructMcpDeviceEndpointUrl("test3"));
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+
+        // Mock the Springboot REST template that checks the connectivity
+        doReturn(new HttpHeaders(params)).when(this.mcpService.restTemplate).headForHeaders(anyString());
+
+        // Perform the service call
+        this.mcpService.checkMcpMirConnectivity();
     }
 
     /**
-     * Test that we correctly construct the MCP devices MRNs.
+     * Test that we can correctly detect the disconnections from the MCP
+     * environment.
      */
     @Test
-    void testConstructMcpDeviceMrn() {
-        // First set the host and the organization registered to the MCP
-        this.mcpService.host = "localhost";
-        this.mcpService.mcpDevicePrefix = "urn:mrn:mcp:device:mcc";
-        this.mcpService.organisation = "grad";
+    void testCheckMcpMirConnectivityFailed() {
+        // Mock some data
+        this.mcpService.restTemplate = mock(RestTemplate.class);
 
-        // Make the assertions
-        assertEquals("urn:mrn:mcp:device:mcc:grad:null", this.mcpService.constructMcpDeviceMrn(null));
-        assertEquals("urn:mrn:mcp:device:mcc:grad:", this.mcpService.constructMcpDeviceMrn(""));
-        assertEquals("urn:mrn:mcp:device:mcc:grad:test", this.mcpService.constructMcpDeviceMrn("test"));
-        assertEquals("urn:mrn:mcp:device:mcc:grad:test2", this.mcpService.constructMcpDeviceMrn("test2"));
-        assertEquals("urn:mrn:mcp:device:mcc:grad:test3", this.mcpService.constructMcpDeviceMrn("test3"));
+        // Mock the MCP Base Service
+        doAnswer(inv -> "https://host/x509/api/org/grad:urn:mrn:mcp:device:mcc:grad/" + inv.getArgument(0)).when(this.mcpConfigService).constructMcpDeviceEndpointUrl(any());
+
+        // Mock the Springboot REST template that checks the connectivity
+        doReturn(null).when(this.mcpService.restTemplate).headForHeaders(anyString());
+
+        // Perform the service call
+        assertThrows(McpConnectivityException.class, () ->
+                this.mcpService.checkMcpMirConnectivity()
+        );
     }
 
     /**
@@ -452,10 +635,6 @@ class McpServiceTest {
      */
     @Test
     void testParseMCPStatusLineError() {
-        // Test for a random error message
-        doReturn("Random Error").when(this.statusLine).getReasonPhrase();
-        assertEquals("Random Error", this.mcpService.parseMCPStatusLineError(this.statusLine));
-
         // Test for no error message
         doReturn("").when(this.statusLine).getReasonPhrase();
         assertEquals("Unknown error returned by the MCP MIR.", this.mcpService.parseMCPStatusLineError(this.statusLine));
