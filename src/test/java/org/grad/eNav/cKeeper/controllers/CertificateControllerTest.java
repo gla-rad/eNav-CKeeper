@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.services.CertificateService;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,12 +102,27 @@ class CertificateControllerTest {
     }
 
     /**
-     * Test that if the service fails to connect to the MCP MIR to revoke
-     * the certificate, an HTTP BAD_REQUEST response  will be returned.
+     * Test that if the service receives a failure when requesting the MCP MIR
+     * to revoke the certificate, an HTTP BAD_REQUEST response  will be
+     * returned.
      */
     @Test
     void testRevokeCertificateFailed() throws Exception {
         doThrow(IOException.class).when(this.certificateService).revoke(this.certificateDto.getId());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificates/{id}/revoke", this.certificateDto.getId()))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    }
+
+    /**
+     * Test that if the service fails to connect to the MCP MIR to revoke
+     * the certificate, an HTTP BAD_REQUEST response  will be returned.
+     */
+    @Test
+    void testRevokeCertificateMcpConnectivityFailed() throws Exception {
+        doThrow(McpConnectivityException.class).when(this.certificateService).revoke(this.certificateDto.getId());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(put("/api/certificates/{id}/revoke", this.certificateDto.getId()))

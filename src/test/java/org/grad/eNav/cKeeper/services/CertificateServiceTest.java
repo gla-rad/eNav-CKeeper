@@ -18,7 +18,9 @@ package org.grad.eNav.cKeeper.services;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
@@ -50,7 +52,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CertificateServiceTest {
@@ -83,6 +85,9 @@ class CertificateServiceTest {
     // Test Variables
     private Certificate certificate;
     private MRNEntity mrnEntity;
+    private KeyPair keypair;
+    private PKCS10CertificationRequest csr;
+    private X509Certificate cert;
 
     /**
      * Add the Bouncy Castle as a security provider for the unit tests.
@@ -117,6 +122,49 @@ class CertificateServiceTest {
     }
 
     /**
+     * Test that we can sync up with the latest certificates comming in from the
+     * MCP Identity Registry. Of course, if an existing local certificate
+     * doesn't exist in the MCP any more, that should be revoked.
+     */
+    @Test
+    void testSyncMrnEntityWithMcpMir() throws McpConnectivityException, IOException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException {
+        // Add the certificate to the MRN Entity
+        this.mrnEntity.setCertificates(Collections.singleton(this.certificate));
+
+        // Create a new test certificate
+        KeyPair keypair = X509Utils.generateKeyPair(null);
+        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keypair, "CN=Test", null);
+        X509Certificate cert = X509Utils.generateX509Certificate(keypair, "CN=Test", new Date(), new Date(), null);
+
+        // Mock the internal calls
+        doReturn(Optional.of(this.mrnEntity)).when(this.mrnEntityRepo).findById(this.mrnEntity.getId());
+        doReturn(Collections.singleton(new Pair<>(String.valueOf(cert.getSerialNumber()), cert))).when(this.mcpService).getMcpDeviceCertificates(this.mrnEntity.getMrn());
+
+        // Perform the service call
+        this.certificateService.syncMrnEntityWithMcpMir(this.mrnEntity.getId());
+
+        // Make sure we saved twice, once for the existing and one for the new certificate
+        verify(this.certificateRepo, times(2)).save(any());
+    }
+
+    /**
+     * Test that if nothing has changes and we have no ceritifates to sync with
+     * no saving whatsoever will take place.
+     */
+    @Test
+    void testSyncMrnEntityWithMcpMirNoChange() throws McpConnectivityException, IOException {
+        // Mock the internal calls
+        doReturn(Optional.of(this.mrnEntity)).when(this.mrnEntityRepo).findById(this.mrnEntity.getId());
+        doReturn(Collections.emptySet()).when(this.mcpService).getMcpDeviceCertificates(this.mrnEntity.getMrn());
+
+        // Perform the service call
+        this.certificateService.syncMrnEntityWithMcpMir(this.mrnEntity.getId());
+
+        // Make sure we don't do any saving since nothing has changed
+        verifyNoInteractions(this.certificateRepo);
+    }
+
+    /**
      * Test that we can retrieve all the certificates associated with a specific
      * MRN entity, using the MRN entity ID.
      */
@@ -138,7 +186,7 @@ class CertificateServiceTest {
      * MRN entity, based on the provided MRN entity ID.
      */
     @Test
-    void testGenerateMrnEntityCertificate() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException {
+    void testGenerateMrnEntityCertificate() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, McpConnectivityException {
         // Spin up a self-signed
         this.certificateService.certDirName="CN=Test";
         KeyPair keyPair = X509Utils.generateKeyPair(null);
@@ -181,7 +229,7 @@ class CertificateServiceTest {
      * database, a SavingFailedException will be thrown.
      */
     @Test
-    void testGenerateMrnEntityCertificateSaveFailed() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException {
+    void testGenerateMrnEntityCertificateSaveFailed() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, McpConnectivityException {
         // Spin up a self-signed
         this.certificateService.certDirName="CN=Test";
         KeyPair keyPair = X509Utils.generateKeyPair(null);
@@ -232,7 +280,7 @@ class CertificateServiceTest {
      * certificate ID, so we can't actually do that.
      */
     @Test
-    void testRevoke() throws IOException {
+    void testRevoke() throws IOException, McpConnectivityException {
         doReturn(Optional.of(this.certificate)).when(this.certificateRepo).findById(this.certificate.getId());
         doReturn(this.certificate).when(this.certificateRepo).save(any());
 

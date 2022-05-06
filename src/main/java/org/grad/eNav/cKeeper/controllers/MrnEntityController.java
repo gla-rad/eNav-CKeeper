@@ -19,6 +19,7 @@ package org.grad.eNav.cKeeper.controllers;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
@@ -194,7 +195,7 @@ public class MrnEntityController {
         try {
             return ResponseEntity.ok()
                     .body(this.certificateService.generateMrnEntityCertificate(id));
-        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | OperatorCreationException | IOException ex) {
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | OperatorCreationException | IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
     }

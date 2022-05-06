@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.Sort;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
@@ -181,34 +182,35 @@ public class MrnEntityService {
         // Save the MRN Entity
         return Optional.of(mrnEntity)
                 .map(MrnEntityDto::toMRNEntity)
-                .map(e -> {
+                .map(entity -> {
                     McpDeviceDto mcpDevice = null;
                     try {
                         // First try to identify if the entity exists in the MRN
                         // MIR, and if no we are going to create it, otherwise
                         // update it
                         try {
-                            mcpDevice = this.mcpService.getMcpDevice(e.getMrn());
+                            mcpDevice = this.mcpService.getMcpDevice(entity.getMrn());
 
                             // We can only update the name of the MRN device
-                            Optional.ofNullable(mcpDevice).ifPresent(md -> md.setName(e.getName()));
+                            Optional.ofNullable(mcpDevice).ifPresent(md -> md.setName(entity.getName()));
                         } catch(DataNotFoundException ex) {
-                            this.log.warn("MCP entry for the MRN device with MRN {} not found", e.getMrn());
+                            this.log.warn("MCP entry for the MRN device with MRN {} not found", entity.getMrn());
                         }
 
                         // Choose whether to create or update
                         if(Objects.isNull(mcpDevice)) {
-                            mcpDevice = this.mcpService.createMcpDevice(new McpDeviceDto(e.getName(), e.getMrn()));
+                            mcpDevice = this.mcpService.createMcpDevice(new McpDeviceDto(entity.getName(), entity.getMrn()));
                         } else {
                             mcpDevice = this.mcpService.updateMcpDevice(mcpDevice.getMrn(), mcpDevice);
                         }
 
                         // Always read the MRN from the MCP MIR
-                        e.setMrn(mcpDevice.getMrn());
-                    } catch (IOException ex) {
+                        entity.setMrn(mcpDevice.getMrn());
+                    } catch (IOException | McpConnectivityException ex) {
+                        // If the MCP connectivity failed, don't continue
                         return null;
                     }
-                    return e;
+                    return entity;
                 })
                 .map(this.mrnEntityRepo::save)
                 .map(MrnEntityDto::new)
@@ -233,15 +235,16 @@ public class MrnEntityService {
 
         // Check and update the MCP Identity Registry
         this.mrnEntityRepo.findById(id)
-                .map(e -> {
+                .map(entity -> {
                     try {
-                        this.mcpService.deleteMcpDevice(e.getMrn());
+                        this.mcpService.deleteMcpDevice(entity.getMrn());
                     } catch(DeletingFailedException ex) {
                         // Not found? Not problem!
-                    } catch(IOException ex) {
+                    } catch(IOException | McpConnectivityException ex) {
+                        // If the MCP connectivity failed, don't continue
                         return null;
                     }
-                    return e.getId();
+                    return entity.getId();
                 })
                 .orElseThrow(() ->
                         new DeletingFailedException(String.format("Cannot delete invalid MRN Entity object"))

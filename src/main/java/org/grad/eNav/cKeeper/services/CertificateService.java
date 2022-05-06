@@ -21,12 +21,12 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
+import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MRNEntity;
 import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
-import org.grad.eNav.cKeeper.models.dtos.McpCertitifateDto;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
@@ -44,8 +44,6 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static java.util.function.Predicate.not;
 
 /**
  * The Certificate Service Class
@@ -120,27 +118,24 @@ public class CertificateService {
         // First check that the MRN Entity exists and get its MIR certificates
         final MRNEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElse(null);
-        // Get all local certificates
-        final Set<Certificate> localCertificates = Optional.ofNullable(mrnEntity)
-                .map(MRNEntity::getId)
-                .map(this.certificateRepo::findAllByMrnEntityId)
-                .orElse(Collections.emptySet());
         // And get the MCP current state
         final Set<Pair<String, X509Certificate>> mcpCertificates = Optional.ofNullable(mrnEntity)
                 .map(MRNEntity::getMrn)
                 .map(mrn -> {
                     try {
-                        return mcpService.retrieveMcpDeviceCertificates(mrn);
-                    } catch (IOException ex) {
+                        return mcpService.getMcpDeviceCertificates(mrn);
+                    } catch (IOException | McpConnectivityException ex) {
+                        // If the MCP connectivity failed, just don't use it
                         return null;
                     }
                 })
                 .orElse(Collections.emptySet());
 
-        // Now update the database with any new entrys
+        // Now update the database with any new entries
         if(!mcpCertificates.isEmpty()) {
             // Revoke all the certificates that are not found
-            localCertificates.stream()
+            mrnEntity.getCertificates()
+                    .stream()
                     .filter(cert -> !Objects.equals(cert.getRevoked(), Boolean.TRUE))
                     .filter(cert -> !(mcpCertificates.stream()
                             .map(Pair::getKey)
@@ -154,7 +149,7 @@ public class CertificateService {
 
             // And save all new entries
             mcpCertificates.stream()
-                    .filter(pair -> localCertificates.stream()
+                    .filter(pair -> mrnEntity.getCertificates().stream()
                             .filter(local -> Objects.equals(local.getMcpMirId(), pair.getKey()))
                             .findFirst()
                             .isEmpty())
@@ -203,7 +198,7 @@ public class CertificateService {
      * @throws OperatorCreationException if the certificate generation process fails
      * @throws IOException for errors during the PEM exporting or HTTP call operations
      */
-    public CertificateDto generateMrnEntityCertificate(@NotNull BigInteger mrnEntityId) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, IOException {
+    public CertificateDto generateMrnEntityCertificate(@NotNull BigInteger mrnEntityId) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, IOException, McpConnectivityException {
         MRNEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElseThrow(() ->
                         new DataNotFoundException(String.format("No MRN Entity node found for the provided ID: %d", mrnEntityId))
@@ -253,7 +248,7 @@ public class CertificateService {
      * @return The revoked certificate
      * @throws IOException for errors during the HTTP call operation
      */
-    public CertificateDto revoke(@NotNull BigInteger id) throws IOException {
+    public CertificateDto revoke(@NotNull BigInteger id) throws IOException, McpConnectivityException {
         // Access the certificate if found
         Certificate certificate = this.certificateRepo.findById(id)
                 .orElseThrow(() ->
@@ -314,8 +309,8 @@ public class CertificateService {
      *
      * @param id        The ID of the certificate to be used for the verification
      * @param content       The content to be verified
-     * @param signature     The signature to verify the contect with
-     * @return Whether the contect verification was successful or not
+     * @param signature     The signature to verify the content with
+     * @return Whether the content verification was successful or not
      * @throws NoSuchAlgorithmException if the selected certificate algorithm is not found
      * @throws IOException for errors during the public key loading operation
      * @throws InvalidKeySpecException  if the provided key specification is invalid

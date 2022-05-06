@@ -41,10 +41,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
-import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
-import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
-import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.exceptions.*;
 import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.dtos.McpCertitifateDto;
 import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
@@ -52,8 +49,11 @@ import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.net.ssl.SSLContext;
@@ -64,10 +64,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
@@ -82,30 +79,6 @@ import static java.util.function.Predicate.not;
 @Service
 @Slf4j
 public class McpService {
-
-    /**
-     * The MCP Host Address.
-     */
-    @Value("${gla.rad.ckeeper.mcp.host:api-x509.maritimeconnectivity.net}")
-    String host;
-
-    /**
-     * The MCP Registered Organisation Name.
-     */
-    @Value("${gla.rad.ckeeper.mcp.organisation:grad}")
-    String organisation;
-
-    /**
-     * The MCP Organisation Sting Prefix.
-     */
-    @Value("${gla.rad.ckeeper.mcp.mrnOrgPrefix:urn:mrn:mcp:org:mcc}")
-    String mcpOrgPrefix;
-
-    /**
-     * The MCP Device Sting Prefix.
-     */
-    @Value("${gla.rad.ckeeper.mcp.mrnDevicePrefix:urn:mrn:mcp:device:mcc}")
-    String mcpDevicePrefix;
 
     /**
      * The MCP Keystore File Location.
@@ -125,9 +98,16 @@ public class McpService {
     @Autowired
     ObjectMapper objectMapper;
 
+    /**
+     * The MCP Base Service.
+     */
+    @Autowired
+    McpConfigService mcpConfigService;
+
     // Apache HTTP Client SSL Context
     protected SSLContext sslContext;
     protected HttpClientBuilder clientBuilder;
+    protected RestTemplate restTemplate;
 
     // Certificate Factory
     protected CertificateFactory certificateFactory;
@@ -159,6 +139,7 @@ public class McpService {
         //Creating HttpClientBuilder
         this.clientBuilder = HttpClients.custom();
         this.clientBuilder = clientBuilder.setSSLSocketFactory(sslConSocFactory);
+        this.restTemplate = new RestTemplate();
 
         // Initialise the certificate factory
         this.certificateFactory = CertificateFactory.getInstance("X.509");
@@ -172,15 +153,18 @@ public class McpService {
      * @return the retrieved MCP device object
      * @throws IOException if the HTTP call failed to execute
      */
-    public McpDeviceDto getMcpDevice(@NotNull String mrn) throws IOException {
+    public McpDeviceDto getMcpDevice(@NotNull String mrn) throws IOException, McpConnectivityException {
         this.log.debug("Request to get all MCP Devices");
 
+        // Make sure that the service is up first
+        this.checkMcpMirConnectivity();
+
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpGet httpGet = new HttpGet(this.constructMcpDeviceEndpointUrl("device") + mrn);
+        HttpGet httpGet = new HttpGet(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn);
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpGet);
@@ -207,8 +191,11 @@ public class McpService {
      * @return the created MCP device object
      * @throws IOException if the HTTP call failed to execute
      */
-    public McpDeviceDto createMcpDevice(@NotNull McpDeviceDto mcpDevice) throws IOException {
+    public McpDeviceDto createMcpDevice(@NotNull McpDeviceDto mcpDevice) throws IOException, McpConnectivityException {
         this.log.debug("Request to create a new MCP Device with MRN {}", mcpDevice.getMrn());
+
+        // Make sure that the service is up first
+        this.checkMcpMirConnectivity();
 
         // Sanity Check
         Optional.of(mcpDevice)
@@ -217,7 +204,7 @@ public class McpService {
                 .orElseThrow(() -> new SavingFailedException("Cannot create new devices in the MCP without a name or an MRN"));
 
         // Make sure the MCP device MRN has the right prefix
-        mcpDevice.setMrn(this.constructMcpDeviceMrn(mcpDevice.getMrn()));
+        mcpDevice.setMrn(this.mcpConfigService.constructMcpDeviceMrn(mcpDevice.getMrn()));
 
         // Convert the new MCP Device object to a string entity
         String json = this.objectMapper.writeValueAsString(mcpDevice);
@@ -226,7 +213,7 @@ public class McpService {
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.constructMcpDeviceEndpointUrl("device"));
+        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpDeviceEndpointUrl("device"));
         httpPost.setEntity(entity);
 
         //Executing the request
@@ -256,8 +243,11 @@ public class McpService {
      * @return the updated version of the MCP device object
      * @throws IOException if the HTTP call failed to execute
      */
-    public McpDeviceDto updateMcpDevice(@NotNull String mrn, @NotNull McpDeviceDto mcpDevice) throws IOException {
+    public McpDeviceDto updateMcpDevice(@NotNull String mrn, @NotNull McpDeviceDto mcpDevice) throws IOException, McpConnectivityException {
         this.log.debug("Request to update a new MCP Device with MRN {}", mcpDevice.getMrn());
+
+        // Make sure that the service is up first
+        this.checkMcpMirConnectivity();
 
         // Sanity Check
         Optional.of(mcpDevice)
@@ -266,7 +256,7 @@ public class McpService {
                 .orElseThrow(() -> new SavingFailedException("Cannot update devices in the MCP without a name or an MRN"));
 
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
 
         // Convert the new MCP Device object to a string entity
         String json = this.objectMapper.writeValueAsString(mcpDevice);
@@ -275,7 +265,7 @@ public class McpService {
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPut httpPut = new HttpPut(this.constructMcpDeviceEndpointUrl("device") + mrn);
+        HttpPut httpPut = new HttpPut(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn);
         httpPut.setEntity(entity);
 
         //Executing the request
@@ -288,6 +278,8 @@ public class McpService {
                 .map(e -> {
                     try {
                         return this.getMcpDevice(mcpDevice.getMrn());
+                    } catch (McpConnectivityException ex) {
+                        throw new SavingFailedException(ex.getMessage());
                     } catch (IOException ex) {
                         throw new SavingFailedException("Unable to parse MCP response");
                     }
@@ -303,15 +295,18 @@ public class McpService {
      * @return whether the operation was successful or not
      * @throws IOException if the HTTP call failed to execute
      */
-    public boolean deleteMcpDevice(@NotNull String mrn) throws IOException {
+    public boolean deleteMcpDevice(@NotNull String mrn) throws IOException, McpConnectivityException {
         this.log.debug("Request to delete MCP Device with MRN {}", mrn);
 
+        // Make sure that the service is up first
+        this.checkMcpMirConnectivity();
+
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpDelete httpDelete = new HttpDelete(this.constructMcpDeviceEndpointUrl("device") + mrn);
+        HttpDelete httpDelete = new HttpDelete(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn);
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpDelete);
@@ -332,21 +327,25 @@ public class McpService {
      * @return the list of available certificates
      * @throws IOException if the response parsing operation fails
      */
-    public Set<Pair<String, X509Certificate>> retrieveMcpDeviceCertificates(String mrn) throws IOException {
+    public Set<Pair<String, X509Certificate>> getMcpDeviceCertificates(String mrn) throws IOException, McpConnectivityException {
         this.log.debug("Request to retrieve an existing certificate for the  MCP Device with MRN {}", mrn);
 
+        // Make sure that the service is up first
+        this.checkMcpMirConnectivity();
+
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpGet httpGet = new HttpGet(this.constructMcpDeviceEndpointUrl("device") + mrn);
+        HttpGet httpGet = new HttpGet(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn);
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpGet);
 
         // Construct and return the MCP certificate objects through JSON
         JsonNode jsonCertificates = Optional.of(httpResponse)
+                .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
                 .map(HttpResponse::getEntity)
                 .map(entity -> {
                     try {
@@ -370,8 +369,8 @@ public class McpService {
                                 c.getSerialNumber(),
                                 (X509Certificate) this.certificateFactory.generateCertificate(IOUtils.toInputStream(c.getCertificate().replace("\\n","\n")))
                         );
-                    } catch (CertificateException e) {
-                        throw new RuntimeException(e);
+                    } catch (CertificateException ex) {
+                        throw new InvalidRequestException(ex.getMessage());
                     }
                 })
                 .collect(Collectors.toSet());
@@ -387,11 +386,14 @@ public class McpService {
      * @return the signed X.509 certificate
      * @throws IOException if the PEM generation of the csr or the HTTP request fail
      */
-    public Pair<String, X509Certificate> issueMcpDeviceCertificate(String mrn, PKCS10CertificationRequest csr) throws IOException {
+    public Pair<String, X509Certificate> issueMcpDeviceCertificate(String mrn, PKCS10CertificationRequest csr) throws IOException, McpConnectivityException {
         this.log.debug("Request to issue a new certificate for the  MCP Device with MRN {}", mrn);
 
+        // Make sure that the service is up first
+        this.checkMcpMirConnectivity();
+
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
 
         // Convert the new MCP Device object to a string entity
         StringEntity entity = new StringEntity(X509Utils.formatCSR(csr));
@@ -399,7 +401,7 @@ public class McpService {
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/issue-new/csr");
+        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/issue-new/csr");
         httpPost.setEntity(entity);
 
         //Executing the request
@@ -436,15 +438,18 @@ public class McpService {
      * @param mcpMirId  The MCP MIR ID of the certificate to be revoked
      * @throws IOException if the HTTP request fails
      */
-    public void revokeMcpDeviceCertificate(String mrn, String mcpMirId) throws IOException {
+    public void revokeMcpDeviceCertificate(String mrn, String mcpMirId) throws IOException, McpConnectivityException {
         this.log.debug("Request to revoke a certificate for the  MCP Device with MRN {}", mrn);
 
+        // Make sure that the service is up first
+        this.checkMcpMirConnectivity();
+
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/" + mcpMirId + "/revoke");
+        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/" + mcpMirId + "/revoke");
 
         // Add the request body
         ObjectNode jsonNode = this.objectMapper.createObjectNode();
@@ -462,26 +467,22 @@ public class McpService {
     }
 
     /**
-     * A helper function to construct the appropriate MCP endpoint URL, based
-     * on the currently loaded host, registered organisation and endpoint to
-     * be reached.
+     * An attempt to verify that the connection with the MCP Identity Registry
+     * is up and active. We just check the address of an empty device which
+     * should basically give as the organisation endpoint. Don't worry about
+     * the response or authorisation, we just need to make sure the service is
+     * up, and we can contact it.
      *
-     * @param endpoint  The MCP endpoint to be reached
-     * @return the complete MCP endpoint URL
+     * @return Whether the connection to the MCP Identity Registry is possible
      */
-    public String constructMcpDeviceEndpointUrl(String endpoint) {
-        return String.format("https://%s/x509/api/org/%s:%s/%s/", this.host, this.mcpOrgPrefix, this.organisation, endpoint);
-    }
-
-    /**
-     * A helper function to construct the appropriate device MRN, based on the
-     * provided device ID.
-     *
-     * @param deviceId  The ID of the device to construct the MRN from
-     * @return The constructed device MRN
-     */
-    public String constructMcpDeviceMrn(String deviceId) {
-        return Optional.ofNullable(deviceId).orElse("").startsWith(this.mcpDevicePrefix) ? deviceId : String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, deviceId);
+    public void checkMcpMirConnectivity() throws McpConnectivityException {
+        try {
+            HttpHeaders httpHeaders = this.restTemplate.headForHeaders(this.mcpConfigService.constructMcpDeviceEndpointUrl(""));
+            assert httpHeaders != null && !httpHeaders.isEmpty();
+        } catch (RestClientException | AssertionError ex) {
+            this.log.trace(ex.getMessage(), ex);
+            throw new McpConnectivityException("MCP Identity Registry could not be contacted... please make sure you have connected and try again later!");
+        }
     }
 
     /**
