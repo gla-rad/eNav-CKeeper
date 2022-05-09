@@ -33,6 +33,8 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 
+import static java.util.function.Predicate.not;
+
 /**
  * The Signature Service Class
  *
@@ -92,7 +94,8 @@ public class SignatureService {
         // Now get the latest certificate for it if it exists, or create a new one
         CertificateDto certificateDto = this.certificateService.findAllByMrnEntityId(mrnEntityDto.getId())
                 .stream()
-                .filter(c -> Objects.nonNull(c.getStartDate()))
+                .filter(not(c -> Objects.equals(c.getRevoked(), Boolean.TRUE)))
+                .filter(not(c -> Objects.isNull(c.getStartDate())))
                 .max(Comparator.comparing(CertificateDto::getStartDate))
                 .orElseGet(() -> {
                     try {
