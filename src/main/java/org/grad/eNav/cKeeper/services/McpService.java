@@ -60,11 +60,13 @@ import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
@@ -327,7 +329,7 @@ public class McpService {
      * @return the list of available certificates
      * @throws IOException if the response parsing operation fails
      */
-    public Set<Pair<String, X509Certificate>> getMcpDeviceCertificates(String mrn) throws IOException, McpConnectivityException {
+    public Map<String, X509Certificate> getMcpDeviceCertificates(String mrn) throws IOException, McpConnectivityException {
         this.log.debug("Request to retrieve an existing certificate for the  MCP Device with MRN {}", mrn);
 
         // Make sure that the service is up first
@@ -344,7 +346,7 @@ public class McpService {
         HttpResponse httpResponse = httpClient.execute(httpGet);
 
         // Construct and return the MCP certificate objects through JSON
-        JsonNode jsonCertificates = Optional.of(httpResponse)
+        final JsonNode jsonCertificates = Optional.of(httpResponse)
                 .filter(r -> r.getStatusLine().getStatusCode() == HttpStatus.OK.value())
                 .map(HttpResponse::getEntity)
                 .map(entity -> {
@@ -363,17 +365,19 @@ public class McpService {
                 .filter(McpCertitifateDto.class::isInstance)
                 .map(McpCertitifateDto.class::cast)
                 .filter(not(McpCertitifateDto::isRevoked))
+                .map(McpCertitifateDto::getCertificate)
+                .map(s -> s.replace("\\n","\n"))
+                .map(IOUtils::toInputStream)
                 .map(c -> {
                     try {
-                        return new Pair<>(
-                                c.getSerialNumber(),
-                                (X509Certificate) this.certificateFactory.generateCertificate(IOUtils.toInputStream(c.getCertificate().replace("\\n","\n")))
-                        );
+                        return (X509Certificate) this.certificateFactory.generateCertificate(c);
                     } catch (CertificateException ex) {
-                        throw new InvalidRequestException(ex.getMessage());
+                        // Don't include invalid certificates
+                        return null;
                     }
                 })
-                .collect(Collectors.toSet());
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(c -> c.getSerialNumber().toString(), Function.identity()));
     }
 
     /**

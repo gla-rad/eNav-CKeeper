@@ -138,7 +138,7 @@ class CertificateServiceTest {
 
         // Mock the internal calls
         doReturn(Optional.of(this.mrnEntity)).when(this.mrnEntityRepo).findById(this.mrnEntity.getId());
-        doReturn(Collections.singleton(new Pair<>(String.valueOf(cert.getSerialNumber()), cert))).when(this.mcpService).getMcpDeviceCertificates(this.mrnEntity.getMrn());
+        doReturn(Collections.singletonMap(String.valueOf(cert.getSerialNumber()), cert)).when(this.mcpService).getMcpDeviceCertificates(this.mrnEntity.getMrn());
 
         // Perform the service call
         this.certificateService.syncMrnEntityWithMcpMir(this.mrnEntity.getId());
@@ -155,7 +155,7 @@ class CertificateServiceTest {
     void testSyncMrnEntityWithMcpMirNoChange() throws McpConnectivityException, IOException {
         // Mock the internal calls
         doReturn(Optional.of(this.mrnEntity)).when(this.mrnEntityRepo).findById(this.mrnEntity.getId());
-        doReturn(Collections.emptySet()).when(this.mcpService).getMcpDeviceCertificates(this.mrnEntity.getMrn());
+        doReturn(Collections.emptyMap()).when(this.mcpService).getMcpDeviceCertificates(this.mrnEntity.getMrn());
 
         // Perform the service call
         this.certificateService.syncMrnEntityWithMcpMir(this.mrnEntity.getId());
