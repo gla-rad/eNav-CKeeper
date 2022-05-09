@@ -127,6 +127,34 @@ class SignatureServiceTest {
     }
 
     /**
+     * Test that we can correctly generate a signature for the provided AtoN
+     * UID and the content we want to sign, even if the respective AtoN or
+     * a certificate has been revoked. They should be created on the fly.
+     */
+    @Test
+    void testGenerateAtonSignatureAutoCreateWhenRevoked() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, OperatorCreationException, McpConnectivityException {
+        // Revoke the certificate
+        this.certificateDto.setRevoked(Boolean.TRUE);
+
+        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+        doReturn(this.mrnEntityDto).when(this.mrnEntityService).save(any());
+        doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
+        doReturn(this.certificateDto).when(this.certificateService).generateMrnEntityCertificate(any());
+        doReturn(this.signature).when(this.certificateService).signContent(mrnEntityDto.getId(), this.content);
+
+        // Perform the service call
+        final byte[] result = this.signatureService.generateAtonSignature(this.mrnEntityDto.getName(), this.mrnEntityDto.getMmsi(), this.content);
+
+        // Assert that we called the certificate generation method
+        verify(this.certificateService, times(1)).generateMrnEntityCertificate(this.mrnEntityDto.getId());
+
+        // Assert the signature equality byte by byte
+        for(int i=0; i<this.signature.length; i++) {
+            assertEquals(this.signature[i], result[i]);
+        }
+    }
+
+    /**
      * Test that if we cannot correctly generate a signature for the provided
      * AtoN UID and the content we want to sign, an InvalidRequestException
      * will be thrown.
