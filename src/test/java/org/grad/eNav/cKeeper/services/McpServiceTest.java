@@ -52,6 +52,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -417,24 +418,23 @@ class McpServiceTest {
         doReturn(this.httpResponse).when(this.httpClient).execute(any());
 
         // Perform the service call
-        Set<Pair<String, X509Certificate>> certificates = this.mcpService.getMcpDeviceCertificates(this.mcpDevice.getMrn());
+        Map<String, X509Certificate> certificates = this.mcpService.getMcpDeviceCertificates(this.mcpDevice.getMrn());
 
         // Make sure the result looks OK
         assertNotNull(certificates);
         assertEquals(1, certificates.size());
 
         // Assert the retrieved certificates
-        Pair<String, X509Certificate> pair = certificates.iterator().next();
-        assertEquals(this.mcpCertitifateDto.getSerialNumber(), pair.getKey());
-        assertEquals(this.mcpCertitifateDto.getStart(), pair.getValue().getNotBefore());
-        assertEquals(this.mcpCertitifateDto.getEnd(), pair.getValue().getNotAfter());
-        assertEquals(this.mcpCertitifateDto.getCertificate(), X509Utils.formatCertificate(pair.getValue()));
+        assertTrue(certificates.containsKey(this.mcpCertitifateDto.getSerialNumber()));
+        assertEquals(this.mcpCertitifateDto.getStart(), certificates.get(this.mcpCertitifateDto.getSerialNumber()).getNotBefore());
+        assertEquals(this.mcpCertitifateDto.getEnd(), certificates.get(this.mcpCertitifateDto.getSerialNumber()).getNotAfter());
+        assertEquals(this.mcpCertitifateDto.getCertificate(), X509Utils.formatCertificate(certificates.get(this.mcpCertitifateDto.getSerialNumber())));
     }
 
     /**
      * Test if we cannot successfully retrieve and translate the certificates
      * from the MCP Identity Registry, for a specified MRN entity, and the
-     * response is invalid, an InvalidRequestException will be  thrown.
+     * response is invalid, the certificate will be omitted.
      */
     @Test
     void testGetMcpDeviceCertificatesFailure() throws IOException, McpConnectivityException, CertificateException {
@@ -463,9 +463,7 @@ class McpServiceTest {
         doReturn(this.httpResponse).when(this.httpClient).execute(any());
 
         // Perform the service call
-        assertThrows(InvalidRequestException.class, () ->
-                this.mcpService.getMcpDeviceCertificates(this.mcpDevice.getMrn())
-        );
+        assertTrue(this.mcpService.getMcpDeviceCertificates(this.mcpDevice.getMrn()).isEmpty());
     }
 
     /**

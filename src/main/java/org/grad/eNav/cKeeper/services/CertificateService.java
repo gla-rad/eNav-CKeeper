@@ -43,7 +43,10 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 /**
  * The Certificate Service Class
@@ -119,8 +122,15 @@ public class CertificateService {
         final MRNEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElse(null);
 
-        // And get the MCP current state
-        final Set<Pair<String, X509Certificate>> mcpCertificates = Optional.ofNullable(mrnEntity)
+        // Extract all the local certificates
+        final Map<String, Certificate> localCertificates = Optional.ofNullable(mrnEntity)
+                .map(MRNEntity::getCertificates)
+                .orElse(Collections.emptySet())
+                .stream()
+                .collect(Collectors.toMap(Certificate::getMcpMirId, Function.identity()));
+
+        // And get the current MCP state
+        final Map<String, X509Certificate> mcpCertificates = Optional.ofNullable(mrnEntity)
                 .map(MRNEntity::getMrn)
                 .map(mrn -> {
                     try {
@@ -130,35 +140,27 @@ public class CertificateService {
                         return null;
                     }
                 })
-                .orElse(null);
+                .orElse(Collections.emptyMap());
 
         // Revoke all the certificates that are not found
-        Optional.ofNullable(mrnEntity)
-                .map(MRNEntity::getCertificates)
-                .orElse(Collections.emptySet())
+        localCertificates.entrySet()
                 .stream()
-                .filter(cert -> !Objects.equals(cert.getRevoked(), Boolean.TRUE))
-                .filter(cert -> !(mcpCertificates.stream()
-                        .map(Pair::getKey)
-                        .toList()
-                        .contains(cert.getMcpMirId())))
+                .filter(not(entry -> Objects.equals(entry.getValue().getRevoked(), Boolean.TRUE)))
+                .filter(not(entry -> mcpCertificates.containsKey(entry.getKey())))
+                .map(Map.Entry::getValue)
                 .map(cert -> {
                     cert.setRevoked(Boolean.TRUE);
                     return cert;
                 })
                 .forEach(this.certificateRepo::save);
 
-        // Now update the database with any new entries
-        Optional.ofNullable(mcpCertificates)
-                .orElse(Collections.emptySet())
+        // Finally update the database with any new entries
+        mcpCertificates.entrySet()
                 .stream()
-                .filter(pair -> mrnEntity.getCertificates().stream()
-                        .filter(local -> Objects.equals(local.getMcpMirId(), pair.getKey()))
-                        .findFirst()
-                        .isEmpty())
-                .map(pair -> {
+                .filter(not(entry -> localCertificates.containsKey(entry.getKey())))
+                .map(entry -> {
                     try {
-                        Certificate certificate = new Certificate(pair.getKey(), pair.getValue());
+                        Certificate certificate = new Certificate(entry.getKey(), entry.getValue());
                         certificate.setMrnEntity(mrnEntity);
                         return certificate;
                     } catch (IOException ex) {
