@@ -18,8 +18,8 @@ package org.grad.eNav.cKeeper.services;
 
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
-import org.grad.eNav.cKeeper.models.domain.MRNEntity;
-import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
+import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.*;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
@@ -80,12 +80,12 @@ class MrnEntityServiceTest {
     private MRNEntityRepo mrnEntityRepo;
 
     // Test Variables
-    private List<MRNEntity> entities;
+    private List<MrnEntity> entities;
     private Pageable pageable;
     private McpDeviceDto newMcpDevice;
     private McpDeviceDto existingMcpDevice;
-    private MRNEntity newEntity;
-    private MRNEntity existingEntity;
+    private MrnEntity newEntity;
+    private MrnEntity existingEntity;
 
     /**
      * Common setup for all the tests.
@@ -95,7 +95,7 @@ class MrnEntityServiceTest {
         // Initialise the MRN entities list
         this.entities = new ArrayList<>();
         for(long i=0; i<10; i++) {
-            MRNEntity entity = new MRNEntity();
+            MrnEntity entity = new MrnEntity();
             entity.setId(BigInteger.valueOf(i));
             entity.setName("Entity Name");
             entity.setMrn("urn:mrn:mcp:device:mcc:grad:test" + i);
@@ -107,13 +107,13 @@ class MrnEntityServiceTest {
         this.pageable = PageRequest.of(0, 5);
 
         // Create a new MRN entity
-        this.newEntity = new MRNEntity();
+        this.newEntity = new MrnEntity();
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
         this.newEntity.setMmsi("123456789");
 
         // Create an existing MRN entity
-        this.existingEntity = new MRNEntity();
+        this.existingEntity = new MrnEntity();
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
@@ -152,7 +152,7 @@ class MrnEntityServiceTest {
     @Test
     void testFindAllPaged() {
         // Created a result page to be returned by the mocked repository
-        Page<MRNEntity> page = new PageImpl<>(this.entities.subList(0, 5), this.pageable, this.entities.size());
+        Page<MrnEntity> page = new PageImpl<>(this.entities.subList(0, 5), this.pageable, this.entities.size());
         doReturn(page).when(this.mrnEntityRepo).findAll(this.pageable);
 
         // Perform the service call
@@ -278,9 +278,9 @@ class MrnEntityServiceTest {
      */
     @Test
     void testCreate() throws IOException, McpConnectivityException {
-        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpDevice(any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(any(), any(), any());
         doReturn(this.newEntity).when(this.mrnEntityRepo).save(any());
-        doReturn(this.newMcpDevice).when(this.mcpService).createMcpDevice(any());
+        doReturn(this.newMcpDevice).when(this.mcpService).createMcpEntity(any());
 
         // Perform the service call
         MrnEntityDto result = this.mrnEntityService.save(new MrnEntityDto(this.newEntity));
@@ -302,8 +302,8 @@ class MrnEntityServiceTest {
     @Test
     void testUpdate() throws IOException, McpConnectivityException {
         doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());
-        doReturn(this.existingMcpDevice).when(this.mcpService).getMcpDevice(this.existingEntity.getMrn());
-        doReturn(this.existingMcpDevice).when(this.mcpService).updateMcpDevice(this.existingMcpDevice.getMrn(), this.existingMcpDevice);
+        doReturn(this.existingMcpDevice).when(this.mcpService).getMcpEntity(this.existingEntity.getMrn(), null, McpDeviceDto.class);
+        doReturn(this.existingMcpDevice).when(this.mcpService).updateMcpEntity(this.existingMcpDevice.getMrn(), this.existingMcpDevice);
         doReturn(this.existingEntity).when(this.mrnEntityRepo).save(any());
 
         // Perform the service call
@@ -325,7 +325,7 @@ class MrnEntityServiceTest {
     @Test
     void testDelete() throws IOException, McpConnectivityException {
         doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findById(this.existingEntity.getId());
-        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpDevice(this.existingEntity.getMrn());
+        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.existingEntity.getMrn(), null, McpDeviceDto.class);
         doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());
         doNothing().when(this.mrnEntityRepo).deleteById(this.existingEntity.getId());
 

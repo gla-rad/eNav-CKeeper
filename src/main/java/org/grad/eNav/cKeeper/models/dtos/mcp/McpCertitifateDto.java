@@ -15,7 +15,7 @@
  *
  */
 
-package org.grad.eNav.cKeeper.models.dtos;
+package org.grad.eNav.cKeeper.models.dtos.mcp;
 
 import java.math.BigInteger;
 import java.util.Date;

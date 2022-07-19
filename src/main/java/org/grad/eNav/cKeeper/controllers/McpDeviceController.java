@@ -19,7 +19,7 @@ package org.grad.eNav.cKeeper.controllers;
 import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
-import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.services.McpService;
 import org.grad.eNav.cKeeper.utils.HeaderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,14 +32,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- * REST controller for managing MCP Operations.
+ * REST controller for managing MCP Device Operations.
  *
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
 @RestController()
-@RequestMapping("/api/mcp")
+@RequestMapping("/api/mcp/device")
 @Slf4j
-public class McpController {
+public class McpDeviceController {
 
     /**
      * The MCP Service.
@@ -48,97 +48,99 @@ public class McpController {
     McpService mcpService;
 
     /**
-     * GET /api/mcp/devices/{id} : Registers a new entity into the MCP MIR.
+     * GET /api/mcp/device/{mrn} : Retrieves a single MCP device from the MCP
+     * MIR.
      *
+     * @param mrn the MRN of the MCP device to be retrieved
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @GetMapping(value = "/devices/{mrn}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/{mrn}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<McpDeviceDto> getMcpDevice(@PathVariable String mrn) {
         log.debug("REST request to get MCP device : {}", mrn);
         try {
             return ResponseEntity.ok()
-                    .body(this.mcpService.getMcpDevice(mrn));
+                    .body(this.mcpService.getMcpEntity(mrn, null, McpDeviceDto.class));
         } catch (IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
     }
 
     /**
-     * POST /api/mcp/devices : Create a new MCP device.
+     * POST /api/mcp/device : Create a new MCP device.
      *
-     * @param mcpDevice the MCP device to create
+     * @param mcpEntityDto the MCP device to be created
      * @return the ResponseEntity with status 201 (Created) and with body the
      * new MCP device, or with status 400 (Bad Request) if the MCP device has
      * already an ID or mo MRN
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
-    @PostMapping(value = "/devices", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<McpDeviceDto> createMcpDevice(@RequestBody McpDeviceDto mcpDevice) throws URISyntaxException {
-        log.debug("REST request to create MCP device : {}", mcpDevice);
-        if (mcpDevice.getId() != null) {
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<McpDeviceDto> createMcpDevice(@RequestBody McpDeviceDto mcpEntityDto) throws URISyntaxException {
+        log.debug("REST request to create MCP device : {}", mcpEntityDto);
+        if (mcpEntityDto.getId() != null) {
             throw new InvalidRequestException("A new MCP device cannot already have an ID");
-        } else if (mcpDevice.getMrn() == null) {
+        } else if (mcpEntityDto.getMrn() == null) {
             throw new InvalidRequestException("Cannot create a new MCP device without an MRN");
         }
 
         // Save the MRN Entity
         try {
-            mcpDevice = this.mcpService.createMcpDevice(mcpDevice);
+            mcpEntityDto = this.mcpService.createMcpEntity(mcpEntityDto);
         } catch (IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
 
         // Build the response
-        return ResponseEntity.created(new URI("/api/mcp/devices/" + mcpDevice.getMrn()))
-                .body(mcpDevice);
+        return ResponseEntity.created(new URI("/api/mcp/device/" + mcpEntityDto.getMrn()))
+                .body(mcpEntityDto);
     }
 
     /**
-     * PUT /api/mcp/devices/{mrn} : Update an existing MCP device.
+     * PUT /api/mcp/device/{mrn} : Update an existing MCP device.
      *
-     * @param mrn the ID of the MCP device to update
-     * @param mcpDevice the MCP device to update
+     * @param mrn the ID of the MCP device to be updated
+     * @param mcpEntityDto the MCP device to update
      * @return the ResponseEntity with status 201 (Created) and with body the
      * new MRN entity, or with status 400 (Bad Request) if the MCP device has
      * already an ID
      */
-    @PutMapping(value = "/devices/{mrn}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/{mrn}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<McpDeviceDto> updateMcpDevice(@PathVariable String mrn,
-                                                        @RequestBody McpDeviceDto mcpDevice) {
-        log.debug("REST request to update MCP device : {}", mcpDevice);
-        if (mcpDevice.getId() == null) {
+                                                        @RequestBody McpDeviceDto mcpEntityDto) {
+        log.debug("REST request to update MCP device : {}", mcpEntityDto);
+        if (mcpEntityDto.getId() == null) {
             throw new InvalidRequestException("Cannot update an MCP device without an ID");
-        } else if (mcpDevice.getMrn() == null) {
+        } else if (mcpEntityDto.getMrn() == null) {
             throw new InvalidRequestException("Cannot update an MCP device without an MRN");
         }
 
         // Save the MRN Entity
         try {
-            this.mcpService.updateMcpDevice(mrn, mcpDevice);
+            this.mcpService.updateMcpEntity(mrn, mcpEntityDto);
         } catch (IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
 
         // Build the response
         return ResponseEntity.ok()
-                .body(mcpDevice);
+                .body(mcpEntityDto);
     }
 
     /**
-     * DELETE /api/mcp/devices/{mrn} : Delete the "MRN" MCP device.
+     * DELETE /api/mcp/device/{mrn} : Delete the "MRN" MCP device.
      *
-     * @param mrn the MRN of the MCP device to delete
+     * @param mrn the MRN of the MCP device to be deleted
      * @return the ResponseEntity with status 200 (OK), or with status 404
      * (Not Found) if the MCP device was not found
      */
-    @DeleteMapping(value = "/devices/{mrn}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "/{mrn}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> deleteMcpDevice(@PathVariable String mrn) {
         log.debug("REST request to delete MCP device : {}", mrn);
 
         // Delete the MRN Entity
         try {
-            this.mcpService.deleteMcpDevice(mrn);
+            this.mcpService.deleteMcpEntity(mrn, null, McpDeviceDto.class);
         } catch (IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }

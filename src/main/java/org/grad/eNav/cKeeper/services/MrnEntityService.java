@@ -22,8 +22,8 @@ import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
-import org.grad.eNav.cKeeper.models.domain.MRNEntity;
-import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
+import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPagingRequest;
@@ -189,7 +189,7 @@ public class MrnEntityService {
                         // MIR, and if no we are going to create it, otherwise
                         // update it
                         try {
-                            mcpDevice = this.mcpService.getMcpDevice(entity.getMrn());
+                            mcpDevice = this.mcpService.getMcpEntity(entity.getMrn(), null, McpDeviceDto.class);
 
                             // We can only update the name of the MRN device
                             Optional.ofNullable(mcpDevice).ifPresent(md -> md.setName(entity.getName()));
@@ -199,9 +199,9 @@ public class MrnEntityService {
 
                         // Choose whether to create or update
                         if(Objects.isNull(mcpDevice)) {
-                            mcpDevice = this.mcpService.createMcpDevice(new McpDeviceDto(entity.getName(), entity.getMrn()));
+                            mcpDevice = this.mcpService.createMcpEntity(new McpDeviceDto(entity.getName(), entity.getMrn()));
                         } else {
-                            mcpDevice = this.mcpService.updateMcpDevice(mcpDevice.getMrn(), mcpDevice);
+                            mcpDevice = this.mcpService.updateMcpEntity(mcpDevice.getMrn(), mcpDevice);
                         }
 
                         // Always read the MRN from the MCP MIR
@@ -237,7 +237,7 @@ public class MrnEntityService {
         this.mrnEntityRepo.findById(id)
                 .map(entity -> {
                     try {
-                        this.mcpService.deleteMcpDevice(entity.getMrn());
+                        this.mcpService.deleteMcpEntity(entity.getMrn(), null, McpDeviceDto.class);
                     } catch(DeletingFailedException ex) {
                         // Not found? Not problem!
                     } catch(IOException | McpConnectivityException ex) {
@@ -281,9 +281,9 @@ public class MrnEntityService {
         // Perform the search query and return the datatables page result
         return Optional.of(searchQuery)
                 .map(query -> query.fetch(dtPagingRequest.getStart(), dtPagingRequest.getLength()))
-                .map(searchResult -> new PageImpl<MRNEntity>(searchResult.hits(), dtPagingRequest.toPageRequest(), searchResult.total().hitCount()))
+                .map(searchResult -> new PageImpl<MrnEntity>(searchResult.hits(), dtPagingRequest.toPageRequest(), searchResult.total().hitCount()))
                 .map(Page.class::cast)
-                .map(page -> page.map(entity -> new MrnEntityDto((MRNEntity)entity)))
+                .map(page -> page.map(entity -> new MrnEntityDto((MrnEntity)entity)))
                 .map(page -> new DtPage<>((Page<MrnEntityDto>)page, dtPagingRequest))
                 .orElseGet(DtPage::new);
     }
@@ -300,9 +300,9 @@ public class MrnEntityService {
      * @param sort the sorting selection for the search query
      * @return the full text query
      */
-    protected SearchQuery<MRNEntity> searchMRNEntitiesQuery(String searchText, Sort sort) {
+    protected SearchQuery<MrnEntity> searchMRNEntitiesQuery(String searchText, Sort sort) {
         SearchSession searchSession = Search.session( entityManager );
-        SearchScope<MRNEntity> scope = searchSession.scope( MRNEntity.class );
+        SearchScope<MrnEntity> scope = searchSession.scope( MrnEntity.class );
         return searchSession.search( scope )
                 .extension(LuceneExtension.get())
                 .where( scope.predicate().wildcard()

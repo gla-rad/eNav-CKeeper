@@ -17,13 +17,7 @@
 
 package org.grad.eNav.cKeeper.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.StatusLine;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,22 +37,13 @@ class McpConfigServiceTest {
     @Spy
     McpConfigService mcpConfigService;
 
-    // Test Variables
-    private ObjectMapper objectMapper;
-    private McpDeviceDto mcpDevice;
-    private CloseableHttpClient httpClient;
-    private CloseableHttpResponse httpResponse;
-    private StatusLine statusLine;
-    private Header locationHeader;
-    private HttpEntity httpEntity;
-
     /**
      * Common setup for all the tests.
      */
     @BeforeEach
     void setUp() {
         // Initialise the absolutely necessary parameters
-        this.mcpConfigService.mcpDevicePrefix = "urn:mrn:mcp:device:mcc:";
+        this.mcpConfigService.mcpEntityPrefix = "urn:mrn:mcp:device:mcc:";
     }
 
     /**
@@ -72,29 +57,106 @@ class McpConfigServiceTest {
         this.mcpConfigService.organisation = "grad";
 
         // Make the assertions
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/null/", this.mcpConfigService.constructMcpDeviceEndpointUrl(null));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad//", this.mcpConfigService.constructMcpDeviceEndpointUrl(""));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test/", this.mcpConfigService.constructMcpDeviceEndpointUrl("test"));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test2/", this.mcpConfigService.constructMcpDeviceEndpointUrl("test2"));
-        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test3/", this.mcpConfigService.constructMcpDeviceEndpointUrl("test3"));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/null/", this.mcpConfigService.constructMcpEndpointUrl(null));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad//", this.mcpConfigService.constructMcpEndpointUrl(""));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test/", this.mcpConfigService.constructMcpEndpointUrl("test"));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test2/", this.mcpConfigService.constructMcpEndpointUrl("test2"));
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad/test3/", this.mcpConfigService.constructMcpEndpointUrl("test3"));
     }
 
     /**
-     * Test that we correctly construct the MCP devices MRNs.
+     * Test that we correctly construct the MCP device MRNs.
      */
     @Test
     void testConstructMcpDeviceMrn() {
         // First set the host and the organization registered to the MCP
         this.mcpConfigService.host = "localhost";
-        this.mcpConfigService.mcpDevicePrefix = "urn:mrn:mcp:device:mcc";
+        this.mcpConfigService.mcpEntityPrefix = "urn:mrn:mcp";
+        this.mcpConfigService.mcpEntitySuffix = "mcc";
         this.mcpConfigService.organisation = "grad";
 
-        // Make the assertions
-        assertEquals("urn:mrn:mcp:device:mcc:grad:null", this.mcpConfigService.constructMcpDeviceMrn(null));
-        assertEquals("urn:mrn:mcp:device:mcc:grad:", this.mcpConfigService.constructMcpDeviceMrn(""));
-        assertEquals("urn:mrn:mcp:device:mcc:grad:test", this.mcpConfigService.constructMcpDeviceMrn("test"));
-        assertEquals("urn:mrn:mcp:device:mcc:grad:test2", this.mcpConfigService.constructMcpDeviceMrn("test2"));
-        assertEquals("urn:mrn:mcp:device:mcc:grad:test3", this.mcpConfigService.constructMcpDeviceMrn("test3"));
+        // Make the assertions for device
+        assertEquals("urn:mrn:mcp:device:mcc:grad:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, null));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, ""));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, "test"));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, "test2"));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, "test3"));
+    }
+
+    /**
+     * Test that we correctly construct the MCP service MRNs.
+     */
+    @Test
+    void testConstructMcpServiceMrn() {
+        // First set the host and the organization registered to the MCP
+        this.mcpConfigService.host = "localhost";
+        this.mcpConfigService.mcpEntityPrefix = "urn:mrn:mcp";
+        this.mcpConfigService.mcpEntitySuffix = "mcc";
+        this.mcpConfigService.organisation = "grad";
+
+        // Make the assertions for service
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,null));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,""));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test2"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test3"));
+    }
+
+    /**
+     * Test that we correctly construct the MCP user MRNs.
+     */
+    @Test
+    void testConstructMcpUserMrn() {
+        // First set the host and the organization registered to the MCP
+        this.mcpConfigService.host = "localhost";
+        this.mcpConfigService.mcpEntityPrefix = "urn:mrn:mcp";
+        this.mcpConfigService.mcpEntitySuffix = "mcc";
+        this.mcpConfigService.organisation = "grad";
+
+        // Make the assertions for user
+        assertEquals("urn:mrn:mcp:user:mcc:grad:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,null));
+        assertEquals("urn:mrn:mcp:user:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,""));
+        assertEquals("urn:mrn:mcp:user:mcc:grad:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,"test"));
+        assertEquals("urn:mrn:mcp:user:mcc:grad:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,"test2"));
+        assertEquals("urn:mrn:mcp:user:mcc:grad:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,"test3"));
+    }
+
+    /**
+     * Test that we correctly construct the MCP vessel MRNs.
+     */
+    @Test
+    void testConstructMcpVesselMrn() {
+        // First set the host and the organization registered to the MCP
+        this.mcpConfigService.host = "localhost";
+        this.mcpConfigService.mcpEntityPrefix = "urn:mrn:mcp";
+        this.mcpConfigService.mcpEntitySuffix = "mcc";
+        this.mcpConfigService.organisation = "grad";
+
+        // Make the assertions for vessel
+        assertEquals("urn:mrn:mcp:vessel:mcc:grad:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,null));
+        assertEquals("urn:mrn:mcp:vessel:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,""));
+        assertEquals("urn:mrn:mcp:vessel:mcc:grad:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,"test"));
+        assertEquals("urn:mrn:mcp:vessel:mcc:grad:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,"test2"));
+        assertEquals("urn:mrn:mcp:vessel:mcc:grad:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,"test3"));
+    }
+
+    /**
+     * Test that we correctly construct the MCP role MRNs.
+     */
+    @Test
+    void testConstructMcpRoleMrn() {
+        // First set the host and the organization registered to the MCP
+        this.mcpConfigService.host = "localhost";
+        this.mcpConfigService.mcpEntityPrefix = "urn:mrn:mcp";
+        this.mcpConfigService.mcpEntitySuffix = "mcc";
+        this.mcpConfigService.organisation = "grad";
+
+        // Make the assertions for role
+        assertEquals("urn:mrn:mcp:role:mcc:grad:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,null));
+        assertEquals("urn:mrn:mcp:role:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,""));
+        assertEquals("urn:mrn:mcp:role:mcc:grad:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,"test"));
+        assertEquals("urn:mrn:mcp:role:mcc:grad:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,"test2"));
+        assertEquals("urn:mrn:mcp:role:mcc:grad:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,"test3"));
     }
 
 }

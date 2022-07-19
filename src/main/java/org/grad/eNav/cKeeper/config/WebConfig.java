@@ -16,7 +16,10 @@
 
 package org.grad.eNav.cKeeper.config;
 
+import org.grad.eNav.cKeeper.components.McpEntityTypeConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -32,6 +35,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {
+
+    /**
+     * The MCP Entity Converter.
+     */
+    @Autowired
+    McpEntityTypeConverter mcpEntityTypeConverter;
 
     /**
      * Add the static resources and webjars to the web resources.
@@ -65,4 +74,13 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addViewController("/").setViewName("forward:/index");
     }
 
+    /**
+     * Add the converters between GeoJSON strings and Geometry, enums etc...
+     *
+     * @param registry the Formatter Registry
+     */
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        registry.addConverter(this.mcpEntityTypeConverter);
+    }
 }

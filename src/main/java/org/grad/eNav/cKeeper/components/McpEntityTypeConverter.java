@@ -12,35 +12,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package org.grad.eNav.cKeeper.repos;
+package org.grad.eNav.cKeeper.components;
 
-import org.grad.eNav.cKeeper.models.domain.MrnEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.math.BigInteger;
-import java.util.Optional;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
 
 /**
- * Spring Data JPA repository for the MRN Entity.
+ * The McpEntityConverter Converter.
  *
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-public interface MRNEntityRepo extends JpaRepository<MrnEntity, BigInteger> {
+@Component
+public class McpEntityTypeConverter implements Converter<String, McpEntityType> {
 
-    /**
-     * Find one using the Entity MRN.
-     *
-     * @return The Entity matching the MRN
-     */
-    Optional<MrnEntity> findByMrn(String mrn);
-
-    /**
-     * Find one using the Entity MMSI.
-     *
-     * @return The Entity matching the MMSI
-     */
-    Optional<MrnEntity> findByMmsi(String mmsi);
+    @Override
+    public McpEntityType convert(String source) {
+        return McpEntityType.valueOf(source.toUpperCase());
+    }
 
 }
