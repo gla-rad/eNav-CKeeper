@@ -16,6 +16,7 @@
 
 package org.grad.eNav.cKeeper.models.domain;
 
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.search.engine.backend.types.Sortable;
@@ -36,7 +37,7 @@ import java.util.Set;
 @Table(name = "mrn_entity")
 @Cacheable
 @Indexed
-public class MRNEntity implements Serializable {
+public class MrnEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -59,6 +60,17 @@ public class MRNEntity implements Serializable {
     @KeywordField(sortable = Sortable.YES)
     @Column(name = "mmsi", unique=true)
     private String mmsi;
+
+    @NotNull
+    @KeywordField(normalizer = "lowercase", sortable = Sortable.YES)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entityType")
+    private McpEntityType entityType;
+
+    @NotNull
+    @KeywordField(normalizer = "lowercase", sortable = Sortable.YES)
+    @Column(name = "version")
+    private String version;
 
     @OneToMany(mappedBy = "mrnEntity", cascade = CascadeType.REMOVE)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
@@ -119,24 +131,6 @@ public class MRNEntity implements Serializable {
     }
 
     /**
-     * Gets certificates.
-     *
-     * @return the certificates
-     */
-    public Set<Certificate> getCertificates() {
-        return certificates;
-    }
-
-    /**
-     * Sets certificates.
-     *
-     * @param certificates the certificates
-     */
-    public void setCertificates(Set<Certificate> certificates) {
-        this.certificates = certificates;
-    }
-
-    /**
      * Gets mmsi.
      *
      * @return the mmsi
@@ -155,6 +149,60 @@ public class MRNEntity implements Serializable {
     }
 
     /**
+     * Gets entity type.
+     *
+     * @return the entity type
+     */
+    public McpEntityType getEntityType() {
+        return entityType;
+    }
+
+    /**
+     * Sets entity type.
+     *
+     * @param entityType the entity type
+     */
+    public void setEntityType(McpEntityType entityType) {
+        this.entityType = entityType;
+    }
+
+    /**
+     * Gets version.
+     *
+     * @return the version
+     */
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * Sets version.
+     *
+     * @param version the version
+     */
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    /**
+     * Gets certificates.
+     *
+     * @return the certificates
+     */
+    public Set<Certificate> getCertificates() {
+        return certificates;
+    }
+
+    /**
+     * Sets certificates.
+     *
+     * @param certificates the certificates
+     */
+    public void setCertificates(Set<Certificate> certificates) {
+        this.certificates = certificates;
+    }
+
+    /**
      * Overrides the equality operator of the class.
      *
      * @param o the object to check the equality
@@ -163,8 +211,8 @@ public class MRNEntity implements Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof MRNEntity)) return false;
-        MRNEntity entity = (MRNEntity) o;
+        if (!(o instanceof MrnEntity)) return false;
+        MrnEntity entity = (MrnEntity) o;
         return Objects.equals(id, entity.id) && mrn.equals(entity.mrn);
     }
 

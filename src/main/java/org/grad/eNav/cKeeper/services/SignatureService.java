@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +77,7 @@ public class SignatureService {
      */
     public byte[] generateAtonSignature(@NotNull String atonUID, String mmsi, @NotNull byte[] payload) {
         // Translate the AtoN UID into an MRC based on the MCP rules
-        final String atonMrn = this.mcpConfigService.constructMcpDeviceMrn(atonUID);
+        final String atonMrn = this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, atonUID);
 
         // Get a matching MRN entity if it exists or create a new one
         final MrnEntityDto mrnEntityDto = Optional.of(atonMrn)

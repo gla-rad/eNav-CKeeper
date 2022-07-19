@@ -17,7 +17,7 @@
 package org.grad.eNav.cKeeper.components;
 
 import lombok.extern.slf4j.Slf4j;
-import org.grad.eNav.cKeeper.models.domain.MRNEntity;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
 import org.hibernate.search.mapper.orm.session.SearchSession;
@@ -61,7 +61,7 @@ public class HibernateSearchInit implements ApplicationListener<ContextRefreshed
         SearchSession searchSession = Search.session( entityManager );
 
         // Create a mass indexer
-        MassIndexer indexer = searchSession.massIndexer( MRNEntity.class )
+        MassIndexer indexer = searchSession.massIndexer( MrnEntity.class )
                 .threadsToLoadObjects( 7 );
 
         // And perform the indexing

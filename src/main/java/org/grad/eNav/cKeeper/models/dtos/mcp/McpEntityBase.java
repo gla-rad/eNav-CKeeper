@@ -12,48 +12,48 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package org.grad.eNav.cKeeper.models.dtos;
+package org.grad.eNav.cKeeper.models.dtos.mcp;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Objects;
 
 /**
- * The MCP Device DTO Class.
- *
+ * The MCP Entity Abstract Class
+ * <p/>
+ * THis is an abstract class to define all the common variables of the MCP
+ * hosted entities, such as the
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-public class McpDeviceDto {
+public abstract class McpEntityBase {
 
     // Class Variable
+    @NotNull
     private BigInteger id;
+    @NotNull
     private String idOrganization;
     @NotNull
     private String mrn;
-    @NotNull
-    private String name;
-    private String permissions;
     private String createdAt;
     private String updatedAt;
-    private String homeMMSUrl;
+    private List<McpCertitifateDto> certificates;
 
     /**
-     * Instantiates a new Mcp device dto.
+     * Instantiates a new Mcp entity dto.
      */
-    public McpDeviceDto() {
-
+    public McpEntityBase() {
     }
 
     /**
-     * Instantiates a new Mcp device dto.
+     * Instantiates a new Mcp entity dto.
      *
-     * @param name the name
-     * @param mrn  the mrn
+     * @param mrn the mrn
      */
-    public McpDeviceDto(String name, String mrn) {
-        this.name = name;
+    public McpEntityBase(String mrn) {
         this.mrn = mrn;
     }
 
@@ -112,42 +112,6 @@ public class McpDeviceDto {
     }
 
     /**
-     * Gets name.
-     *
-     * @return the name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets name.
-     *
-     * @param name the name
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Gets permissions.
-     *
-     * @return the permissions
-     */
-    public String getPermissions() {
-        return permissions;
-    }
-
-    /**
-     * Sets permissions.
-     *
-     * @param permissions the permissions
-     */
-    public void setPermissions(String permissions) {
-        this.permissions = permissions;
-    }
-
-    /**
      * Gets created at.
      *
      * @return the created at
@@ -184,21 +148,21 @@ public class McpDeviceDto {
     }
 
     /**
-     * Gets home mms url.
+     * Gets certificates.
      *
-     * @return the home mms url
+     * @return the certificates
      */
-    public String getHomeMMSUrl() {
-        return homeMMSUrl;
+    public List<McpCertitifateDto> getCertificates() {
+        return certificates;
     }
 
     /**
-     * Sets home mms url.
+     * Sets certificates.
      *
-     * @param homeMMSUrl the home mms url
+     * @param certificates the certificates
      */
-    public void setHomeMMSUrl(String homeMMSUrl) {
-        this.homeMMSUrl = homeMMSUrl;
+    public void setCertificates(List<McpCertitifateDto> certificates) {
+        this.certificates = certificates;
     }
 
     /**
@@ -210,9 +174,9 @@ public class McpDeviceDto {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof McpDeviceDto)) return false;
-        McpDeviceDto deviceDto = (McpDeviceDto) o;
-        return mrn.equals(deviceDto.mrn) && name.equals(deviceDto.name);
+        if (!(o instanceof McpEntityBase)) return false;
+        McpEntityBase that = (McpEntityBase) o;
+        return Objects.equals(mrn, that.mrn);
     }
 
     /**
@@ -222,6 +186,6 @@ public class McpDeviceDto {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(mrn, name);
+        return Objects.hash(mrn);
     }
 }

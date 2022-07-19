@@ -76,7 +76,7 @@ public class Certificate {
     @ManyToOne()
     @JoinColumn(name = "mrnEntityId", nullable = false)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-    private MRNEntity mrnEntity;
+    private MrnEntity mrnEntity;
 
     /**
      * Empty Constructor
@@ -249,7 +249,7 @@ public class Certificate {
      *
      * @return the mrn entity
      */
-    public MRNEntity getMrnEntity() {
+    public MrnEntity getMrnEntity() {
         return mrnEntity;
     }
 
@@ -258,7 +258,7 @@ public class Certificate {
      *
      * @param mrnEntity the mrn entity
      */
-    public void setMrnEntity(MRNEntity mrnEntity) {
+    public void setMrnEntity(MrnEntity mrnEntity) {
         this.mrnEntity = mrnEntity;
     }
 

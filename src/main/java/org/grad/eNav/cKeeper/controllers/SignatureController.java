@@ -17,7 +17,7 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.SignatureService;
 import org.springframework.beans.factory.annotation.Autowired;

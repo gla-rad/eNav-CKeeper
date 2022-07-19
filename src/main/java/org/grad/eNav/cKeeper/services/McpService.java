@@ -42,9 +42,11 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.*;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.domain.Pair;
-import org.grad.eNav.cKeeper.models.dtos.McpCertitifateDto;
-import org.grad.eNav.cKeeper.models.dtos.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.dtos.mcp.McpCertitifateDto;
+import org.grad.eNav.cKeeper.models.dtos.mcp.McpEntityBase;
+import org.grad.eNav.cKeeper.models.dtos.mcp.McpServiceDto;
 import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,12 +62,14 @@ import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -128,7 +132,7 @@ public class McpService {
         //Loading the Keystore file
         SSLContextBuilder SSLBuilder = SSLContexts.custom();
         ClassPathResource keyStoreResource = new ClassPathResource(this.keyStore);
-        SSLBuilder = SSLBuilder.loadKeyMaterial(this.loadKeyMaterial(keyStoreResource.getInputStream(), this.keyStorePass.toCharArray()), this.keyStorePass.toCharArray());
+        SSLBuilder = SSLBuilder.loadKeyMaterial(this.loadKeyStore(keyStoreResource.getInputStream(), this.keyStorePass.toCharArray()), this.keyStorePass.toCharArray());
 
         //Building the SSLContext
         this.sslContext = SSLBuilder.build();
@@ -148,25 +152,34 @@ public class McpService {
     }
 
     /**
-     * Retrieves the MCP device object identified by the provided MRN from the
+     * Retrieves the MCP entity object identified by the provided MRN from the
      * MCP MIR if successful. Otherwise, a DataNotFoundException will be thrown.
      *
-     * @param mrn       The MRN of the MCP device to b retrieved
-     * @return the retrieved MCP device object
+     * @param mrn       The MRN of the MCP entity to be retrieved
+     * @return the retrieved MCP entity object
      * @throws IOException if the HTTP call failed to execute
      */
-    public McpDeviceDto getMcpDevice(@NotNull String mrn) throws IOException, McpConnectivityException {
-        this.log.debug("Request to get all MCP Devices");
+    public <T extends McpEntityBase> T getMcpEntity(@NotNull String mrn,
+                                                    String version,
+                                                    @NotNull Class<T> entityClass) throws IOException, McpConnectivityException {
+        // Figure our the type of entity we are working on
+        McpEntityType mcpEntityType = McpEntityType.fromEntityClass(entityClass);
+        this.log.debug("Request to get MCP {} with MRN {}", mcpEntityType.getValue(), mrn);
 
         // Make sure that the service is up first
         this.checkMcpMirConnectivity();
 
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpEntityMrn(mcpEntityType, mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpGet httpGet = new HttpGet(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn);
+        HttpGet httpGet = new HttpGet(this.mcpConfigService.constructMcpEndpointUrl(mcpEntityType.getValue())
+                + mrn
+                + Optional.of(mcpEntityType)
+                        .filter(McpEntityType.SERVICE::equals)
+                        .map(t -> String.format("/%s", version))
+                        .orElse(""));
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpGet);
@@ -177,7 +190,7 @@ public class McpService {
                 .map(HttpResponse::getEntity)
                 .map(e -> {
                     try {
-                        return this.objectMapper.readValue(e.getContent(), McpDeviceDto.class);
+                        return (T) this.objectMapper.readValue(e.getContent(), mcpEntityType.getEntityClass());
                     } catch (IOException ex) {
                         throw new DataNotFoundException("Unable to parse MCP response");
                     }
@@ -186,36 +199,37 @@ public class McpService {
     }
 
     /**
-     * Creates a new MCP device object into the MCP MIR and returns the created
+     * Creates a new MCP entity object into the MCP MIR and returns the created
      * object if successful. Otherwise, a SavingFailedException will be thrown.
      *
-     * @param mcpDevice     The MCP device object to be created
-     * @return the created MCP device object
+     * @param mcpEntity     The MCP entity object to be created
+     * @return the created MCP entity object
      * @throws IOException if the HTTP call failed to execute
      */
-    public McpDeviceDto createMcpDevice(@NotNull McpDeviceDto mcpDevice) throws IOException, McpConnectivityException {
-        this.log.debug("Request to create a new MCP Device with MRN {}", mcpDevice.getMrn());
+    public <T extends McpEntityBase> T createMcpEntity(@NotNull T mcpEntity) throws IOException, McpConnectivityException {
+        // Figure our the type of entity we are working on
+        McpEntityType mcpEntityType = McpEntityType.fromEntityClass(mcpEntity.getClass());
+        this.log.debug("Request to create a new MCP {} with MRN {}", mcpEntityType.getValue(), mcpEntity.getMrn());
 
         // Make sure that the service is up first
         this.checkMcpMirConnectivity();
 
         // Sanity Check
-        Optional.of(mcpDevice)
-                .filter(d -> StringUtils.isNotBlank(d.getName()))
+        Optional.of(mcpEntity)
                 .filter(d -> StringUtils.isNotBlank(d.getMrn()))
-                .orElseThrow(() -> new SavingFailedException("Cannot create new devices in the MCP without a name or an MRN"));
+                .orElseThrow(() -> new SavingFailedException("Cannot create new devices in the MCP without an MRN"));
 
         // Make sure the MCP device MRN has the right prefix
-        mcpDevice.setMrn(this.mcpConfigService.constructMcpDeviceMrn(mcpDevice.getMrn()));
+        mcpEntity.setMrn(this.mcpConfigService.constructMcpEntityMrn(mcpEntityType, mcpEntity.getMrn()));
 
         // Convert the new MCP Device object to a string entity
-        String json = this.objectMapper.writeValueAsString(mcpDevice);
+        String json = this.objectMapper.writeValueAsString(mcpEntity);
         StringEntity entity = new StringEntity(json);
         entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpDeviceEndpointUrl("device"));
+        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpEndpointUrl(mcpEntityType.getValue()));
         httpPost.setEntity(entity);
 
         //Executing the request
@@ -227,7 +241,7 @@ public class McpService {
                 .map(HttpResponse::getEntity)
                 .map(e -> {
                     try {
-                        return this.objectMapper.readValue(e.getContent(), McpDeviceDto.class);
+                        return (T) this.objectMapper.readValue(e.getContent(), mcpEntity.getClass());
                     } catch (IOException ex) {
                         throw new SavingFailedException("Unable to parse MCP response");
                     }
@@ -236,38 +250,45 @@ public class McpService {
     }
 
     /**
-     * Updates the MRN device identified by the provided MRN in the MCP MIR
+     * Updates the MRN entity identified by the provided MRN in the MCP MIR
      * and returns the updated object if successful. Otherwise, a
      * SavingFailedException will be thrown.
      *
-     * @param mrn       The MRN of the MCP device to be updated
-     * @param mcpDevice The MCP device to be updated
-     * @return the updated version of the MCP device object
+     * @param mrn       The MRN of the MCP entity to be updated
+     * @param mcpEntity The MCP entity to be updated
+     * @return the updated version of the MCP entity object
      * @throws IOException if the HTTP call failed to execute
      */
-    public McpDeviceDto updateMcpDevice(@NotNull String mrn, @NotNull McpDeviceDto mcpDevice) throws IOException, McpConnectivityException {
-        this.log.debug("Request to update a new MCP Device with MRN {}", mcpDevice.getMrn());
+    public <T extends McpEntityBase> T updateMcpEntity(@NotNull String mrn,
+                                                       @NotNull T mcpEntity) throws IOException, McpConnectivityException {
+        // Figure our the type of entity we are working on
+        McpEntityType mcpEntityType = McpEntityType.fromEntityClass(mcpEntity.getClass());
+        this.log.debug("Request to update a existing MCP {} with MRN {}", mcpEntityType.getValue(), mcpEntity.getMrn());
 
         // Make sure that the service is up first
         this.checkMcpMirConnectivity();
 
         // Sanity Check
-        Optional.of(mcpDevice)
-                .filter(d -> StringUtils.isNotBlank(d.getName()))
+        Optional.of(mcpEntity)
                 .filter(d -> StringUtils.isNotBlank(d.getMrn()))
-                .orElseThrow(() -> new SavingFailedException("Cannot update devices in the MCP without a name or an MRN"));
+                .orElseThrow(() -> new SavingFailedException("Cannot update devices in the MCP without an MRN"));
 
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpEntityMrn(mcpEntityType, mrn);
 
         // Convert the new MCP Device object to a string entity
-        String json = this.objectMapper.writeValueAsString(mcpDevice);
+        String json = this.objectMapper.writeValueAsString(mcpEntity);
         StringEntity entity = new StringEntity(json);
         entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPut httpPut = new HttpPut(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn);
+        HttpPut httpPut = new HttpPut(this.mcpConfigService.constructMcpEndpointUrl(mcpEntityType.getValue())
+                + mrn
+                + Optional.of(mcpEntityType)
+                    .filter(McpEntityType.SERVICE::equals)
+                    .map(t -> String.format("/%s", ((McpServiceDto)mcpEntity).getInstanceVersion()))
+                    .orElse(""));
         httpPut.setEntity(entity);
 
         //Executing the request
@@ -279,7 +300,14 @@ public class McpService {
                 .map(HttpResponse::getEntity)
                 .map(e -> {
                     try {
-                        return this.getMcpDevice(mcpDevice.getMrn());
+                        return (T) this.getMcpEntity(
+                                mcpEntity.getMrn(),
+                                Optional.of(mcpEntity)
+                                        .filter(McpServiceDto.class::isInstance)
+                                        .map(McpServiceDto.class::cast)
+                                        .map(McpServiceDto::getInstanceVersion)
+                                        .orElse(null),
+                                mcpEntity.getClass());
                     } catch (McpConnectivityException ex) {
                         throw new SavingFailedException(ex.getMessage());
                     } catch (IOException ex) {
@@ -290,25 +318,34 @@ public class McpService {
     }
 
     /**
-     * Delete the MRN device identified by the provided MRN from the MCP
+     * Delete the MRN entity identified by the provided MRN from the MCP
      * MIR, if that exists, otherwise a DeletingFailedException will be thrown.
      *
-     * @param mrn       The MRN of the MCP device to be deleted
+     * @param mrn       The MRN of the MCP entity to be deleted
      * @return whether the operation was successful or not
      * @throws IOException if the HTTP call failed to execute
      */
-    public boolean deleteMcpDevice(@NotNull String mrn) throws IOException, McpConnectivityException {
-        this.log.debug("Request to delete MCP Device with MRN {}", mrn);
+    public <T extends McpEntityBase> boolean deleteMcpEntity(@NotNull String mrn,
+                                                             String version,
+                                                             @NotNull Class<T> entityClass) throws IOException, McpConnectivityException {
+        // Figure our the type of entity we are working on
+        McpEntityType mcpEntityType = McpEntityType.fromEntityClass(entityClass);
+        this.log.debug("Request to delete MCP {} with MRN {}", mcpEntityType.getValue(), mrn);
 
         // Make sure that the service is up first
         this.checkMcpMirConnectivity();
 
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpEntityMrn(mcpEntityType, mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpDelete httpDelete = new HttpDelete(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn);
+        HttpDelete httpDelete = new HttpDelete(this.mcpConfigService.constructMcpEndpointUrl(mcpEntityType.getValue())
+                + mrn
+                + Optional.of(mcpEntityType)
+                    .filter(McpEntityType.SERVICE::equals)
+                    .map(t -> String.format("/%s", version))
+                    .orElse(""));
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpDelete);
@@ -322,25 +359,32 @@ public class McpService {
 
     /**
      * This method can be used to retrieve all the certificates available for
-     * a specific MCP device registered in the MCP Identity Registry. This way
+     * a specific MCP entity registered in the MCP Identity Registry. This way
      * we can keep the local MCP certificate up to date with the MIR database.
      *
-     * @param mrn           The MCP device MRN to retrieve the certificates for
+     * @param mcpEntityType The MCP entity type
+     * @param mrn           The MCP entity MRN to retrieve the certificates for
+     * @param version       The version (if applicable) of the MCP entity
      * @return the list of available certificates
      * @throws IOException if the response parsing operation fails
      */
-    public Map<String, X509Certificate> getMcpDeviceCertificates(String mrn) throws IOException, McpConnectivityException {
-        this.log.debug("Request to retrieve an existing certificate for the  MCP Device with MRN {}", mrn);
+    public Map<String, X509Certificate> getMcpEntityCertificates(McpEntityType mcpEntityType, String mrn, String version) throws IOException, McpConnectivityException {
+        this.log.debug("Request to retrieve an existing certificate for the MCP {} with MRN {}", mcpEntityType.getValue(), mrn);
 
         // Make sure that the service is up first
         this.checkMcpMirConnectivity();
 
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpEntityMrn(mcpEntityType, mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpGet httpGet = new HttpGet(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn);
+        HttpGet httpGet = new HttpGet(this.mcpConfigService.constructMcpEndpointUrl(mcpEntityType.getValue())
+                + mrn
+                + Optional.of(mcpEntityType)
+                        .filter(McpEntityType.SERVICE::equals)
+                        .map(t -> String.format("/%s", version))
+                        .orElse(""));
 
         //Executing the request
         HttpResponse httpResponse = httpClient.execute(httpGet);
@@ -383,21 +427,24 @@ public class McpService {
     /**
      * Requests the MCP MIR to issue a new X509 certificate based on the
      * provided certificate signing operation. This certificate will be attached
-     * to the specified MCP device, based on the provided MRN.
+     * to the specified MCP entity, based on the provided entity type, the MRN
+     * and the entity version.
      *
-     * @param mrn           The MCP device MRN to attach the new certificate to
+     * @param mcpEntityType The MCP entity type
+     * @param mrn           he MCP device MRN to attach the new certificate to
+     * @param version       The version (if applicable) of the MCP entity
      * @param csr           The certificate signing request to issue the certificate from
      * @return the signed X.509 certificate
      * @throws IOException if the PEM generation of the csr or the HTTP request fail
      */
-    public Pair<String, X509Certificate> issueMcpDeviceCertificate(String mrn, PKCS10CertificationRequest csr) throws IOException, McpConnectivityException {
-        this.log.debug("Request to issue a new certificate for the  MCP Device with MRN {}", mrn);
+    public Pair<String, X509Certificate> issueMcpEntityCertificate(McpEntityType mcpEntityType, String mrn, String version, PKCS10CertificationRequest csr) throws IOException, McpConnectivityException {
+        this.log.debug("Request to issue a new certificate for the MCP {} with MRN {}", mcpEntityType.getValue(), mrn);
 
         // Make sure that the service is up first
         this.checkMcpMirConnectivity();
 
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpEntityMrn(mcpEntityType, mrn);
 
         // Convert the new MCP Device object to a string entity
         StringEntity entity = new StringEntity(X509Utils.formatCSR(csr));
@@ -405,7 +452,13 @@ public class McpService {
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/issue-new/csr");
+        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpEndpointUrl("device")
+                + mrn
+                + Optional.of(mcpEntityType)
+                    .filter(McpEntityType.SERVICE::equals)
+                    .map(t -> String.format("/%s", version))
+                    .orElse("")
+                + "/certificate/issue-new/csr");
         httpPost.setEntity(entity);
 
         //Executing the request
@@ -436,24 +489,33 @@ public class McpService {
 
     /**
      * Requests the MCP MIR to issue revoke an existing X509 certificate based
-     * on the provided MCP device MRN and the certificate ID.
+     * on the provided MCP entity type, the MRN, the entiry version and the
+     * certificate ID.
      *
-     * @param mrn       The MRN of the MCP device to revoke the certificate for
+     * @param mcpEntityType The MCP entity type
+     * @param mrn           The MRN of the MCP device to revoke the certificate for
+     * @param version       The version (if applicable) of the MCP entity
      * @param mcpMirId  The MCP MIR ID of the certificate to be revoked
      * @throws IOException if the HTTP request fails
      */
-    public void revokeMcpDeviceCertificate(String mrn, String mcpMirId) throws IOException, McpConnectivityException {
-        this.log.debug("Request to revoke a certificate for the  MCP Device with MRN {}", mrn);
+    public void revokeMcpEntityCertificate(McpEntityType mcpEntityType, String mrn, String version, String mcpMirId) throws IOException, McpConnectivityException {
+        this.log.debug("Request to revoke a certificate for the MCP {} with MRN {}", mcpEntityType.getValue(), mrn);
 
         // Make sure that the service is up first
         this.checkMcpMirConnectivity();
 
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.mcpConfigService.constructMcpDeviceMrn(mrn);
+        mrn = this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpDeviceEndpointUrl("device") + mrn + "/certificate/" + mcpMirId + "/revoke");
+        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpEndpointUrl(mcpEntityType.getValue())
+                + mrn
+                + Optional.of(mcpEntityType)
+                    .filter(McpEntityType.SERVICE::equals)
+                    .map(t -> String.format("/%s", version))
+                    .orElse("")
+                + "/certificate/" + mcpMirId + "/revoke");
 
         // Add the request body
         ObjectNode jsonNode = this.objectMapper.createObjectNode();
@@ -481,7 +543,7 @@ public class McpService {
      */
     public void checkMcpMirConnectivity() throws McpConnectivityException {
         try {
-            HttpHeaders httpHeaders = this.restTemplate.headForHeaders(this.mcpConfigService.constructMcpDeviceEndpointUrl(""));
+            HttpHeaders httpHeaders = this.restTemplate.headForHeaders(this.mcpConfigService.constructMcpEndpointUrl(""));
             assert httpHeaders != null && !httpHeaders.isEmpty();
         } catch (RestClientException | AssertionError ex) {
             this.log.trace(ex.getMessage(), ex);
@@ -500,7 +562,7 @@ public class McpService {
      * @throws KeyStoreException if no Provider supports a KeyStoreSpi implementation for the specified type
      * @throws IOException for any file loading operations gone wrong
      */
-    protected KeyStore loadKeyMaterial(InputStream kin, char[] ksp) throws KeyStoreException, IOException {
+    protected KeyStore loadKeyStore(InputStream kin, char[] ksp) throws KeyStoreException, IOException {
         final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         try {
             keyStore.load(kin, ksp);

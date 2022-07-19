@@ -16,7 +16,7 @@
 
 package org.grad.eNav.cKeeper.models.dtos;
 
-import org.grad.eNav.cKeeper.models.domain.MRNEntity;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -63,7 +63,7 @@ public class MrnEntityDto {
      *
      * @param mrnEntity the mrn entity
      */
-    public MrnEntityDto(MRNEntity mrnEntity) {
+    public MrnEntityDto(MrnEntity mrnEntity) {
         // Sanity Check
         if(Objects.isNull(mrnEntity)) {
             return;
@@ -177,8 +177,8 @@ public class MrnEntityDto {
      *
      * @return The corresponding MRN entity object
      */
-    public MRNEntity toMRNEntity() {
-        MRNEntity entity = new MRNEntity();
+    public MrnEntity toMRNEntity() {
+        MrnEntity entity = new MrnEntity();
         entity.setId(this.id);
         entity.setName(this.name);
         entity.setMrn(this.mrn);

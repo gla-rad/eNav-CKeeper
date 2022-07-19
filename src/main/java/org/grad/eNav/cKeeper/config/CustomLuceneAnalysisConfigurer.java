@@ -46,8 +46,8 @@ public class CustomLuceneAnalysisConfigurer implements LuceneAnalysisConfigurer 
                 .tokenizer( StandardTokenizerFactory.class )
                 .charFilter( HTMLStripCharFilterFactory.class )
                 .tokenFilter( LowerCaseFilterFactory.class )
-                .tokenFilter( SnowballPorterFilterFactory.class )
-                .param( "language", "English" )
+                //.tokenFilter( SnowballPorterFilterFactory.class )
+                //.param( "language", "English" )
                 .tokenFilter( ASCIIFoldingFilterFactory.class );
 
         context.normalizer( "lowercase" ).custom()

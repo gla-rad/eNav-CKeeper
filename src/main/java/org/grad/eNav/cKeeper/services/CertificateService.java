@@ -24,7 +24,7 @@ import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
-import org.grad.eNav.cKeeper.models.domain.MRNEntity;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
@@ -119,22 +119,21 @@ public class CertificateService {
      */
     public void syncMrnEntityWithMcpMir(@NotNull BigInteger mrnEntityId) {
         // First check that the MRN Entity exists and get its MIR certificates
-        final MRNEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
+        final MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElse(null);
 
         // Extract all the local certificates
         final Map<String, Certificate> localCertificates = Optional.ofNullable(mrnEntity)
-                .map(MRNEntity::getCertificates)
+                .map(MrnEntity::getCertificates)
                 .orElse(Collections.emptySet())
                 .stream()
                 .collect(Collectors.toMap(Certificate::getMcpMirId, Function.identity()));
 
         // And get the current MCP state
         final Map<String, X509Certificate> mcpCertificates = Optional.ofNullable(mrnEntity)
-                .map(MRNEntity::getMrn)
-                .map(mrn -> {
+                .map(entity -> {
                     try {
-                        return mcpService.getMcpDeviceCertificates(mrn);
+                        return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn(), mrnEntity.getVersion());
                     } catch (IOException | McpConnectivityException ex) {
                         // If the MCP connectivity failed, just don't use it
                         return null;
@@ -203,7 +202,7 @@ public class CertificateService {
      * @throws IOException for errors during the PEM exporting or HTTP call operations
      */
     public CertificateDto generateMrnEntityCertificate(@NotNull BigInteger mrnEntityId) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, IOException, McpConnectivityException {
-        MRNEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
+        MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElseThrow(() ->
                         new DataNotFoundException(String.format("No MRN Entity node found for the provided ID: %d", mrnEntityId))
                 );
@@ -215,7 +214,7 @@ public class CertificateService {
         PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, this.certAlgorithm);
 
         // Get the X509 certificate signed by the MCP
-        Pair<String, X509Certificate> certificateInfo = this.mcpService.issueMcpDeviceCertificate(mrnEntity.getMrn(), csr);
+        Pair<String, X509Certificate> certificateInfo = this.mcpService.issueMcpEntityCertificate(mrnEntity.getEntityType(), mrnEntity.getMrn(), mrnEntity.getVersion(), csr);
 
         // Populate the new certificate object
         Certificate certificate = new Certificate(certificateInfo.getKey(), certificateInfo.getValue());
@@ -260,7 +259,7 @@ public class CertificateService {
                 );
 
         // Mark as revoked in the MCP
-        this.mcpService.revokeMcpDeviceCertificate(certificate.getMrnEntity().getMrn(), certificate.getMcpMirId());
+        this.mcpService.revokeMcpEntityCertificate(certificate.getMrnEntity().getEntityType(), certificate.getMrnEntity().getMrn(), certificate.getMrnEntity().getVersion(), certificate.getMcpMirId());
 
         // And if successful, make it locally as well
         certificate.setRevoked(true);

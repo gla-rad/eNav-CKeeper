@@ -18,6 +18,7 @@
 package org.grad.eNav.cKeeper.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -54,10 +55,16 @@ public class McpConfigService {
     String mcpOrgPrefix;
 
     /**
-     * The MCP Device Sting Prefix.
+     * The MCP Entity Sting Prefix.
      */
-    @Value("${gla.rad.ckeeper.mcp.mrnDevicePrefix:urn:mrn:mcp:device:mcc}")
-    String mcpDevicePrefix;
+    @Value("${gla.rad.ckeeper.mcp.mrnEntityPrefix:urn:mrn:mcp}")
+    String mcpEntityPrefix;
+
+    /**
+     * The MCP Entity Sting Suffix.
+     */
+    @Value("${gla.rad.ckeeper.mcp.mrnEntitySuffix:mcc}")
+    String mcpEntitySuffix;
 
     /**
      * The MCP Keystore File Location.
@@ -79,19 +86,26 @@ public class McpConfigService {
      * @param endpoint  The MCP endpoint to be reached
      * @return the complete MCP endpoint URL
      */
-    public String constructMcpDeviceEndpointUrl(String endpoint) {
+    public String constructMcpEndpointUrl(String endpoint) {
         return String.format("https://%s/x509/api/org/%s:%s/%s/", this.host, this.mcpOrgPrefix, this.organisation, endpoint);
     }
 
     /**
-     * A helper function to construct the appropriate device MRN, based on the
+     * A helper function to construct the appropriate entity MRN, based on the
      * provided device ID.
      *
-     * @param deviceId  The ID of the device to construct the MRN from
+     * @param mcpEntityType The MCP entity type
+     * @param entityId  The ID of the device to construct the MRN from
      * @return The constructed device MRN
      */
-    public String constructMcpDeviceMrn(String deviceId) {
-        return Optional.ofNullable(deviceId).orElse("").startsWith(this.mcpDevicePrefix) ? deviceId : String.format("%s:%s:%s", this.mcpDevicePrefix, this.organisation, deviceId);
+    public String constructMcpEntityMrn(McpEntityType mcpEntityType, String entityId) {
+        return Optional.ofNullable(entityId).orElse("").startsWith(this.mcpEntityPrefix) ?
+                entityId :
+                String.format("%s:%s:%s:%s:%s", this.mcpEntityPrefix,
+                        mcpEntityType.getValue(),
+                        this.mcpEntitySuffix,
+                        this.organisation,
+                        (mcpEntityType == McpEntityType.SERVICE ? "instance:" : "") + entityId);
     }
 
 }

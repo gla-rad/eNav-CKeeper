@@ -89,7 +89,7 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateAtonSignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpEntityMrn(any(), any());
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMrn(this.mrnEntityDto.getMrn());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(this.signature).when(this.certificateService).signContent(mrnEntityDto.getId(), this.content);
@@ -111,7 +111,7 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateAtonSignatureAutoCreate() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, OperatorCreationException, McpConnectivityException {
-        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpEntityMrn(any(), any());
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).save(any());
         doReturn(Collections.emptySet()).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(this.certificateDto).when(this.certificateService).generateMrnEntityCertificate(any());
@@ -136,7 +136,7 @@ class SignatureServiceTest {
         // Revoke the certificate
         this.certificateDto.setRevoked(Boolean.TRUE);
 
-        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpEntityMrn(any(), any());
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).save(any());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doReturn(this.certificateDto).when(this.certificateService).generateMrnEntityCertificate(any());
@@ -161,7 +161,7 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateAtonSignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpDeviceMrn(any());
+        doReturn(this.mrnEntityDto.getMrn()).when(this.mcpConfigService).constructMcpEntityMrn(any(), any());
         doReturn(this.mrnEntityDto).when(this.mrnEntityService).findOneByMrn(this.mrnEntityDto.getMrn());
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntityDto.getId());
         doThrow(SignatureException.class).when(this.certificateService).signContent(mrnEntityDto.getId(), this.content);
