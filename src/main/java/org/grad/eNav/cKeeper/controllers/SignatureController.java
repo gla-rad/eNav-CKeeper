@@ -58,7 +58,7 @@ public class SignatureController {
                                                           @RequestBody byte[] signaturePayload) {
         log.debug("REST request to get a signature for entity with ID : {}", entityId);
         return ResponseEntity.ok()
-                .body(signatureService.generateEntitySignature(mmsi, entityId, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), signaturePayload));
+                .body(signatureService.generateEntitySignature(entityId, mmsi, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), signaturePayload));
     }
 
     /**
