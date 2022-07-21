@@ -30,6 +30,13 @@ import java.util.Optional;
 public interface MRNEntityRepo extends JpaRepository<MrnEntity, BigInteger> {
 
     /**
+     * Find one using the Entity name.
+     *
+     * @return The Entity matching the name
+     */
+    Optional<MrnEntity> findByName(String name);
+
+    /**
      * Find one using the Entity MRN.
      *
      * @return The Entity matching the MRN

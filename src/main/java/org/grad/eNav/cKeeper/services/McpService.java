@@ -452,7 +452,7 @@ public class McpService {
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();
-        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpEndpointUrl("device")
+        HttpPost httpPost = new HttpPost(this.mcpConfigService.constructMcpEndpointUrl(mcpEntityType.getValue())
                 + mrn
                 + Optional.of(mcpEntityType)
                     .filter(McpEntityType.SERVICE::equals)
@@ -505,7 +505,7 @@ public class McpService {
         this.checkMcpMirConnectivity();
 
         // Make sure the MCP device MRN has the right prefix
-        mrn = this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, mrn);
+        mrn = this.mcpConfigService.constructMcpEntityMrn(mcpEntityType, mrn);
 
         //Building the CloseableHttpClient
         CloseableHttpClient httpClient = this.clientBuilder.build();

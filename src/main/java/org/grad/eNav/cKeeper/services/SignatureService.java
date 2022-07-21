@@ -70,23 +70,30 @@ public class SignatureService {
      * keys from the latest certificate assigned to the MRN entity identified
      * by the MRN constructed from the AtoN UID provided.
      *
-     * @param atonUID       The AtoN UID to construct the MRN from
-     * @param mmsi          The AtoN MMSI number
+     * @param entityId      The entity ID to generate the signature for
+     * @param entityId      The ID of the entity to generate the signature for
+     * @param entityType    The MCP type of the entity to generate the signature for
      * @param payload       The payload to be signed
      * @return The signature for the provided payload
      */
-    public byte[] generateAtonSignature(@NotNull String atonUID, String mmsi, @NotNull byte[] payload) {
-        // Translate the AtoN UID into an MRC based on the MCP rules
-        final String atonMrn = this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, atonUID);
-
-        // Get a matching MRN entity if it exists or create a new one
-        final MrnEntityDto mrnEntityDto = Optional.of(atonMrn)
+    public byte[] generateEntitySignature(@NotNull String entityId, String mmsi, @NotNull McpEntityType entityType, @NotNull byte[] payload) {
+        final MrnEntityDto mrnEntityDto = Optional.of(entityId)
                 .map(mrn -> {
-                    try { return this.mrnEntityService.findOneByMrn(mrn); } catch (DataNotFoundException ex) { return null; }
+                    try {
+                        return this.mrnEntityService.findOneByName(entityId);
+                    } catch (DataNotFoundException ex) {
+                        return null;
+                    }
                 })
                 .orElseGet(() -> {
                     try {
-                        return this.mrnEntityService.save(new MrnEntityDto(atonUID, atonMrn, mmsi));
+                        final MrnEntityDto newMrnEntityDto = new MrnEntityDto();
+                        newMrnEntityDto.setName(entityId);
+                        newMrnEntityDto.setMrn(this.mcpConfigService.constructMcpEntityMrn(entityType, entityId));
+                        newMrnEntityDto.setMmsi(mmsi);
+                        newMrnEntityDto.setEntityType(entityType);
+                        newMrnEntityDto.setVersion(entityType == McpEntityType.SERVICE ? "0.0.1" : null);
+                        return this.mrnEntityService.save(newMrnEntityDto);
                     } catch (Exception ex) {
                         throw new SavingFailedException(ex.getMessage());
                     }
@@ -118,20 +125,20 @@ public class SignatureService {
     }
 
     /**
-     * Verify that for the MRN constructed for the provided entity MMSI, the
-     * signature is a valid one for the specified content.
+     * Verify that for the MRN constructed for the provided entity ID (name),
+     * the signature is a valid one for the specified content.
      *
      * Note that the content and signature need to be Base64 encoded, coming
      * from the controller.
      *
-     * @param mmsi          The entity MMSI to get the certificate for
+     * @param entityId      The entity ID to get the certificate for
      * @param b64Content    The Base64 encoded content to be verified
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyMmsiSignature(String mmsi, String b64Content, String b64Signature) {
-        return Optional.of(mmsi)
-                .map(this.mrnEntityService::findOneByMmsi)
+    public boolean verifyEntitySignature(@NotNull String entityId, String b64Content, String b64Signature) {
+        return Optional.of(entityId)
+                .map(this.mrnEntityService::findOneByName)
                 .map(MrnEntityDto::getId)
                 .map(this.certificateService::findAllByMrnEntityId)
                 .orElseGet(() -> Collections.emptySet())
@@ -147,6 +154,26 @@ public class SignatureService {
                         return false;
                     }
                 })
+                .orElse(Boolean.FALSE);
+    }
+
+    /**
+     * Verify that for the MRN constructed for the provided entity MMSI, the
+     * signature is a valid one for the specified content.
+     *
+     * Note that the content and signature need to be Base64 encoded, coming
+     * from the controller.
+     *
+     * @param mmsi          The entity MMSI to get the certificate for
+     * @param b64Content    The Base64 encoded content to be verified
+     * @param b64Signature  The Base64 encoded signature to verify the content with
+     * @return Whether the verification was successful or not
+     */
+    public boolean verifyEntitySignatureByMmsi(@NotNull String mmsi, String b64Content, String b64Signature) {
+        return Optional.of(mmsi)
+                .map(this.mrnEntityService::findOneByMmsi)
+                .map(MrnEntityDto::getName)
+                .map(name -> this.verifyEntitySignature(name, b64Content, b64Signature))
                 .orElse(Boolean.FALSE);
     }
 }

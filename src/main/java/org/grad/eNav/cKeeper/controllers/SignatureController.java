@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.SignatureService;
@@ -25,13 +26,15 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 /**
  * REST controller for managing signatures.
  *
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
 @RestController()
-@RequestMapping("/api/signatures")
+@RequestMapping("/api/signature")
 @Slf4j
 public class SignatureController {
 
@@ -42,35 +45,54 @@ public class SignatureController {
     SignatureService signatureService;
 
     /**
-     * POST /api/signatures/atons/generate : Requests a signature for the
-     * provided payload based on the AtoN UID.
+     * POST /api/signature/entity/generate/{entityId} : Requests a signature
+     * for the provided payload based on the entity ID.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @PostMapping(value = "/atons/generate", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<byte[]> generateAtoNSignature(@RequestParam("atonUID") String atonUID,
-                                                        @RequestParam("mmsi") String mmsi,
-                                                        @RequestBody byte[] signaturePayload) {
-        log.debug("REST request to get a signature for AtoN with UID : {}", atonUID);
+    @PostMapping(value = "/entity/generate/{entityId}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<byte[]> generateEntitySignature(@PathVariable String entityId,
+                                                          @RequestParam("mmsi") String mmsi,
+                                                          @RequestParam("entityType") McpEntityType entityType,
+                                                          @RequestBody byte[] signaturePayload) {
+        log.debug("REST request to get a signature for entity with ID : {}", entityId);
         return ResponseEntity.ok()
-                .body(signatureService.generateAtonSignature(atonUID, mmsi, signaturePayload));
-
+                .body(signatureService.generateEntitySignature(mmsi, entityId, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), signaturePayload));
     }
 
     /**
-     * POST /api/signatures/mmsi/verify : Verify the provided content based on
-     * the provided MMSI.
+     * POST /api/signature/entity/verify/{entityId} : Verify the provided
+     * content based on the provided ID.
+     *
+     * @return the ResponseEntity with status 200 (OK) if successful, or with
+     * status 400 (Bad Request)
+     */
+    @PostMapping(value = "/entity/verify/{entityId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<McpDeviceDto> verifyEntitySignature(@PathVariable String entityId,
+                                                              @RequestBody SignatureVerificationRequestDto svr) {
+        log.debug("REST request to get verify the signed content for entity with ID : {}", entityId);
+        // Verify the posted signature
+        if(this.signatureService.verifyEntitySignature(entityId, svr.getContent(), svr.getSignature())) {
+            return ResponseEntity.ok().build();
+        }
+        // Otherwise, always return a bad request
+        return ResponseEntity.badRequest().build();
+    }
+
+    /**
+     * POST /api/signature/mmsi/verify/{mmsi} : Verify the provided content
+     * based on the provided MMSI.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
     @PostMapping(value = "/mmsi/verify/{mmsi}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<McpDeviceDto> verifyMmsiSignature(@PathVariable String mmsi,
-                                                            @RequestBody SignatureVerificationRequestDto svr) {
+    public ResponseEntity<McpDeviceDto> verifyEntitySignatureByMmsi(@PathVariable String mmsi,
+                                                                    @RequestBody SignatureVerificationRequestDto svr) {
         log.debug("REST request to get verify the signed content for AtoN with MMSI : {}", mmsi);
         // Verify the posted signature
-        if(this.signatureService.verifyMmsiSignature(mmsi, svr.getContent(), svr.getSignature())) {
+        if(this.signatureService.verifyEntitySignatureByMmsi(mmsi, svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
         }
         // Otherwise, always return a bad request

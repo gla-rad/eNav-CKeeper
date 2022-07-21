@@ -49,12 +49,12 @@ public class MrnEntity implements Serializable {
 
     @NotNull
     @KeywordField(sortable = Sortable.YES)
-    @Column(name = "name")
+    @Column(name = "name", unique=true)
     private String name;
 
     @NotNull
     @KeywordField(sortable = Sortable.YES)
-    @Column(name = "mrn")
+    @Column(name = "mrn", unique=true, nullable = true)
     private String mrn;
 
     @KeywordField(sortable = Sortable.YES)
@@ -62,9 +62,9 @@ public class MrnEntity implements Serializable {
     private String mmsi;
 
     @NotNull
-    @KeywordField(normalizer = "lowercase", sortable = Sortable.YES)
+    @KeywordField(normalizer = "lowercase", sortable = Sortable.YES, indexNullAs="DEVICE")
     @Enumerated(EnumType.STRING)
-    @Column(name = "entityType")
+    @Column(name = "entityType", nullable = false)
     private McpEntityType entityType;
 
     @NotNull

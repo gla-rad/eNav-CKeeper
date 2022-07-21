@@ -91,7 +91,7 @@ class CertificateControllerTest {
         doReturn(this.certificateDto).when(this.certificateService).revoke(this.certificateDto.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificates/{id}/revoke", this.certificateDto.getId()))
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificateDto.getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andReturn();
@@ -111,7 +111,7 @@ class CertificateControllerTest {
         doThrow(IOException.class).when(this.certificateService).revoke(this.certificateDto.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificates/{id}/revoke", this.certificateDto.getId()))
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificateDto.getId()))
                 .andExpect(status().isBadRequest())
                 .andReturn();
     }
@@ -125,7 +125,7 @@ class CertificateControllerTest {
         doThrow(McpConnectivityException.class).when(this.certificateService).revoke(this.certificateDto.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificates/{id}/revoke", this.certificateDto.getId()))
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificateDto.getId()))
                 .andExpect(status().isBadRequest())
                 .andReturn();
     }
@@ -137,7 +137,7 @@ class CertificateControllerTest {
     @Test
     void testDeleteCertificate() throws Exception {
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(delete("/api/certificates/{id}", this.certificateDto.getId()))
+        MvcResult mvcResult = this.mockMvc.perform(delete("/api/certificate/{id}", this.certificateDto.getId()))
                 .andExpect(status().isOk())
                 .andReturn();
     }
