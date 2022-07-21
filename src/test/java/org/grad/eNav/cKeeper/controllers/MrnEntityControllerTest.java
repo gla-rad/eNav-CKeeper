@@ -18,6 +18,7 @@ package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.*;
@@ -107,12 +108,14 @@ class MrnEntityControllerTest {
         this.newEntity = new MrnEntityDto();
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
+        this.newEntity.setEntityType(McpEntityType.DEVICE);
 
         // Create an MRN entity with an ID
         this.existingEntity = new MrnEntityDto();
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
+        this.existingEntity.setEntityType(McpEntityType.DEVICE);
 
         // Create a certificate to be assigned to the existing MRN entity
         this.certificateDto = new CertificateDto();
@@ -135,7 +138,7 @@ class MrnEntityControllerTest {
         doReturn(page).when(this.mrnEntityService).findAll(any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(get("/api/mrn-entities"))
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mrn-entity"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andReturn();
@@ -177,7 +180,7 @@ class MrnEntityControllerTest {
         doReturn(dtPage).when(this.mrnEntityService).handleDatatablesPagingRequest(any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/mrn-entities/dt")
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/mrn-entity/dt")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(dtPagingRequest)))
                 .andExpect(status().isOk())
@@ -197,7 +200,7 @@ class MrnEntityControllerTest {
         doReturn(this.existingEntity).when(this.mrnEntityService).findOne(this.existingEntity.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(get("/api/mrn-entities/{id}", this.existingEntity.getId()))
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mrn-entity/{id}", this.existingEntity.getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andReturn();
@@ -217,7 +220,7 @@ class MrnEntityControllerTest {
         doThrow(DataNotFoundException.class).when(this.mrnEntityService).findOne(any());
 
         // Perform the MVC request
-        this.mockMvc.perform(get("/api/mrn-entities/{id}", id))
+        this.mockMvc.perform(get("/api/mrn-entity/{id}", id))
                 .andExpect(status().isNotFound());
     }
 
@@ -232,7 +235,7 @@ class MrnEntityControllerTest {
         doReturn(this.existingEntity).when(this.mrnEntityService).save(any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/mrn-entities")
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/mrn-entity")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.newEntity)))
                 .andExpect(status().isCreated())
@@ -252,7 +255,7 @@ class MrnEntityControllerTest {
     @Test
     void testCreateMrnEntityWithId() throws Exception {
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/mrn-entities")
+        this.mockMvc.perform(post("/api/mrn-entity")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.existingEntity)))
                 .andExpect(status().isBadRequest())
@@ -269,7 +272,7 @@ class MrnEntityControllerTest {
         doReturn(this.existingEntity).when(this.mrnEntityService).save(any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/mrn-entities/{id}", this.existingEntity.getId())
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/mrn-entity/{id}", this.existingEntity.getId())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.existingEntity)))
                 .andExpect(status().isOk())
@@ -288,7 +291,7 @@ class MrnEntityControllerTest {
     @Test
     void testDeleteMrnEntity() throws Exception {
         // Perform the MVC request
-        this.mockMvc.perform(delete("/api/mrn-entities/{id}", this.existingEntity.getId())
+        this.mockMvc.perform(delete("/api/mrn-entity/{id}", this.existingEntity.getId())
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -303,7 +306,7 @@ class MrnEntityControllerTest {
         doThrow(DataNotFoundException.class).when(this.mrnEntityService).delete(any());
 
         // Perform the MVC request
-        this.mockMvc.perform(delete("/api/mrn-entities/{id}", this.existingEntity.getId()))
+        this.mockMvc.perform(delete("/api/mrn-entity/{id}", this.existingEntity.getId()))
                 .andExpect(status().isNotFound());
     }
 
@@ -316,7 +319,7 @@ class MrnEntityControllerTest {
         doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.existingEntity.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(get("/api/mrn-entities/{id}/certificates", this.existingEntity.getId())
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mrn-entity/{id}/certificates", this.existingEntity.getId())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.existingEntity)))
                 .andExpect(status().isOk())
@@ -338,7 +341,7 @@ class MrnEntityControllerTest {
         doReturn(this.certificateDto).when(this.certificateService).generateMrnEntityCertificate(this.existingEntity.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/mrn-entities/{id}/certificates", this.existingEntity.getId())
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/mrn-entity/{id}/certificates", this.existingEntity.getId())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.existingEntity)))
                 .andExpect(status().isOk())
@@ -359,7 +362,7 @@ class MrnEntityControllerTest {
         doThrow(IOException.class).when(this.certificateService).generateMrnEntityCertificate(this.existingEntity.getId());
 
         // Perform the MVC request
-        this.mockMvc.perform(put("/api/mrn-entities/{id}/certificates", this.existingEntity.getId())
+        this.mockMvc.perform(put("/api/mrn-entity/{id}/certificates", this.existingEntity.getId())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.existingEntity)))
                 .andExpect(status().isBadRequest())

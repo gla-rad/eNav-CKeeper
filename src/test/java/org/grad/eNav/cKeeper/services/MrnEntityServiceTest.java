@@ -19,6 +19,7 @@ package org.grad.eNav.cKeeper.services;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.*;
@@ -111,6 +112,7 @@ class MrnEntityServiceTest {
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
         this.newEntity.setMmsi("123456789");
+        this.newEntity.setEntityType(McpEntityType.DEVICE);
 
         // Create an existing MRN entity
         this.existingEntity = new MrnEntity();
@@ -118,10 +120,12 @@ class MrnEntityServiceTest {
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
         this.existingEntity.setMmsi("123456790");
+        this.existingEntity.setEntityType(McpEntityType.DEVICE);
 
         // Create an MCP Device DTO
         this.newMcpDevice = new McpDeviceDto(this.newEntity.getName(), this.newEntity.getMrn());
         this.existingMcpDevice = new McpDeviceDto(this.existingEntity.getName(), this.existingEntity.getMrn());
+        this.existingMcpDevice.setId(BigInteger.ONE);
     }
 
     /**
@@ -187,6 +191,8 @@ class MrnEntityServiceTest {
         assertEquals(this.existingEntity.getName(), result.getName());
         assertEquals(this.existingEntity.getMrn(), result.getMrn());
         assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
     }
 
     /**
@@ -201,6 +207,44 @@ class MrnEntityServiceTest {
                 this.mrnEntityService.findOne(this.existingEntity.getId())
         );
     }
+
+    /**
+     * Test that we can retrieve a single MRN entity based on the MRN entity
+     * name.
+     */
+    @Test
+    void testFindOneByName() {
+        doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByName(this.existingEntity.getName());
+
+        // Perform the service call
+        MrnEntityDto result = this.mrnEntityService.findOneByName(this.existingEntity.getName());
+
+        // Make sure the eager relationships repo call was called
+        verify(this.mrnEntityRepo, times(1)).findByName(this.existingEntity.getName());
+
+        // Test the result
+        assertNotNull(result);
+        assertEquals(this.existingEntity.getId(), result.getId());
+        assertEquals(this.existingEntity.getName(), result.getName());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
+        assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
+    }
+
+    /**
+     * Test that we if the provided MRN entity name does NOT exist, then when
+     * trying to retrieve the respective MRN entity will return a
+     * DataNotFoundException.
+     */
+    @Test
+    void testFindOneNotFoundByName() {
+        // Perform the service call
+        assertThrows(DataNotFoundException.class, () ->
+                this.mrnEntityService.findOneByName(this.existingEntity.getName())
+        );
+    }
+
 
     /**
      * Test that we can retrieve a single MRN entity based on the MRN entity
@@ -222,6 +266,8 @@ class MrnEntityServiceTest {
         assertEquals(this.existingEntity.getName(), result.getName());
         assertEquals(this.existingEntity.getMrn(), result.getMrn());
         assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
     }
 
     /**
@@ -257,6 +303,8 @@ class MrnEntityServiceTest {
         assertEquals(this.existingEntity.getName(), result.getName());
         assertEquals(this.existingEntity.getMrn(), result.getMrn());
         assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
     }
 
     /**
@@ -290,6 +338,8 @@ class MrnEntityServiceTest {
         assertEquals(this.newEntity.getName(), result.getName());
         assertEquals(this.newEntity.getMrn(), result.getMrn());
         assertEquals(this.newEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.newEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.newEntity.getVersion(), result.getVersion());
 
         // Also that a saving call took place in the repository
         verify(this.mrnEntityRepo, times(1)).save(this.newEntity);
@@ -314,6 +364,8 @@ class MrnEntityServiceTest {
         assertEquals(this.existingEntity.getName(), result.getName());
         assertEquals(this.existingEntity.getMrn(), result.getMrn());
         assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
 
         // Also that a saving call took place in the repository
         verify(this.mrnEntityRepo, times(1)).save(this.existingEntity);

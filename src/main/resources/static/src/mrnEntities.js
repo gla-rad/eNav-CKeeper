@@ -31,6 +31,24 @@ var mrnEntitiesColumnDefs = [{
     title: "MMSI",
     hoverMsg: "MMSI of the entity",
     placeholder: "MMSI of the entity"
+}, {
+    data: "entityType",
+    title: "Entity Type",
+    hoverMsg: "The type of the entity",
+    placeholder: "The type of the entity",
+    type: "select",
+    options: {
+        "device": "Device",
+        "service": "Service",
+        "vessel": "Vessel"
+    },
+    required: true
+}, {
+    data: "version",
+    title: "Version",
+    hoverMsg: "The version of the entity",
+    placeholder: "The version of the entity",
+    required: false
  }];
 
 /**
@@ -105,7 +123,7 @@ $(document).ready( function () {
         "serverSide": true,
         ajax: {
             "type": "POST",
-            "url": "./api/mrn-entities/dt",
+            "url": "./api/mrn-entity/dt",
             "contentType": "application/json",
             "data": function (d) {
                 return JSON.stringify(d);
@@ -146,7 +164,7 @@ $(document).ready( function () {
         }],
         onAddRow: function (datatable, rowdata, success, error) {
             $.ajax({
-                url: './api/mrn-entities',
+                url: './api/mrn-entity',
                 type: 'POST',
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
@@ -154,7 +172,9 @@ $(document).ready( function () {
                     id: rowdata["id"],
                     name: rowdata["name"],
                     mrn: rowdata["mrn"],
-                    mmsi: rowdata["mmsi"]
+                    mmsi: rowdata["mmsi"],
+                    entityType: rowdata["entityType"],
+                    version: rowdata["version"]
                 }),
                 success: success,
                 error: error
@@ -163,7 +183,7 @@ $(document).ready( function () {
         onDeleteRow: function (datatable, selectedRows, success, error) {
             selectedRows.every(function (rowIdx, tableLoop, rowLoop) {
                 $.ajax({
-                    url: `./api/mrn-entities/${this.data()["id"]}`,
+                    url: `./api/mrn-entity/${this.data()["id"]}`,
                     type: 'DELETE',
                     success: success,
                     error: error
@@ -172,7 +192,7 @@ $(document).ready( function () {
         },
         onEditRow: function (datatable, rowdata, success, error) {
             $.ajax({
-                url: `./api/mrn-entities/${rowdata["id"]}`,
+                url: `./api/mrn-entity/${rowdata["id"]}`,
                 type: 'PUT',
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
@@ -180,7 +200,9 @@ $(document).ready( function () {
                     id: rowdata["id"],
                     name: rowdata["name"],
                     mrn: rowdata["mrn"],
-                    mmsi: rowdata["mmsi"]
+                    mmsi: rowdata["mmsi"],
+                    entityType: rowdata["entityType"],
+                    version: rowdata["version"]
                 }),
                 success: success,
                 error: error
@@ -204,7 +226,7 @@ $(document).ready( function () {
         var mrnEntityId = data[0].id;
         $modalDiv.addClass('loading');
         $.ajax({
-            url: `./api/mrn-entities/${mrnEntityId}/certificates`,
+            url: `./api/mrn-entity/${mrnEntityId}/certificates`,
             type: 'PUT',
             contentType: 'application/json; charset=utf-8',
             dataType: 'json',
@@ -228,7 +250,7 @@ $(document).ready( function () {
         var certificateId = data[0].id;
         $modalDiv.addClass('loading');
         $.ajax({
-            url: `./api/certificates/${certificateId}/revoke`,
+            url: `./api/certificate/${certificateId}/revoke`,
             type: 'PUT',
             contentType: 'application/json; charset=utf-8',
             dataType: 'json',
@@ -257,6 +279,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
     var idx = table.cell('.selected', 0).index();
     var data = table.rows(idx.row).data();
     var mrnEntityId = data[0].id;
+    var mrnEntityType = data[0].entityType;
 
     // Destroy the table if it already exists
     if (certificatesTable) {
@@ -268,7 +291,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
     certificatesTable = $('#certificates_table').DataTable({
         ajax: {
             "type": "GET",
-            "url": `./api/mrn-entities/${mrnEntityId}/certificates`,
+            "url": `./api/mrn-entity/${mrnEntityId}/certificates`,
             "dataType": "json",
             "cache": false,
             "dataSrc": function (json) {
@@ -320,7 +343,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
                     showError("You can only delete a certificate if it has first been revoked.\nPlease revoke it and try again...");
                 } else {
                     $.ajax({
-                        url: `./api/certificates/${this.data()["id"]}`,
+                        url: `./api/certificate/${this.data()["id"]}`,
                         type: 'DELETE',
                         success: success,
                         error: error

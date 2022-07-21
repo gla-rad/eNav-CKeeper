@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.models.dtos;
 
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -38,24 +39,15 @@ public class MrnEntityDto {
     private String mrn;
     @Pattern(regexp="^(0|[1-9][0-9]*)$")
     private String mmsi;
+    @NotNull
+    private McpEntityType entityType;
+    private String version;
 
     /**
      * Instantiates a new Mrn entity dto.
      */
     public MrnEntityDto() {
 
-    }
-
-    /**
-     * Instantiates a new Mrn entity dto.
-     *
-     * @param name the name
-     * @param mrn  the mrn
-     */
-    public MrnEntityDto(String name, String mrn, String mmsi) {
-        this.name = name;
-        this.mrn = mrn;
-        this.mmsi = mmsi;
     }
 
     /**
@@ -74,6 +66,8 @@ public class MrnEntityDto {
         this.name = mrnEntity.getName();
         this.mrn = mrnEntity.getMrn();
         this.mmsi = mrnEntity.getMmsi();
+        this.entityType = mrnEntity.getEntityType();
+        this.version = mrnEntity.getVersion();
     }
 
     /**
@@ -149,6 +143,42 @@ public class MrnEntityDto {
     }
 
     /**
+     * Gets entity type.
+     *
+     * @return the entity type
+     */
+    public McpEntityType getEntityType() {
+        return entityType;
+    }
+
+    /**
+     * Sets entity type.
+     *
+     * @param entityType the entity type
+     */
+    public void setEntityType(McpEntityType entityType) {
+        this.entityType = entityType;
+    }
+
+    /**
+     * Gets version.
+     *
+     * @return the version
+     */
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * Sets version.
+     *
+     * @param version the version
+     */
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    /**
      * Overrides the equality operator of the class.
      *
      * @param o the object to check the equality
@@ -183,6 +213,8 @@ public class MrnEntityDto {
         entity.setName(this.name);
         entity.setMrn(this.mrn);
         entity.setMmsi(this.mmsi);
+        entity.setEntityType(this.entityType);
+        entity.setVersion(this.version);
         return entity;
     }
 

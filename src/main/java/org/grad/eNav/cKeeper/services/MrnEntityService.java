@@ -23,7 +23,7 @@ import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
-import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
+import org.grad.eNav.cKeeper.models.dtos.mcp.*;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPagingRequest;
@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
@@ -133,6 +134,22 @@ public class MrnEntityService {
     }
 
     /**
+     * Get one MRN Entity by name.
+     *
+     * @param name the name of the entity
+     * @return the node
+     */
+    @Transactional(readOnly = true)
+    public MrnEntityDto findOneByName(@NotNull String name) {
+        log.debug("Request to get MRN Entity with MRN : {}", name);
+        return this.mrnEntityRepo.findByName(name)
+                .map(MrnEntityDto::new)
+                .orElseThrow(() ->
+                        new DataNotFoundException(String.format("No MRN Entity found for the provided name: %s", name))
+                );
+    }
+
+    /**
      * Get one MRN Entity by MRN.
      *
      * @param mrn the MRN of the node
@@ -183,31 +200,52 @@ public class MrnEntityService {
         return Optional.of(mrnEntity)
                 .map(MrnEntityDto::toMRNEntity)
                 .map(entity -> {
-                    McpDeviceDto mcpDevice = null;
+                    McpEntityBase mcpEntity;
                     try {
                         // First try to identify if the entity exists in the MRN
                         // MIR, and if no we are going to create it, otherwise
                         // update it
                         try {
-                            mcpDevice = this.mcpService.getMcpEntity(entity.getMrn(), null, McpDeviceDto.class);
-
-                            // We can only update the name of the MRN device
-                            Optional.ofNullable(mcpDevice).ifPresent(md -> md.setName(entity.getName()));
+                            mcpEntity = this.mcpService.getMcpEntity(entity.getMrn(), entity.getVersion(), entity.getEntityType().getEntityClass());
                         } catch(DataNotFoundException ex) {
                             this.log.warn("MCP entry for the MRN device with MRN {} not found", entity.getMrn());
+                            mcpEntity = entity.getEntityType().getEntityClass().getDeclaredConstructor().newInstance();
+                            mcpEntity.setMrn(entity.getMrn());
+                        }
+
+                        // We can only update the name of the MCP entity (and version for new services)
+                        if(McpDeviceDto.class.isInstance(mcpEntity)) {
+                            ((McpDeviceDto)mcpEntity).setName(entity.getName());
+                        } else if(McpServiceDto.class.isInstance(mcpEntity)) {
+                            ((McpServiceDto)mcpEntity).setName(entity.getName());
+                            if(Objects.isNull(mcpEntity.getId())) {
+                                ((McpServiceDto) mcpEntity).setInstanceVersion(entity.getVersion());
+                            }
+                        } else if(McpVesselDto.class.isInstance(mcpEntity)) {
+                            ((McpVesselDto)mcpEntity).setName(entity.getName());
+                        } else if(McpUserDto.class.isInstance(mcpEntity)) {
+                            ((McpUserDto)mcpEntity).setFirstName(entity.getName().split(" ")[0]);
+                            ((McpUserDto)mcpEntity).setLastName(entity.getName().split(" ")[1]);
+                        } else if(McpRoleDto.class.isInstance(mcpEntity)) {
+                            ((McpRoleDto)mcpEntity).setRoleName(entity.getName());
                         }
 
                         // Choose whether to create or update
-                        if(Objects.isNull(mcpDevice)) {
-                            mcpDevice = this.mcpService.createMcpEntity(new McpDeviceDto(entity.getName(), entity.getMrn()));
+                        if(Objects.isNull(mcpEntity.getId())) {
+                            mcpEntity = this.mcpService.createMcpEntity(mcpEntity);
                         } else {
-                            mcpDevice = this.mcpService.updateMcpEntity(mcpDevice.getMrn(), mcpDevice);
+                            mcpEntity = this.mcpService.updateMcpEntity(mcpEntity.getMrn(), mcpEntity);
                         }
 
                         // Always read the MRN from the MCP MIR
-                        entity.setMrn(mcpDevice.getMrn());
+                        entity.setMrn(mcpEntity.getMrn());
                     } catch (IOException | McpConnectivityException ex) {
                         // If the MCP connectivity failed, don't continue
+                        log.error(ex.getMessage());
+                        return null;
+                    } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
+                        // If we get a reflections change, also don't continue
+                        log.error(ex.getMessage());
                         return null;
                     }
                     return entity;
@@ -237,7 +275,7 @@ public class MrnEntityService {
         this.mrnEntityRepo.findById(id)
                 .map(entity -> {
                     try {
-                        this.mcpService.deleteMcpEntity(entity.getMrn(), null, McpDeviceDto.class);
+                        this.mcpService.deleteMcpEntity(entity.getMrn(), entity.getVersion(), entity.getEntityType().getEntityClass());
                     } catch(DeletingFailedException ex) {
                         // Not found? Not problem!
                     } catch(IOException | McpConnectivityException ex) {

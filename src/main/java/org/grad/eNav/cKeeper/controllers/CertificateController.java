@@ -36,7 +36,7 @@ import java.math.BigInteger;
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
 @RestController()
-@RequestMapping("/api/certificates")
+@RequestMapping("/api/certificate")
 @Slf4j
 public class CertificateController {
 
@@ -47,7 +47,7 @@ public class CertificateController {
     CertificateService certificateService;
 
     /**
-     * PUT /api/certificates/{id}/revoke : Revoke the "ID" certificate.
+     * PUT /api/certificate/{id}/revoke : Revoke the "ID" certificate.
      *
      * @param id the ID of the certificate to be revoked
      * @return the ResponseEntity with status 200 (OK)
@@ -64,7 +64,7 @@ public class CertificateController {
     }
 
     /**
-     * DELETE /api/certificates/{id} : Delete the "ID" certificate.
+     * DELETE /api/certificate/{id} : Delete the "ID" certificate.
      *
      * @param id the ID of the certificate to delete
      * @return the ResponseEntity with status 200 (OK)

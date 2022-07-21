@@ -51,7 +51,7 @@ import java.util.Set;
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
 @RestController
-@RequestMapping("/api/mrn-entities")
+@RequestMapping("/api/mrn-entity")
 @Slf4j
 public class MrnEntityController {
 
@@ -68,7 +68,7 @@ public class MrnEntityController {
     CertificateService certificateService;
 
     /**
-     * GET /api/mrn-entities : Returns a paged list of all current MRN entities.
+     * GET /api/mrn-entity : Returns a paged list of all current MRN entities.
      *
      * @param page the page number to be retrieved
      * @param size the number of entries on each page
@@ -86,7 +86,7 @@ public class MrnEntityController {
     }
 
     /**
-     * POST /api/mrn-entities/dt : Returns a paged list of all current MRN entities.
+     * POST /api/mrn-entity/dt : Returns a paged list of all current MRN entities.
      *
      * @param dtPagingRequest the datatables paging request
      * @return the ResponseEntity with status 200 (OK) and the list of MRN entities in body
@@ -99,7 +99,7 @@ public class MrnEntityController {
     }
 
     /**
-     * GET /api/mrn-entities/{id} : get the "ID" MRN entity.
+     * GET /api/mrn-entity/{id} : get the "ID" MRN entity.
      *
      * @param id the ID of the MRN entity to retrieve
      * @return the ResponseEntity with status 200 (OK) and with body the MRN entity, or with status 404 (Not Found)
@@ -112,7 +112,7 @@ public class MrnEntityController {
     }
 
     /**
-     * POST /api/mrn-entities : Create a new MRN entity.
+     * POST /api/mrn-entity : Create a new MRN entity.
      *
      * @param entity the MRN entity to create
      * @return the ResponseEntity with status 201 (Created) and with body the new MRN entity, or with status 400 (Bad Request) if the MRN entity has already an ID
@@ -134,7 +134,7 @@ public class MrnEntityController {
     }
 
     /**
-     * PUT /api/mrn-entities/{id} : Update an existing MRN entity.
+     * PUT /api/mrn-entity/{id} : Update an existing MRN entity.
      *
      * @param id the ID of the MRN entity to update
      * @param entity the MRN entity to update
