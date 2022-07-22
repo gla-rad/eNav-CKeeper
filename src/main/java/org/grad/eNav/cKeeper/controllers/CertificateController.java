@@ -17,9 +17,13 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.components.DomainDtoMapper;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
+import org.grad.eNav.cKeeper.models.domain.Certificate;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
+import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.utils.HeaderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +51,12 @@ public class CertificateController {
     CertificateService certificateService;
 
     /**
+     * Model Mapper from Domain to DTO.
+     */
+    @Autowired
+    DomainDtoMapper<Certificate, CertificateDto> certificateDomainToDtoMapper;
+
+    /**
      * PUT /api/certificate/{id}/revoke : Revoke the "ID" certificate.
      *
      * @param id the ID of the certificate to be revoked
@@ -57,7 +67,7 @@ public class CertificateController {
         log.debug("REST request to revoke Certificate : {}", id);
         try {
             return ResponseEntity.ok()
-                    .body(this.certificateService.revoke(id));
+                    .body(this.certificateDomainToDtoMapper.convertTo(this.certificateService.revoke(id), CertificateDto.class));
         } catch (IOException | McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }

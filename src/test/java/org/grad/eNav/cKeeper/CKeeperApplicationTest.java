@@ -18,12 +18,14 @@ package org.grad.eNav.cKeeper;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
 /**
  * The Application Context Test.
  */
 @SpringBootTest
-class TemplateApplicationTests {
+@TestPropertySource("classpath:application.properties")
+class CKeeperApplicationTest {
 
 	/**
 	 * Test tha the context loads correctly.

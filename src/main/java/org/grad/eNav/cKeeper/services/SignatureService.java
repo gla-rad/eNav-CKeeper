@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.models.domain.Certificate;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
@@ -77,7 +79,7 @@ public class SignatureService {
      * @return The signature for the provided payload
      */
     public byte[] generateEntitySignature(@NotNull String entityId, String mmsi, @NotNull McpEntityType entityType, @NotNull byte[] payload) {
-        final MrnEntityDto mrnEntityDto = Optional.of(entityId)
+        final MrnEntity mrnEntity = Optional.of(entityId)
                 .map(mrn -> {
                     try {
                         return this.mrnEntityService.findOneByName(entityId);
@@ -87,27 +89,27 @@ public class SignatureService {
                 })
                 .orElseGet(() -> {
                     try {
-                        final MrnEntityDto newMrnEntityDto = new MrnEntityDto();
-                        newMrnEntityDto.setName(entityId);
-                        newMrnEntityDto.setMrn(this.mcpConfigService.constructMcpEntityMrn(entityType, entityId));
-                        newMrnEntityDto.setMmsi(mmsi);
-                        newMrnEntityDto.setEntityType(entityType);
-                        newMrnEntityDto.setVersion(entityType == McpEntityType.SERVICE ? "0.0.1" : null);
-                        return this.mrnEntityService.save(newMrnEntityDto);
+                        final MrnEntity newMrnEntity = new MrnEntity();
+                        newMrnEntity.setName(entityId);
+                        newMrnEntity.setMrn(this.mcpConfigService.constructMcpEntityMrn(entityType, entityId));
+                        newMrnEntity.setMmsi(mmsi);
+                        newMrnEntity.setEntityType(entityType);
+                        newMrnEntity.setVersion(entityType == McpEntityType.SERVICE ? "0.0.1" : null);
+                        return this.mrnEntityService.save(newMrnEntity);
                     } catch (Exception ex) {
                         throw new SavingFailedException(ex.getMessage());
                     }
                 });
 
         // Now get the latest certificate for it if it exists, or create a new one
-        CertificateDto certificateDto = this.certificateService.findAllByMrnEntityId(mrnEntityDto.getId())
+        Certificate certificate = this.certificateService.findAllByMrnEntityId(mrnEntity.getId())
                 .stream()
                 .filter(not(c -> Objects.equals(c.getRevoked(), Boolean.TRUE)))
                 .filter(not(c -> Objects.isNull(c.getStartDate())))
-                .max(Comparator.comparing(CertificateDto::getStartDate))
+                .max(Comparator.comparing(Certificate::getStartDate))
                 .orElseGet(() -> {
                     try {
-                        return this.certificateService.generateMrnEntityCertificate(mrnEntityDto.getId());
+                        return this.certificateService.generateMrnEntityCertificate(mrnEntity.getId());
                     } catch (Exception ex) {
                         throw new SavingFailedException(ex.getMessage());
                     }
@@ -116,7 +118,7 @@ public class SignatureService {
         // Finally, sing the payload
         try {
             this.log.debug("Signature service signing payload: {}", Base64.getEncoder().encodeToString(payload));
-            final byte[] signature = this.certificateService.signContent(certificateDto.getId(), payload);
+            final byte[] signature = this.certificateService.signContent(certificate.getId(), payload);
             this.log.debug("Signature service generated signature: {}", Base64.getEncoder().encodeToString(signature));
             return signature;
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException |  InvalidKeyException ex) {
@@ -139,13 +141,13 @@ public class SignatureService {
     public boolean verifyEntitySignature(@NotNull String entityId, String b64Content, String b64Signature) {
         return Optional.of(entityId)
                 .map(this.mrnEntityService::findOneByName)
-                .map(MrnEntityDto::getId)
+                .map(MrnEntity::getId)
                 .map(this.certificateService::findAllByMrnEntityId)
                 .orElseGet(() -> Collections.emptySet())
                 .stream()
                 .filter(c -> Objects.nonNull(c.getStartDate()))
-                .max(Comparator.comparing(CertificateDto::getStartDate))
-                .map(CertificateDto::getId)
+                .max(Comparator.comparing(Certificate::getStartDate))
+                .map(Certificate::getId)
                 .map(id -> {
                     try {
                         this.log.debug("Signature service verifying payload: {}\n with signature: {}", b64Content, b64Signature);
@@ -172,7 +174,7 @@ public class SignatureService {
     public boolean verifyEntitySignatureByMmsi(@NotNull String mmsi, String b64Content, String b64Signature) {
         return Optional.of(mmsi)
                 .map(this.mrnEntityService::findOneByMmsi)
-                .map(MrnEntityDto::getName)
+                .map(MrnEntity::getName)
                 .map(name -> this.verifyEntitySignature(name, b64Content, b64Signature))
                 .orElse(Boolean.FALSE);
     }

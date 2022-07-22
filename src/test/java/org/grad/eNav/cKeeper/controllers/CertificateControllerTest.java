@@ -17,7 +17,10 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.grad.eNav.cKeeper.TestingConfiguration;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
+import org.grad.eNav.cKeeper.models.domain.Certificate;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.services.CertificateService;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -45,6 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ActiveProfiles("test")
 @WebMvcTest(controllers = CertificateController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
+@Import(TestingConfiguration.class)
 class CertificateControllerTest {
 
     /**
@@ -66,20 +71,20 @@ class CertificateControllerTest {
     CertificateService certificateService;
 
     // Test Variables
-    private CertificateDto certificateDto;
+    private Certificate certificate;
 
     /**
      * Common setup for all the tests.
      */
     @BeforeEach
     void setUp() {
-        this.certificateDto = new CertificateDto();
-        this.certificateDto.setId(BigInteger.ONE);
-        this.certificateDto.setMrnEntityId(BigInteger.TEN);
-        this.certificateDto.setPublicKey("PUBLIC KEY");
-        this.certificateDto.setStartDate(new Date());
-        this.certificateDto.setEndDate(new Date());
-        this.certificateDto.setRevoked(Boolean.FALSE);
+        this.certificate = new Certificate();
+        this.certificate.setId(BigInteger.ONE);
+        this.certificate.setMrnEntity(new MrnEntity());;
+        this.certificate.setPublicKey("PUBLIC KEY");
+        this.certificate.setStartDate(new Date());
+        this.certificate.setEndDate(new Date());
+        this.certificate.setRevoked(Boolean.FALSE);
     }
 
     /**
@@ -88,17 +93,22 @@ class CertificateControllerTest {
      */
     @Test
     void testRevokeCertificate() throws Exception {
-        doReturn(this.certificateDto).when(this.certificateService).revoke(this.certificateDto.getId());
+        doReturn(this.certificate).when(this.certificateService).revoke(this.certificate.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificateDto.getId()))
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificate.getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andReturn();
 
         // Parse and validate the response
         CertificateDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), CertificateDto.class);
-        assertEquals(this.certificateDto, result);
+        assertEquals(this.certificate.getId(), result.getId());
+        assertEquals(this.certificate.getMrnEntity().getId(), result.getMrnEntityId());
+        assertEquals(this.certificate.getPublicKey(), result.getPublicKey());
+        assertEquals(this.certificate.getStartDate(), result.getStartDate());
+        assertEquals(this.certificate.getEndDate(), result.getEndDate());
+        assertEquals(this.certificate.getRevoked(), result.getRevoked());
     }
 
     /**
@@ -108,10 +118,10 @@ class CertificateControllerTest {
      */
     @Test
     void testRevokeCertificateFailed() throws Exception {
-        doThrow(IOException.class).when(this.certificateService).revoke(this.certificateDto.getId());
+        doThrow(IOException.class).when(this.certificateService).revoke(this.certificate.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificateDto.getId()))
+        this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificate.getId()))
                 .andExpect(status().isBadRequest())
                 .andReturn();
     }
@@ -122,10 +132,10 @@ class CertificateControllerTest {
      */
     @Test
     void testRevokeCertificateMcpConnectivityFailed() throws Exception {
-        doThrow(McpConnectivityException.class).when(this.certificateService).revoke(this.certificateDto.getId());
+        doThrow(McpConnectivityException.class).when(this.certificateService).revoke(this.certificate.getId());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificateDto.getId()))
+        this.mockMvc.perform(put("/api/certificate/{id}/revoke", this.certificate.getId()))
                 .andExpect(status().isBadRequest())
                 .andReturn();
     }
@@ -137,7 +147,7 @@ class CertificateControllerTest {
     @Test
     void testDeleteCertificate() throws Exception {
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(delete("/api/certificate/{id}", this.certificateDto.getId()))
+        this.mockMvc.perform(delete("/api/certificate/{id}", this.certificate.getId()))
                 .andExpect(status().isOk())
                 .andReturn();
     }

@@ -21,7 +21,6 @@ import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
-import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.*;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.hibernate.search.engine.search.query.SearchQuery;
@@ -138,14 +137,14 @@ class MrnEntityServiceTest {
         doReturn(this.entities).when(this.mrnEntityRepo).findAll();
 
         // Perform the service call
-        List<MrnEntityDto> result = this.mrnEntityService.findAll();
+        List<MrnEntity> result = this.mrnEntityService.findAll();
 
         // Test the result
         assertEquals(this.entities.size(), result.size());
 
         // Test each of the result entries
         for(int i=0; i < result.size(); i++){
-            assertEquals(new MrnEntityDto(this.entities.get(i)), result.get(i));
+            assertEquals(this.entities.get(i), result.get(i));
         }
     }
 
@@ -160,14 +159,14 @@ class MrnEntityServiceTest {
         doReturn(page).when(this.mrnEntityRepo).findAll(this.pageable);
 
         // Perform the service call
-        Page<MrnEntityDto> result = this.mrnEntityService.findAll(pageable);
+        Page<MrnEntity> result = this.mrnEntityService.findAll(pageable);
 
         // Test the result
         assertEquals(page.getSize(), result.getSize());
 
         // Test each of the result entries
         for(int i=0; i < result.getSize(); i++){
-            assertEquals(new MrnEntityDto(this.entities.get(i)), result.getContent().get(i));
+            assertEquals(this.entities.get(i), result.getContent().get(i));
         }
     }
 
@@ -180,7 +179,7 @@ class MrnEntityServiceTest {
         doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findById(this.existingEntity.getId());
 
         // Perform the service call
-        MrnEntityDto result = this.mrnEntityService.findOne(this.existingEntity.getId());
+        MrnEntity result = this.mrnEntityService.findOne(this.existingEntity.getId());
 
         // Make sure the eager relationships repo call was called
         verify(this.mrnEntityRepo, times(1)).findById(this.existingEntity.getId());
@@ -217,7 +216,7 @@ class MrnEntityServiceTest {
         doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByName(this.existingEntity.getName());
 
         // Perform the service call
-        MrnEntityDto result = this.mrnEntityService.findOneByName(this.existingEntity.getName());
+        MrnEntity result = this.mrnEntityService.findOneByName(this.existingEntity.getName());
 
         // Make sure the eager relationships repo call was called
         verify(this.mrnEntityRepo, times(1)).findByName(this.existingEntity.getName());
@@ -255,7 +254,7 @@ class MrnEntityServiceTest {
         doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByMrn(this.existingEntity.getMrn());
 
         // Perform the service call
-        MrnEntityDto result = this.mrnEntityService.findOneByMrn(this.existingEntity.getMrn());
+        MrnEntity result = this.mrnEntityService.findOneByMrn(this.existingEntity.getMrn());
 
         // Make sure the eager relationships repo call was called
         verify(this.mrnEntityRepo, times(1)).findByMrn(this.existingEntity.getMrn());
@@ -292,7 +291,7 @@ class MrnEntityServiceTest {
         doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByMmsi(this.existingEntity.getMmsi());
 
         // Perform the service call
-        MrnEntityDto result = this.mrnEntityService.findOneByMmsi(this.existingEntity.getMmsi());
+        MrnEntity result = this.mrnEntityService.findOneByMmsi(this.existingEntity.getMmsi());
 
         // Make sure the eager relationships repo call was called
         verify(this.mrnEntityRepo, times(1)).findByMmsi(this.existingEntity.getMmsi());
@@ -331,7 +330,7 @@ class MrnEntityServiceTest {
         doReturn(this.newMcpDevice).when(this.mcpService).createMcpEntity(any());
 
         // Perform the service call
-        MrnEntityDto result = this.mrnEntityService.save(new MrnEntityDto(this.newEntity));
+        MrnEntity result = this.mrnEntityService.save(this.newEntity);
 
         // Test the result
         assertEquals(this.newEntity.getId(), result.getId());
@@ -357,7 +356,7 @@ class MrnEntityServiceTest {
         doReturn(this.existingEntity).when(this.mrnEntityRepo).save(any());
 
         // Perform the service call
-        MrnEntityDto result = this.mrnEntityService.save(new MrnEntityDto(this.existingEntity));
+        MrnEntity result = this.mrnEntityService.save(this.existingEntity);
 
         // Test the result
         assertEquals(this.existingEntity.getId(), result.getId());
@@ -442,15 +441,15 @@ class MrnEntityServiceTest {
         doReturn(mockedQuery).when(this.mrnEntityService).searchMRNEntitiesQuery(any(), any());
 
         // Perform the service call
-        DtPage<MrnEntityDto> result = this.mrnEntityService.handleDatatablesPagingRequest(dtPagingRequest);
+        Page<MrnEntity> result = this.mrnEntityService.handleDatatablesPagingRequest(dtPagingRequest);
 
         // Validate the result
         assertNotNull(result);
-        assertEquals(5, result.getRecordsFiltered());
+        assertEquals(5, result.getSize());
 
         // Test each of the result entries
-        for(int i=0; i < result.getRecordsFiltered(); i++){
-            assertEquals(new MrnEntityDto(this.entities.get(i)), result.getData().get(i));
+        for(int i=0; i < result.getSize(); i++){
+            assertEquals(this.entities.get(i), result.getContent().get(i));
         }
     }
 
