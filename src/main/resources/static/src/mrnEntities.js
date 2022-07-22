@@ -45,7 +45,7 @@ var mrnEntitiesColumnDefs = [{
     required: true
 }, {
     data: "version",
-    title: "Version",
+    title: "Version (For Services)",
     hoverMsg: "The version of the entity",
     placeholder: "The version of the entity",
     required: false
@@ -169,12 +169,12 @@ $(document).ready( function () {
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 data: JSON.stringify({
-                    id: rowdata["id"],
-                    name: rowdata["name"],
-                    mrn: rowdata["mrn"],
-                    mmsi: rowdata["mmsi"],
-                    entityType: rowdata["entityType"],
-                    version: rowdata["version"]
+                    id: null,
+                    name: nullIfEmpty(rowdata["name"]),
+                    mrn: nullIfEmpty(rowdata["mrn"]),
+                    mmsi: nullIfEmpty(rowdata["mmsi"]),
+                    entityType: nullIfEmpty(rowdata["entityType"]),
+                    version: nullIfEmpty(rowdata["version"])
                 }),
                 success: success,
                 error: error
@@ -197,12 +197,12 @@ $(document).ready( function () {
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 data: JSON.stringify({
-                    id: rowdata["id"],
-                    name: rowdata["name"],
-                    mrn: rowdata["mrn"],
-                    mmsi: rowdata["mmsi"],
-                    entityType: rowdata["entityType"],
-                    version: rowdata["version"]
+                    id: nullIfEmpty(rowdata["id"]),
+                    name: nullIfEmpty(rowdata["name"]),
+                    mrn: nullIfEmpty(rowdata["mrn"]),
+                    mmsi: nullIfEmpty(rowdata["mmsi"]),
+                    entityType: nullIfEmpty(rowdata["entityType"]),
+                    version: nullIfEmpty(rowdata["version"])
                 }),
                 success: success,
                 error: error

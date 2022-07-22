@@ -7,6 +7,18 @@ $(() => {
 });
 
 /**
+ * A helper function sets a value to null if it's empty/undefined.
+ *
+ * @param {*} obj   The object to be checked whether empty
+ */
+function nullIfEmpty(obj) {
+    if (obj && obj != "null" && obj != "undefined") {
+        return obj;
+    }
+    return null;
+}
+
+/**
  * A helper function that shows the error boostrap error dialog and displays
  * the provided error message in it.
  */

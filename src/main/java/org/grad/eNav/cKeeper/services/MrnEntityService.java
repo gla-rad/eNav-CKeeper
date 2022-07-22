@@ -18,11 +18,9 @@ package org.grad.eNav.cKeeper.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.Sort;
-import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
-import org.grad.eNav.cKeeper.exceptions.DeletingFailedException;
-import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
-import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.exceptions.*;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.mcp.*;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
@@ -183,6 +181,11 @@ public class MrnEntityService {
         // Sanity Check
         if(Objects.nonNull(mrnEntity.getId()) && !this.mrnEntityRepo.existsById(mrnEntity.getId())) {
             throw new DataNotFoundException(String.format("No MRN Entity found for the provided ID: %d", mrnEntity.getId()));
+        }
+
+        // Services should always have a version
+        if(mrnEntity.getEntityType() == McpEntityType.SERVICE && Objects.isNull(mrnEntity.getVersion())) {
+            throw new ValidationException(String.format("No version provided by the MRN Entity service with MRN: %s", mrnEntity.getMrn()));
         }
 
         // Save the MRN Entity
