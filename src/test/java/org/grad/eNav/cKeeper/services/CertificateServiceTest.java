@@ -175,12 +175,12 @@ class CertificateServiceTest {
         doReturn(Collections.singleton(this.certificate)).when(certificateRepo).findAllByMrnEntityId(this.mrnEntity.getId());
 
         // Perform the service call
-        Set<CertificateDto> result = this.certificateService.findAllByMrnEntityId(this.mrnEntity.getId());
+        Set<Certificate> result = this.certificateService.findAllByMrnEntityId(this.mrnEntity.getId());
 
         // Make sure the response is correct
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(new CertificateDto(this.certificate), result.toArray()[0]);
+        assertEquals(this.certificate, result.toArray()[0]);
     }
 
     /**
@@ -199,12 +199,12 @@ class CertificateServiceTest {
         doReturn(this.certificate).when(this.certificateRepo).save(any());
 
         // Perform the service call
-        CertificateDto result = this.certificateService.generateMrnEntityCertificate(this.mrnEntity.getId());
+        Certificate result = this.certificateService.generateMrnEntityCertificate(this.mrnEntity.getId());
 
         // Make sure the response is correct
         assertNotNull(result);
         assertEquals(this.certificate.getId(), result.getId());
-        assertEquals(this.certificate.getMrnEntity().getId(), result.getMrnEntityId());
+        assertEquals(this.certificate.getMrnEntity().getId(), result.getMrnEntity().getId());
         assertEquals(this.certificate.getPublicKey(), result.getPublicKey());
         assertEquals(this.certificate.getStartDate(), result.getStartDate());
         assertEquals(this.certificate.getEndDate(), result.getEndDate());
@@ -287,12 +287,12 @@ class CertificateServiceTest {
         doReturn(this.certificate).when(this.certificateRepo).save(any());
 
         // Perform the service call
-        CertificateDto result = this.certificateService.revoke(this.mrnEntity.getId());
+        Certificate result = this.certificateService.revoke(this.mrnEntity.getId());
 
         // Make sure the response is correct
         assertNotNull(result);
         assertEquals(this.certificate.getId(), result.getId());
-        assertEquals(this.certificate.getMrnEntity().getId(), result.getMrnEntityId());
+        assertEquals(this.certificate.getMrnEntity().getId(), result.getMrnEntity().getId());
         assertEquals(this.certificate.getPublicKey(), result.getPublicKey());
         assertEquals(this.certificate.getStartDate(), result.getStartDate());
         assertEquals(this.certificate.getEndDate(), result.getEndDate());

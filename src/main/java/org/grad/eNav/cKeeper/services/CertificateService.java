@@ -178,15 +178,12 @@ public class CertificateService {
      * @return the set of certificates assigned to the provided MRN entity
      */
     @Transactional
-    public Set<CertificateDto> findAllByMrnEntityId(@NotNull BigInteger mrnEntityId) {
+    public Set<Certificate> findAllByMrnEntityId(@NotNull BigInteger mrnEntityId) {
         // First always try to check the MCP MSR
         this.syncMrnEntityWithMcpMir(mrnEntityId);
 
         // And then lookup the local database
-        return this.certificateRepo.findAllByMrnEntityId(mrnEntityId)
-                .stream()
-                .map(CertificateDto::new)
-                .collect(Collectors.toSet());
+        return this.certificateRepo.findAllByMrnEntityId(mrnEntityId);
     }
 
     /**
@@ -201,7 +198,7 @@ public class CertificateService {
      * @throws OperatorCreationException if the certificate generation process fails
      * @throws IOException for errors during the PEM exporting or HTTP call operations
      */
-    public CertificateDto generateMrnEntityCertificate(@NotNull BigInteger mrnEntityId) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, IOException, McpConnectivityException {
+    public Certificate generateMrnEntityCertificate(@NotNull BigInteger mrnEntityId) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, IOException, McpConnectivityException {
         MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElseThrow(() ->
                         new DataNotFoundException(String.format("No MRN Entity node found for the provided ID: %d", mrnEntityId))
@@ -224,9 +221,8 @@ public class CertificateService {
         // Save the certificate into the database
         return Optional.of(certificate)
                 .map(this.certificateRepo::save)
-                .map(CertificateDto::new)
                 .orElseThrow(() ->
-                        new SavingFailedException(String.format("Failed to generate the X.509 certificate for the MRN Entity with ID {}", mrnEntityId))
+                        new SavingFailedException(String.format("Failed to generate the X.509 certificate for the MRN Entity with ID: %d", mrnEntityId))
                 );
     }
 
@@ -251,7 +247,7 @@ public class CertificateService {
      * @return The revoked certificate
      * @throws IOException for errors during the HTTP call operation
      */
-    public CertificateDto revoke(@NotNull BigInteger id) throws IOException, McpConnectivityException {
+    public Certificate revoke(@NotNull BigInteger id) throws IOException, McpConnectivityException {
         // Access the certificate if found
         Certificate certificate = this.certificateRepo.findById(id)
                 .orElseThrow(() ->
@@ -267,7 +263,6 @@ public class CertificateService {
         // Save and return
         return Optional.of(certificate)
                 .map(this.certificateRepo::save)
-                .map(CertificateDto::new)
                 .orElseThrow(() ->
                         new SavingFailedException(String.format("Failed to revoke Certificate with ID: %d", id))
                 );

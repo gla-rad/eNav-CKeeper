@@ -17,7 +17,10 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.grad.eNav.cKeeper.TestingConfiguration;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
+import org.grad.eNav.cKeeper.models.domain.Certificate;
+import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
@@ -30,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -44,6 +48,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -53,6 +58,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ActiveProfiles("test")
 @WebMvcTest(controllers = MrnEntityController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
+@Import(TestingConfiguration.class)
 class MrnEntityControllerTest {
 
     /**
@@ -82,9 +88,9 @@ class MrnEntityControllerTest {
     // Test Variables
     private List<MrnEntityDto> entities;
     private Pageable pageable;
-    private MrnEntityDto newEntity;
-    private MrnEntityDto existingEntity;
-    private CertificateDto certificateDto;
+    private MrnEntity newEntity;
+    private MrnEntity existingEntity;
+    private Certificate certificate;
 
     /**
      * Common setup for all the tests.
@@ -105,26 +111,26 @@ class MrnEntityControllerTest {
         this.pageable = PageRequest.of(0, 5);
 
         // Create a new MRN entity
-        this.newEntity = new MrnEntityDto();
+        this.newEntity = new MrnEntity();
         this.newEntity.setName("New Entity Name");
         this.newEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-new");
         this.newEntity.setEntityType(McpEntityType.DEVICE);
 
         // Create an MRN entity with an ID
-        this.existingEntity = new MrnEntityDto();
+        this.existingEntity = new MrnEntity();
         this.existingEntity.setId(BigInteger.ONE);
         this.existingEntity.setName("Existing Entity Name");
         this.existingEntity.setMrn("urn:mrn:mcp:device:mcc:grad:test-existing");
         this.existingEntity.setEntityType(McpEntityType.DEVICE);
 
         // Create a certificate to be assigned to the existing MRN entity
-        this.certificateDto = new CertificateDto();
-        this.certificateDto.setId(BigInteger.ONE);
-        this.certificateDto.setMrnEntityId(this.existingEntity.getId());
-        this.certificateDto.setPublicKey("PUBLIC KEY");
-        this.certificateDto.setStartDate(new Date());
-        this.certificateDto.setEndDate(new Date());
-        this.certificateDto.setRevoked(Boolean.FALSE);
+        this.certificate = new Certificate();
+        this.certificate.setId(BigInteger.ONE);
+        this.certificate.setMrnEntity(this.existingEntity);
+        this.certificate.setPublicKey("PUBLIC KEY");
+        this.certificate.setStartDate(new Date());
+        this.certificate.setEndDate(new Date());
+        this.certificate.setRevoked(Boolean.FALSE);
     }
 
     /**
@@ -144,8 +150,20 @@ class MrnEntityControllerTest {
                 .andReturn();
 
         // Parse and validate the response
-        MrnEntityDto[] result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MrnEntityDto[].class);
-        assertEquals(5, Arrays.asList(result).size());
+        Page<Map<String, String>> result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Page.class);
+        assertNotNull(result);
+        assertEquals(this.entities.size(), result.getTotalElements());
+        assertEquals(5, result.getNumberOfElements());
+        assertNotNull(result.getContent());
+        for(int i=0; i< result.getNumberOfElements(); i++) {
+            assertNotNull(result.getContent().get(i));
+            assertEquals(this.entities.get(i).getId().intValue(), result.getContent().get(i).get("id"));
+            assertEquals(this.entities.get(i).getName(), result.getContent().get(i).get("name"));
+            assertEquals(this.entities.get(i).getMrn(), result.getContent().get(i).get("mrn"));
+            assertEquals(this.entities.get(i).getMmsi(), result.getContent().get(i).get("mmsi"));
+            assertEquals(this.entities.get(i).getEntityType(), result.getContent().get(i).get("entityType"));
+            assertEquals(this.entities.get(i).getVersion(), result.getContent().get(i).get("version"));
+        }
     }
 
     /**
@@ -169,15 +187,9 @@ class MrnEntityControllerTest {
         dtPagingRequest.setOrder(Collections.singletonList(dtOrder));
         dtPagingRequest.setColumns(Collections.singletonList(dtColumn));
 
-        // Create a mocked datatables paging response
-        DtPage<MrnEntityDto> dtPage = new DtPage<>();
-        dtPage.setData(this.entities);
-        dtPage.setDraw(1);
-        dtPage.setRecordsFiltered(this.entities.size());
-        dtPage.setRecordsTotal(this.entities.size());
-
-        // Mock the service call for creating a new instance
-        doReturn(dtPage).when(this.mrnEntityService).handleDatatablesPagingRequest(any());
+        // Created a result page to be returned by the mocked service
+        Page<MrnEntityDto> page = new PageImpl<>(this.entities.subList(0, 5), this.pageable, this.entities.size());
+        doReturn(page).when(this.mrnEntityService).handleDatatablesPagingRequest(any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/mrn-entity/dt")
@@ -187,8 +199,20 @@ class MrnEntityControllerTest {
                 .andReturn();
 
         // Parse and validate the response
-        DtPage<MrnEntityDto> result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), DtPage.class);
-        assertEquals(this.entities.size(), result.getData().size());
+        DtPage<Map<String, String>> result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), DtPage.class);
+        assertNotNull(result);
+        assertEquals(this.entities.size(), result.getRecordsTotal());
+        assertEquals(5, result.getRecordsFiltered());
+        assertNotNull(result.getData());
+        for(int i=0; i< result.getRecordsFiltered(); i++) {
+            assertNotNull(result.getData().get(i));
+            assertEquals(this.entities.get(i).getId().intValue(), result.getData().get(i).get("id"));
+            assertEquals(this.entities.get(i).getName(), result.getData().get(i).get("name"));
+            assertEquals(this.entities.get(i).getMrn(), result.getData().get(i).get("mrn"));
+            assertEquals(this.entities.get(i).getMmsi(), result.getData().get(i).get("mmsi"));
+            assertEquals(this.entities.get(i).getEntityType(), result.getData().get(i).get("entityType"));
+            assertEquals(this.entities.get(i).getVersion(), result.getData().get(i).get("version"));
+        }
     }
 
     /**
@@ -207,7 +231,13 @@ class MrnEntityControllerTest {
 
         // Parse and validate the response
         MrnEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MrnEntityDto.class);
-        assertEquals(this.existingEntity, result);
+        assertNotNull(result);
+        assertEquals(this.existingEntity.getId(), result.getId());
+        assertEquals(this.existingEntity.getName(), result.getName());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
+        assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
     }
 
     /**
@@ -244,7 +274,13 @@ class MrnEntityControllerTest {
 
         // Parse and validate the response
         MrnEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MrnEntityDto.class);
-        assertEquals(this.existingEntity, result);
+        assertNotNull(result);
+        assertEquals(this.existingEntity.getId(), result.getId());
+        assertEquals(this.existingEntity.getName(), result.getName());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
+        assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
     }
 
     /**
@@ -281,7 +317,13 @@ class MrnEntityControllerTest {
 
         // Parse and validate the response
         MrnEntityDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), MrnEntityDto.class);
-        assertEquals(this.existingEntity, result);
+        assertNotNull(result);
+        assertEquals(this.existingEntity.getId(), result.getId());
+        assertEquals(this.existingEntity.getName(), result.getName());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
+        assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
     }
 
     /**
@@ -316,7 +358,7 @@ class MrnEntityControllerTest {
      */
     @Test
     void testGetMrnEntityCertificates()  throws Exception {
-        doReturn(Collections.singleton(this.certificateDto)).when(this.certificateService).findAllByMrnEntityId(this.existingEntity.getId());
+        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(this.existingEntity.getId());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mrn-entity/{id}/certificates", this.existingEntity.getId())
@@ -328,8 +370,15 @@ class MrnEntityControllerTest {
 
         // Parse and validate the response
         CertificateDto[] result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), CertificateDto[].class);
+        assertNotNull(result);
         assertEquals(1, result.length);
-        assertEquals(this.certificateDto, result[0]);
+        assertNotNull(result[0]);
+        assertEquals(this.certificate.getId(), result[0].getId());
+        assertEquals(this.certificate.getMrnEntity().getId(), result[0].getMrnEntityId());
+        assertEquals(this.certificate.getStartDate(), result[0].getStartDate());
+        assertEquals(this.certificate.getEndDate(), result[0].getEndDate());
+        assertEquals(this.certificate.getPublicKey(), result[0].getPublicKey());
+        assertEquals(this.certificate.getRevoked(), result[0].getRevoked());
     }
 
     /**
@@ -338,7 +387,7 @@ class MrnEntityControllerTest {
      */
     @Test
     void testPutMrnEntityCertificate() throws Exception {
-        doReturn(this.certificateDto).when(this.certificateService).generateMrnEntityCertificate(this.existingEntity.getId());
+        doReturn(this.certificate).when(this.certificateService).generateMrnEntityCertificate(this.existingEntity.getId());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(put("/api/mrn-entity/{id}/certificates", this.existingEntity.getId())
@@ -350,7 +399,13 @@ class MrnEntityControllerTest {
 
         // Parse and validate the response
         CertificateDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), CertificateDto.class);
-        assertEquals(this.certificateDto, result);
+        assertNotNull(result);
+        assertEquals(this.certificate.getId(), result.getId());
+        assertEquals(this.certificate.getMrnEntity().getId(), result.getMrnEntityId());
+        assertEquals(this.certificate.getStartDate(), result.getStartDate());
+        assertEquals(this.certificate.getEndDate(), result.getEndDate());
+        assertEquals(this.certificate.getPublicKey(), result.getPublicKey());
+        assertEquals(this.certificate.getRevoked(), result.getRevoked());
     }
 
     /**

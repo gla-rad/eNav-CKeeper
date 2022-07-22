@@ -178,44 +178,5 @@ public class MrnEntityDto {
         this.version = version;
     }
 
-    /**
-     * Overrides the equality operator of the class.
-     *
-     * @param o the object to check the equality
-     * @return whether the two objects are equal
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof MrnEntityDto)) return false;
-        MrnEntityDto that = (MrnEntityDto) o;
-        return Objects.equals(id, that.id) && mrn.equals(that.mrn);
-    }
-
-    /**
-     * Overrides the hashcode generation of the object.
-     *
-     * @return the generated hashcode
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, mrn);
-    }
-
-    /**
-     * Translated the MRN Entiry DTO object to a domain MRN Entity.
-     *
-     * @return The corresponding MRN entity object
-     */
-    public MrnEntity toMRNEntity() {
-        MrnEntity entity = new MrnEntity();
-        entity.setId(this.id);
-        entity.setName(this.name);
-        entity.setMrn(this.mrn);
-        entity.setMmsi(this.mmsi);
-        entity.setEntityType(this.entityType);
-        entity.setVersion(this.version);
-        return entity;
-    }
 
 }
