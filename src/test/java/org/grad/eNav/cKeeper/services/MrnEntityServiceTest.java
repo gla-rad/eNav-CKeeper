@@ -18,6 +18,7 @@ package org.grad.eNav.cKeeper.services;
 
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
+import org.grad.eNav.cKeeper.exceptions.ValidationException;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
@@ -345,6 +346,22 @@ class MrnEntityServiceTest {
     }
 
     /**
+     * Test that when creating a service MRN entity, no version is provided,
+     * a ValidationException will be thrown.
+     */
+    @Test
+    void testCreateServiceWithoutVersion() {
+        // Make the entity a service
+        this.newEntity.setEntityType(McpEntityType.SERVICE);
+
+        // Perform the service call
+        assertThrows(ValidationException.class, () ->
+                this.mrnEntityService.save(this.newEntity)
+        );
+
+    }
+
+    /**
      * Test that we can update correctly an existing station if all the
      * validation checks are successful.
      */
@@ -368,6 +385,24 @@ class MrnEntityServiceTest {
 
         // Also that a saving call took place in the repository
         verify(this.mrnEntityRepo, times(1)).save(this.existingEntity);
+    }
+
+    /**
+     * Test that when updating a service MRN entity, no version is provided,
+     * a ValidationException will be thrown.
+     */
+    @Test
+    void testUpdateServiceWithoutVersion() {
+        // Make the entity a service
+        this.existingEntity.setEntityType(McpEntityType.SERVICE);
+
+        doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());
+
+        // Perform the service call
+        assertThrows(ValidationException.class, () ->
+                this.mrnEntityService.save(this.existingEntity)
+        );
+
     }
 
     /**
