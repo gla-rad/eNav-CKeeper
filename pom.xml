@@ -42,11 +42,11 @@
 	<repositories>
 		<repository>
 			<id>grad</id>
-			<url>https://gla-rrnav1.dyndns.org:8081/repository/grad/</url>
+			<url>https://rnavlab.gla-rad.org:8081/repository/grad/</url>
 		</repository>
 		<repository>
 			<id>grad-snapshots</id>
-			<url>https://gla-rrnav1.dyndns.org:8081/repository/grad-snapshots/</url>
+			<url>https://rnavlab.gla-rad.org:8081/repository/grad-snapshots/</url>
 		</repository>
 	</repositories>
 
@@ -133,6 +133,13 @@
 			<groupId>io.projectreactor.netty</groupId>
 			<artifactId>reactor-netty</artifactId>
 			<version>1.0.21</version>
+		</dependency>
+
+		<!-- SECOM -->
+		<dependency>
+			<groupId>org.grad.secom</groupId>
+			<artifactId>secom-core</artifactId>
+			<version>0.0.6-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Swagger -->

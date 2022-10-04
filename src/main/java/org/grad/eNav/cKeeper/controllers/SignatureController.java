@@ -21,7 +21,9 @@ import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.SignatureService;
+import org.grad.secom.core.utils.SecomPemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,13 +41,20 @@ import java.util.Optional;
 public class SignatureController {
 
     /**
+     * The X.509 Certificate Algorithm.
+     */
+    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA256withCVC-ECDSA}")
+    String certAlgorithm;
+
+    /**
      * The Signature Service.
      */
     @Autowired
     SignatureService signatureService;
 
     // Class Variables
-    final private String CKEEPER_PUBLIC_CERTIFICATE_HEADER = "PUBLIC_CERTIFICATE";
+    final public static String CKEEPER_PUBLIC_CERTIFICATE_HEADER = "PUBLIC_CERTIFICATE";
+    final public static String CKEEPER_SIGNATURE_ALGORITHM = "SIGNATURE_ALGORITHM";
 
     /**
      * POST /api/signature/entity/generate/{entityId} : Requests a signature
@@ -62,7 +71,8 @@ public class SignatureController {
         log.debug("REST request to get a signature for entity with ID : {}", entityId);
         Pair<String, byte[]> result = signatureService.generateEntitySignature(entityId, mmsi, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), signaturePayload);
         return ResponseEntity.ok()
-                .header(CKEEPER_PUBLIC_CERTIFICATE_HEADER, result.getKey())
+                .header(CKEEPER_PUBLIC_CERTIFICATE_HEADER, SecomPemUtils.getMinifiedPemFromCertString(result.getKey()))
+                .header(CKEEPER_SIGNATURE_ALGORITHM, this.certAlgorithm)
                 .body(result.getValue());
     }
 

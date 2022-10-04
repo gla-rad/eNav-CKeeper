@@ -28,15 +28,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 
@@ -119,25 +114,12 @@ public class SignatureService {
                     }
                 });
 
-        // Re-construct the X.509 certificate
-        X509Certificate x509Certificate = Optional.of(certificate)
-                .map(Certificate::getCertificate)
-                .map(String::getBytes)
-                .map(ByteArrayInputStream::new)
-                .map(b -> {  try { return CertificateFactory.getInstance("X.509").generateCertificate(b); } catch (CertificateException ex) { return null; } })
-                .filter(X509Certificate.class::isInstance)
-                .map(X509Certificate.class::cast)
-                .orElse(null);
-
         // Finally, sing the payload
         try {
             this.log.debug("Signature service signing payload: {}", Base64.getEncoder().encodeToString(payload));
             final byte[] signature = this.certificateService.signContent(certificate.getId(), payload);
             this.log.debug("Signature service generated signature: {}", Base64.getEncoder().encodeToString(signature));
-            return new Pair<>(Optional.ofNullable(x509Certificate)
-                    .map(c -> {  try { return c.getEncoded(); } catch (CertificateEncodingException ex) { return null; } })
-                    .map(Base64.getEncoder()::encodeToString)
-                    .orElse(null), signature);
+            return new Pair<>(certificate.getCertificate(), signature);
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException | InvalidKeyException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
