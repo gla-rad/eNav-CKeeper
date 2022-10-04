@@ -77,6 +77,8 @@ class SignatureControllerTest {
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.DEVICE.getValue())
+                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
+                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -99,6 +101,8 @@ class SignatureControllerTest {
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.SERVICE.getValue())
+                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
+                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -121,6 +125,8 @@ class SignatureControllerTest {
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.VESSEL.getValue())
+                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
+                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -143,6 +149,8 @@ class SignatureControllerTest {
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.USER.getValue())
+                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
+                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -164,7 +172,9 @@ class SignatureControllerTest {
         doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.ROLE.getValue())
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityI}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.ROLE.getValue())
+                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
+                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
