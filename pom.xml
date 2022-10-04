@@ -138,12 +138,6 @@
 		<!-- SECOM -->
 		<dependency>
 			<groupId>org.grad.secom</groupId>
-			<artifactId>secom-parent</artifactId>
-			<version>0.0.6-SNAPSHOT</version>
-			<type>pom</type>
-		</dependency>
-		<dependency>
-			<groupId>org.grad.secom</groupId>
 			<artifactId>secom-core</artifactId>
 			<version>0.0.6-SNAPSHOT</version>
 		</dependency>
