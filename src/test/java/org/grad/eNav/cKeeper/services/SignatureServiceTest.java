@@ -80,6 +80,7 @@ class SignatureServiceTest {
         this.certificate.setMrnEntity(this.mrnEntity);
         this.certificate.setStartDate(new Date());
         this.certificate.setEndDate(new Date());
+        this.certificate.setCertificate("CERTIFICATE");
 
         // Generate a dummy content and signature
         this.content = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
@@ -99,8 +100,6 @@ class SignatureServiceTest {
         // Perform the service call
         final Pair<String, byte[]> result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
 
-        // Assert the certificate
-        assertEquals(this.certificate.getCertificate(), result.getKey());
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
             assertEquals(this.signature[i], result.getValue()[i]);
@@ -124,8 +123,6 @@ class SignatureServiceTest {
         // Perform the service call
         final Pair<String, byte[]> result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
 
-        // Assert the certificate
-        assertEquals(this.certificate.getCertificate(), result.getKey());
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
             assertEquals(this.signature[i], result.getValue()[i]);
@@ -154,8 +151,6 @@ class SignatureServiceTest {
         // Assert that we called the certificate generation method
         verify(this.certificateService, times(1)).generateMrnEntityCertificate(this.mrnEntity.getId());
 
-        // Assert the certificate
-        assertEquals(this.certificate.getCertificate(), result.getKey());
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
             assertEquals(this.signature[i], result.getValue()[i]);
