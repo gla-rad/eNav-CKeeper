@@ -17,8 +17,8 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
-import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.SignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +44,9 @@ public class SignatureController {
     @Autowired
     SignatureService signatureService;
 
+    // Class Variables
+    final private String CKEEPER_PUBLIC_CERTIFICATE_HEADER = "PUBLIC_CERTIFICATE";
+
     /**
      * POST /api/signature/entity/generate/{entityId} : Requests a signature
      * for the provided payload based on the entity ID.
@@ -57,8 +60,10 @@ public class SignatureController {
                                                           @RequestParam("entityType") McpEntityType entityType,
                                                           @RequestBody byte[] signaturePayload) {
         log.debug("REST request to get a signature for entity with ID : {}", entityId);
+        Pair<String, byte[]> result = signatureService.generateEntitySignature(entityId, mmsi, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), signaturePayload);
         return ResponseEntity.ok()
-                .body(signatureService.generateEntitySignature(entityId, mmsi, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), signaturePayload));
+                .header(CKEEPER_PUBLIC_CERTIFICATE_HEADER, result.getKey())
+                .body(result.getValue());
     }
 
     /**
@@ -69,8 +74,8 @@ public class SignatureController {
      * status 400 (Bad Request)
      */
     @PostMapping(value = "/entity/verify/{entityId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<McpDeviceDto> verifyEntitySignature(@PathVariable String entityId,
-                                                              @RequestBody SignatureVerificationRequestDto svr) {
+    public ResponseEntity<Void> verifyEntitySignature(@PathVariable String entityId,
+                                                      @RequestBody SignatureVerificationRequestDto svr) {
         log.debug("REST request to get verify the signed content for entity with ID : {}", entityId);
         // Verify the posted signature
         if(this.signatureService.verifyEntitySignature(entityId, svr.getContent(), svr.getSignature())) {
@@ -88,8 +93,8 @@ public class SignatureController {
      * status 400 (Bad Request)
      */
     @PostMapping(value = "/mmsi/verify/{mmsi}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<McpDeviceDto> verifyEntitySignatureByMmsi(@PathVariable String mmsi,
-                                                                    @RequestBody SignatureVerificationRequestDto svr) {
+    public ResponseEntity<Void> verifyEntitySignatureByMmsi(@PathVariable String mmsi,
+                                                            @RequestBody SignatureVerificationRequestDto svr) {
         log.debug("REST request to get verify the signed content for AtoN with MMSI : {}", mmsi);
         // Verify the posted signature
         if(this.signatureService.verifyEntitySignatureByMmsi(mmsi, svr.getContent(), svr.getSignature())) {

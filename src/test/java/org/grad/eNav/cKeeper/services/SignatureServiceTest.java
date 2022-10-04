@@ -5,6 +5,7 @@ import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
+import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,11 +97,13 @@ class SignatureServiceTest {
         doReturn(this.signature).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
 
         // Perform the service call
-        final byte[] result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
+        final Pair<String, byte[]> result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
 
+        // Assert the certificate
+        assertEquals(this.certificate.getCertificate(), result.getKey());
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
-            assertEquals(this.signature[i], result[i]);
+            assertEquals(this.signature[i], result.getValue()[i]);
         }
     }
 
@@ -119,11 +122,13 @@ class SignatureServiceTest {
         doReturn(this.signature).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
 
         // Perform the service call
-        final byte[] result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
+        final Pair<String, byte[]> result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
 
+        // Assert the certificate
+        assertEquals(this.certificate.getCertificate(), result.getKey());
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
-            assertEquals(this.signature[i], result[i]);
+            assertEquals(this.signature[i], result.getValue()[i]);
         }
     }
 
@@ -144,14 +149,16 @@ class SignatureServiceTest {
         doReturn(this.signature).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
 
         // Perform the service call
-        final byte[] result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
+        final Pair<String, byte[]> result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
 
         // Assert that we called the certificate generation method
         verify(this.certificateService, times(1)).generateMrnEntityCertificate(this.mrnEntity.getId());
 
+        // Assert the certificate
+        assertEquals(this.certificate.getCertificate(), result.getKey());
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
-            assertEquals(this.signature[i], result[i]);
+            assertEquals(this.signature[i], result.getValue()[i]);
         }
     }
 
