@@ -22,6 +22,7 @@ import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
+import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
@@ -78,7 +79,7 @@ public class SignatureService {
      * @param payload       The payload to be signed
      * @return The signature for the provided payload
      */
-    public byte[] generateEntitySignature(@NotNull String entityId, String mmsi, @NotNull McpEntityType entityType, @NotNull byte[] payload) {
+    public Pair<String, byte[]> generateEntitySignature(@NotNull String entityId, String mmsi, @NotNull McpEntityType entityType, @NotNull byte[] payload) {
         final MrnEntity mrnEntity = Optional.of(entityId)
                 .map(mrn -> {
                     try {
@@ -120,7 +121,7 @@ public class SignatureService {
             this.log.debug("Signature service signing payload: {}", Base64.getEncoder().encodeToString(payload));
             final byte[] signature = this.certificateService.signContent(certificate.getId(), payload);
             this.log.debug("Signature service generated signature: {}", Base64.getEncoder().encodeToString(signature));
-            return signature;
+            return new Pair<>(certificate.getCertificate(), signature);
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException |  InvalidKeyException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }

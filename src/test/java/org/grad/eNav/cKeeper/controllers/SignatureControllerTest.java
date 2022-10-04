@@ -1,6 +1,7 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.SignatureService;
@@ -21,6 +22,7 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -71,7 +73,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForDevice() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.DEVICE.getValue())
@@ -93,7 +95,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForService() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.SERVICE.getValue())
@@ -115,7 +117,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForVessel() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.VESSEL.getValue())
@@ -137,7 +139,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForUser() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.USER.getValue())
@@ -159,7 +161,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureFoRole() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.ROLE.getValue())
