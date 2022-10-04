@@ -56,7 +56,7 @@ public class SignatureController {
      */
     @PostMapping(value = "/entity/generate/{entityId}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateEntitySignature(@PathVariable String entityId,
-                                                          @RequestParam("mmsi") String mmsi,
+                                                          @RequestParam(value = "mmsi", required = false) String mmsi,
                                                           @RequestParam("entityType") McpEntityType entityType,
                                                           @RequestBody byte[] signaturePayload) {
         log.debug("REST request to get a signature for entity with ID : {}", entityId);
