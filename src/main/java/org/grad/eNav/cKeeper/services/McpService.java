@@ -48,9 +48,9 @@ import org.grad.eNav.cKeeper.models.dtos.mcp.McpCertitifateDto;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpEntityBase;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpServiceDto;
 import org.grad.eNav.cKeeper.utils.X509Utils;
+import org.grad.secom.core.utils.KeyStoreUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -61,7 +61,6 @@ import javax.annotation.PostConstruct;
 import javax.net.ssl.SSLContext;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -93,10 +92,16 @@ public class McpService {
     String keyStore;
 
     /**
-     * The MCP keystore File Password.
+     * The MCP Keystore File Password.
      */
-    @Value("${gla.rad.ckeeper.mcp.keyStorePass:keyStorePass}")
-    String keyStorePass;
+    @Value("${gla.rad.ckeeper.mcp.keyStorePassword:password}")
+    String keyStorePassword;
+
+    /**
+     * The MCP Keystore File Type.
+     */
+    @Value("${gla.rad.ckeeper.mcp.keyStoreType:PKCS12}")
+    String keyStoreType;
 
     /**
      * The JSON Object Mapper
@@ -131,8 +136,7 @@ public class McpService {
     public void init() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, UnrecoverableKeyException, CertificateException {
         //Loading the Keystore file
         SSLContextBuilder SSLBuilder = SSLContexts.custom();
-        ClassPathResource keyStoreResource = new ClassPathResource(this.keyStore);
-        SSLBuilder = SSLBuilder.loadKeyMaterial(this.loadKeyStore(keyStoreResource.getInputStream(), this.keyStorePass.toCharArray()), this.keyStorePass.toCharArray());
+        SSLBuilder = SSLBuilder.loadKeyMaterial(KeyStoreUtils.getKeyStore(this.keyStore, this.keyStorePassword, this.keyStoreType), this.keyStorePassword.toCharArray());
 
         //Building the SSLContext
         this.sslContext = SSLBuilder.build();
@@ -549,29 +553,6 @@ public class McpService {
             this.log.trace(ex.getMessage(), ex);
             throw new McpConnectivityException("MCP Identity Registry could not be contacted... please make sure you have connected and try again later!");
         }
-    }
-
-    /**
-     * Provided a keystore URI location and the corresponding encryption
-     * password, this function will load and the return the keystore in a
-     * Java Security format.
-     *
-     * @param kin    The keystore input stream
-     * @param ksp   The keystore encryption password
-     * @return The loaded keystore
-     * @throws KeyStoreException if no Provider supports a KeyStoreSpi implementation for the specified type
-     * @throws IOException for any file loading operations gone wrong
-     */
-    protected KeyStore loadKeyStore(InputStream kin, char[] ksp) throws KeyStoreException, IOException {
-        final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        try {
-            keyStore.load(kin, ksp);
-        } catch(NoSuchAlgorithmException | CertificateException ex) {
-            this.log.error(ex.getMessage());
-        } finally {
-            kin.close();
-        }
-        return keyStore;
     }
 
     /**

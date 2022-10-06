@@ -184,6 +184,25 @@ class CertificateServiceTest {
     }
 
     /**
+     * Test that we can correctly retrieve the root certificate from the
+     * truststore in the classpath and generate a thumbprint value for it.
+     */
+    @Test
+    void testGetTrustedCertificateThumbprint() {
+        // Initialise the service parameters
+        this.certificateService.trustStore="truststore.jks";
+        this.certificateService.trustStorePassword="password";
+        this.certificateService.trustStoreType="JKS";
+
+        // Call the service
+        String thumbprint = this.certificateService.getTrustedCertificateThumbprint("test-cert", "SHA-1");
+
+        // Make sure the thumbprint looks OK
+        assertNotNull(thumbprint);
+        assertEquals("4328a4dc335c1ce73d8d8cdce4ed5afa8c1caa53", thumbprint);
+    }
+
+    /**
      * Test that we can correctly generate a new X.509 certificate for a given
      * MRN entity, based on the provided MRN entity ID.
      */

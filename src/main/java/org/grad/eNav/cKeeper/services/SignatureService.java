@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 

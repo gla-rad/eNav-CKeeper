@@ -136,8 +136,8 @@ class McpServiceTest {
      */
     @Test
     void testInit() throws UnrecoverableKeyException, IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, CertificateException {
-        this.mcpService.keyStore = "cKeeperKeystore";
-        this.mcpService.keyStorePass = "password";
+        this.mcpService.keyStore = "keystore.jks";
+        this.mcpService.keyStorePassword = "password";
         this.mcpService.init();
 
         // Make sure we've got an SSL Context
