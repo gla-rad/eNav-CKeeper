@@ -26,10 +26,11 @@ import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.Pair;
-import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
+import org.grad.secom.core.utils.KeyStoreUtils;
+import org.grad.secom.core.utils.SecomPemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -84,6 +85,24 @@ public class CertificateService {
     Integer certYearDuration;
 
     /**
+     * The X.509 Trust-Store.
+     */
+    @Value("${gla.rad.ckeeper.mcp.trustStore:mcp/truststore.p12}")
+    String trustStore;
+
+    /**
+     * The X.509 Trust-Store Password.
+     */
+    @Value("${gla.rad.ckeeper.mcp.trustStorePassword:password}")
+    String trustStorePassword;
+
+    /**
+     * The X.509 Trust-Store Type.
+     */
+    @Value("${gla.rad.ckeeper.mcp.trustStoreType:PKCS12}")
+    String trustStoreType;
+
+    /**
      * The Certificate Repo.
      */
     @Autowired
@@ -117,6 +136,7 @@ public class CertificateService {
      *
      * @param mrnEntityId the MRN Entity ID
      */
+    @Transactional
     public void syncMrnEntityWithMcpMir(@NotNull BigInteger mrnEntityId) {
         // First check that the MRN Entity exists and get its MIR certificates
         final MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
@@ -187,6 +207,41 @@ public class CertificateService {
     }
 
     /**
+     * Generate a certificate thumbprint based on the selection from the
+     * provided truststore, using the certificate alias. Also, the
+     * thumbprint generation algorithm can be adjusted.
+     *
+     * @param alias                 The alias of the certificate to generate the thumbprint from
+     * @param thumbprintAlgorithm   The algorithm to be used for generating the thumbprint
+     * @return the generated certificate thumbprint
+     */
+    public String getTrustedCertificateThumbprint(String alias, String thumbprintAlgorithm) {
+            return Optional.of(alias)
+                    .map(a -> {
+                        try {
+                            return KeyStoreUtils.getKeyStore(this.trustStore,
+                                            this.trustStorePassword,
+                                            this.trustStoreType)
+                                    .getCertificate(a);
+                        } catch (Exception ex) {
+                            log.error(ex.getMessage());
+                            return null;
+                        }
+                    })
+                    .filter(X509Certificate.class::isInstance)
+                    .map(X509Certificate.class::cast)
+                    .map(c -> {
+                        try {
+                            return SecomPemUtils.getCertThumbprint(c, thumbprintAlgorithm);
+                        } catch (Exception ex) {
+                            log.error(ex.getMessage());
+                            return null;
+                        }
+                    })
+                    .orElse(null);
+    }
+
+    /**
      * Generates a brand-new X.509 certificate for the MRN Entity specified by
      * the provided ID. The new certificate will be added into the database
      * and the corresponding DTO object will be returned.
@@ -198,6 +253,7 @@ public class CertificateService {
      * @throws OperatorCreationException if the certificate generation process fails
      * @throws IOException for errors during the PEM exporting or HTTP call operations
      */
+    @Transactional
     public Certificate generateMrnEntityCertificate(@NotNull BigInteger mrnEntityId) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, OperatorCreationException, IOException, McpConnectivityException {
         MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElseThrow(() ->
@@ -231,6 +287,7 @@ public class CertificateService {
      *
      * @param id the ID of the certificate
      */
+    @Transactional
     public void delete(@NotNull BigInteger id) {
         log.debug("Request to delete Certificate : {}", id);
         if(this.certificateRepo.existsById(id)) {
@@ -247,6 +304,7 @@ public class CertificateService {
      * @return The revoked certificate
      * @throws IOException for errors during the HTTP call operation
      */
+    @Transactional
     public Certificate revoke(@NotNull BigInteger id) throws IOException, McpConnectivityException {
         // Access the certificate if found
         Certificate certificate = this.certificateRepo.findById(id)

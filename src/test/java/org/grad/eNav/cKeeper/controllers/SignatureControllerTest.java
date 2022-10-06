@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
+import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.services.SignatureService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,12 @@ class SignatureControllerTest {
     ObjectMapper objectMapper;
 
     /**
+     * The Certificate Service mock.
+     */
+    @MockBean
+    CertificateService certificateService;
+
+    /**
      * The Signature Service mock.
      */
     @MockBean
@@ -74,11 +81,13 @@ class SignatureControllerTest {
     @Test
     void testGenerateEntitySignatureForDevice() throws Exception {
         doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.DEVICE.getValue())
                         .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
                         .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
+                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -98,11 +107,13 @@ class SignatureControllerTest {
     @Test
     void testGenerateEntitySignatureForService() throws Exception {
         doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.SERVICE.getValue())
                         .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
                         .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
+                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -122,11 +133,13 @@ class SignatureControllerTest {
     @Test
     void testGenerateEntitySignatureForVessel() throws Exception {
         doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.VESSEL.getValue())
                         .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
                         .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
+                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -146,11 +159,13 @@ class SignatureControllerTest {
     @Test
     void testGenerateEntitySignatureForUser() throws Exception {
         doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.USER.getValue())
                         .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
                         .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
+                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -170,11 +185,13 @@ class SignatureControllerTest {
     @Test
     void testGenerateEntitySignatureFoRole() throws Exception {
         doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityI}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.ROLE.getValue())
                         .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
                         .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
+                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())

@@ -71,7 +71,6 @@ public class HTMLViewerController {
     @Value("${gla.rad.ckeeper.info.copyright:}")
     private String appCopyright;
 
-
     /**
      * The home page of the VDES Controller Application.
      *

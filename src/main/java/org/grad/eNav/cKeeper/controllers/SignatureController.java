@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
+import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.services.SignatureService;
 import org.grad.secom.core.utils.SecomPemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,24 @@ public class SignatureController {
     String certAlgorithm;
 
     /**
+     * The X.509 Trust-Store Root Certificate Alias.
+     */
+    @Value("${gla.rad.ckeeper.mcp.trustStore.rootCertificate.alias:root}")
+    String rootCertAlias;
+
+    /**
+     * The X.509 Trust-Store Certificate Thumbprint Algorithm.
+     */
+    @Value("${gla.rad.ckeeper.mcp.trustStore.rootCertificate.thumbprintAlgorithm:SHA-1}")
+    String thumbprintAlgorithm;
+
+    /**
+     * The Certificate Service.
+     */
+    @Autowired
+    CertificateService certificateService;
+
+    /**
      * The Signature Service.
      */
     @Autowired
@@ -55,6 +74,7 @@ public class SignatureController {
     // Class Variables
     final public static String CKEEPER_PUBLIC_CERTIFICATE_HEADER = "PUBLIC_CERTIFICATE";
     final public static String CKEEPER_SIGNATURE_ALGORITHM = "SIGNATURE_ALGORITHM";
+    final public static String CKEEPER_ROOT_CERTIFICATE_THUMBPRINT = "ROOT_CERTIFICATE_THUMBPRINT";
 
     /**
      * POST /api/signature/entity/generate/{entityId} : Requests a signature
@@ -73,6 +93,7 @@ public class SignatureController {
         return ResponseEntity.ok()
                 .header(CKEEPER_PUBLIC_CERTIFICATE_HEADER, SecomPemUtils.getMinifiedPemFromCertString(result.getKey()))
                 .header(CKEEPER_SIGNATURE_ALGORITHM, this.certAlgorithm)
+                .header(CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, this.certificateService.getTrustedCertificateThumbprint(this.rootCertAlias, this.thumbprintAlgorithm))
                 .body(result.getValue());
     }
 
