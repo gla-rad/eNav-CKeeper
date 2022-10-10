@@ -17,18 +17,19 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.grad.eNav.cKeeper.models.domain.Pair;
+import org.grad.eNav.cKeeper.components.DomainDtoMapper;
+import org.grad.eNav.cKeeper.models.domain.SignatureCertificate;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
+import org.grad.eNav.cKeeper.models.dtos.SignatureCertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.services.SignatureService;
-import org.grad.secom.core.utils.SecomPemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigInteger;
 import java.util.Optional;
 
 /**
@@ -42,24 +43,6 @@ import java.util.Optional;
 public class SignatureController {
 
     /**
-     * The X.509 Certificate Algorithm.
-     */
-    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA256withCVC-ECDSA}")
-    String certAlgorithm;
-
-    /**
-     * The X.509 Trust-Store Root Certificate Alias.
-     */
-    @Value("${gla.rad.ckeeper.mcp.trustStore.rootCertificate.alias:root}")
-    String rootCertAlias;
-
-    /**
-     * The X.509 Trust-Store Certificate Thumbprint Algorithm.
-     */
-    @Value("${gla.rad.ckeeper.mcp.trustStore.rootCertificate.thumbprintAlgorithm:SHA-1}")
-    String thumbprintAlgorithm;
-
-    /**
      * The Certificate Service.
      */
     @Autowired
@@ -71,45 +54,66 @@ public class SignatureController {
     @Autowired
     SignatureService signatureService;
 
+    /**
+     * Certificate Mapper from Domain to DTO.
+     */
+    @Autowired
+    DomainDtoMapper<SignatureCertificate, SignatureCertificateDto> signatureCertificateDomainToDtoMapper;
+
     // Class Variables
     final public static String CKEEPER_PUBLIC_CERTIFICATE_HEADER = "PUBLIC_CERTIFICATE";
     final public static String CKEEPER_SIGNATURE_ALGORITHM = "SIGNATURE_ALGORITHM";
     final public static String CKEEPER_ROOT_CERTIFICATE_THUMBPRINT = "ROOT_CERTIFICATE_THUMBPRINT";
 
     /**
-     * POST /api/signature/entity/generate/{entityId} : Requests a signature
+     * GET /api/signature/entity/certificate/{entityName} : Requests a signature
      * for the provided payload based on the entity ID.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @PostMapping(value = "/entity/generate/{entityId}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<byte[]> generateEntitySignature(@PathVariable String entityId,
-                                                          @RequestParam(value = "mmsi", required = false) String mmsi,
-                                                          @RequestParam("entityType") McpEntityType entityType,
-                                                          @RequestBody byte[] signaturePayload) {
-        log.debug("REST request to get a signature for entity with ID : {}", entityId);
-        Pair<String, byte[]> result = signatureService.generateEntitySignature(entityId, mmsi, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), signaturePayload);
+    @GetMapping(value = "/entity/certificate/{entityName}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SignatureCertificateDto> getSignatureCertificate(@PathVariable String entityName,
+                                                                           @RequestParam(value = "mmsi", required = false) String mmsi,
+                                                                           @RequestParam("entityType") McpEntityType entityType) {
+        log.debug("REST request to get Signature Certificate for : {}", entityName);
         return ResponseEntity.ok()
-                .header(CKEEPER_PUBLIC_CERTIFICATE_HEADER, SecomPemUtils.getMinifiedPemFromCertString(result.getKey()))
-                .header(CKEEPER_SIGNATURE_ALGORITHM, this.certAlgorithm)
-                .header(CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, this.certificateService.getTrustedCertificateThumbprint(this.rootCertAlias, this.thumbprintAlgorithm))
-                .body(result.getValue());
+                .body(this.signatureCertificateDomainToDtoMapper.convertTo(this.signatureService.getSignatureCertificate(entityName, mmsi, entityType), SignatureCertificateDto.class));
     }
 
     /**
-     * POST /api/signature/entity/verify/{entityId} : Verify the provided
-     * content based on the provided ID.
+     * POST /api/signature/entity/generate/{entityName} : Requests a signature
+     * for the provided payload based on the entity name.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @PostMapping(value = "/entity/verify/{entityId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> verifyEntitySignature(@PathVariable String entityId,
+    @PostMapping(value = "/entity/generate/{entityName}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<byte[]> generateEntitySignature(@PathVariable String entityName,
+                                                          @RequestParam(value = "mmsi", required = false) String mmsi,
+                                                          @RequestParam(value = "entityType", required = false) McpEntityType entityType,
+                                                          @RequestParam(value = "certificateId", required = false) BigInteger certificateId,
+                                                          @RequestBody byte[] signaturePayload) {
+        log.debug("REST request to get a signature for entity with ID : {}", entityName);
+        final byte[] result = signatureService.generateEntitySignature(entityName,
+                mmsi, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), certificateId, signaturePayload);
+        return ResponseEntity.ok()
+                .body(result);
+    }
+
+    /**
+     * POST /api/signature/entity/verify/{entityName} : Verify the provided
+     * content based on the provided entity name.
+     *
+     * @return the ResponseEntity with status 200 (OK) if successful, or with
+     * status 400 (Bad Request)
+     */
+    @PostMapping(value = "/entity/verify/{entityName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> verifyEntitySignature(@PathVariable String entityName,
                                                       @RequestBody SignatureVerificationRequestDto svr) {
-        log.debug("REST request to get verify the signed content for entity with ID : {}", entityId);
+        log.debug("REST request to get verify the signed content for entity with ID : {}", entityName);
         // Verify the posted signature
-        if(this.signatureService.verifyEntitySignature(entityId, svr.getContent(), svr.getSignature())) {
+        if(this.signatureService.verifyEntitySignature(entityName, svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
         }
         // Otherwise, always return a bad request

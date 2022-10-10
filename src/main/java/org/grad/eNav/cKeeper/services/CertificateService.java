@@ -43,6 +43,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -324,6 +325,32 @@ public class CertificateService {
                 .orElseThrow(() ->
                         new SavingFailedException(String.format("Failed to revoke Certificate with ID: %d", id))
                 );
+    }
+
+    /**
+     * Retrieves the latest valid certificate that is present in the system for
+     * the specified MRN Entity, using its ID. If no valid certificate is
+     * detected, the certificate generation method will be called to provide
+     * a new one.
+     *
+     * @param mrnEntityId       The ID of the MRN entity to get the certificate for
+     * @return the latest valid certificate for the specifed MRN entity
+     */
+    public Certificate getLatestOrCreate(BigInteger mrnEntityId) {
+        return this.findAllByMrnEntityId(mrnEntityId)
+                .stream()
+                .filter(c -> Optional.of(c).map(Certificate::getStartDate).map(d -> d.before(Date.from(Instant.now()))).orElse(true))
+                .filter(c -> Optional.of(c).map(Certificate::getEndDate).map(d -> d.after(Date.from(Instant.now()))).orElse(true))
+                .filter(not(c -> Objects.equals(c.getRevoked(), Boolean.TRUE)))
+                .filter(not(c -> Objects.isNull(c.getStartDate())))
+                .max(Comparator.comparing(Certificate::getStartDate))
+                .orElseGet(() -> {
+                    try {
+                        return this.generateMrnEntityCertificate(mrnEntityId);
+                    } catch (Exception ex) {
+                        throw new SavingFailedException(ex.getMessage());
+                    }
+                });
     }
 
     /**

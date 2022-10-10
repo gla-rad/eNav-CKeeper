@@ -21,10 +21,8 @@ import org.apache.lucene.search.Sort;
 import org.grad.eNav.cKeeper.exceptions.*;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
-import org.grad.eNav.cKeeper.models.dtos.mcp.*;
-import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
-import org.grad.eNav.cKeeper.models.dtos.datatables.DtPage;
 import org.grad.eNav.cKeeper.models.dtos.datatables.DtPagingRequest;
+import org.grad.eNav.cKeeper.models.dtos.mcp.*;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.hibernate.search.backend.lucene.LuceneExtension;
 import org.hibernate.search.engine.search.query.SearchQuery;
@@ -44,7 +42,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The MRN Entity Service Class
@@ -289,6 +286,35 @@ public class MrnEntityService {
     public void deleteByMRN(@NotNull String mrn) throws DataNotFoundException {
         log.debug("Request to delete MRN Entity with MRN : {}", mrn);
         this.delete(this.findOneByMrn(mrn).getId());
+    }
+
+    /**
+     * This utility function can be used to retrieve an MRN entity based on its
+     * specified name. If that entry does not exist, a new one will be generated
+     * and persisted in the database, using all the provided parameters (i.e.
+     * MRN, MMSI, type etc).
+     *
+     * @param entityName        The entity name to identify the entry with
+     * @param mrn               The MRN to be used for new entries
+     * @param mmsi              The MMSI to be used for new entries
+     * @param entityType        The type of the enity to be used for new entries
+     * @return the identified or new MRN Entity entry
+     */
+    public MrnEntity getOrCreate(@NotNull String entityName, @NotNull String mrn, String mmsi, @NotNull McpEntityType entityType) {
+        return this.mrnEntityRepo.findByName(entityName)
+                .orElseGet(() -> {
+                    try {
+                        final MrnEntity newMrnEntity = new MrnEntity();
+                        newMrnEntity.setName(entityName);
+                        newMrnEntity.setMrn(mrn);
+                        newMrnEntity.setMmsi(mmsi);
+                        newMrnEntity.setEntityType(entityType);
+                        newMrnEntity.setVersion(entityType == McpEntityType.SERVICE ? "0.0.1" : null);
+                        return this.save(newMrnEntity);
+                    } catch (Exception ex) {
+                        throw new SavingFailedException(ex.getMessage());
+                    }
+                });
     }
 
     /**

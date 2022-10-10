@@ -1,11 +1,9 @@
 package org.grad.eNav.cKeeper.services;
 
-import org.bouncycastle.operator.OperatorCreationException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
-import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
-import org.grad.eNav.cKeeper.models.domain.Pair;
+import org.grad.eNav.cKeeper.models.domain.SignatureCertificate;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,12 +13,14 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.security.*;
-import java.util.Base64;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collections;
+import java.util.Base64;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -58,6 +58,7 @@ class SignatureServiceTest {
     // Test Variables
     private MrnEntity mrnEntity;
     private Certificate certificate;
+    private SignatureCertificate signatureCertificate;
     private byte[] content;
     private byte[] signature;
 
@@ -74,7 +75,7 @@ class SignatureServiceTest {
         this.mrnEntity.setMrn("mcp:prefix:" + this.mrnEntity.getName());
         this.mrnEntity.setEntityType(McpEntityType.DEVICE);
 
-        // Create a new Certificate DTO
+        // Create a new Certificate
         this.certificate = new Certificate();
         this.certificate.setId(BigInteger.ONE);
         this.certificate.setMrnEntity(this.mrnEntity);
@@ -82,9 +83,38 @@ class SignatureServiceTest {
         this.certificate.setEndDate(new Date());
         this.certificate.setCertificate("CERTIFICATE");
 
+        // Create a new Signature Certificate
+        this.signatureCertificate = new SignatureCertificate();
+        this.signatureCertificate.setCertificateId(this.certificate.getId());
+        this.signatureCertificate.setCertificate(this.certificate.getCertificate());
+        this.signatureCertificate.setPublicKey(this.certificate.getPublicKey());
+        this.signatureCertificate.setRootCertificateThumbprint("rootCertificateThumbprint");
+
         // Generate a dummy content and signature
         this.content = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
         this.signature = MessageDigest.getInstance("SHA-256").digest(("That's the signature?").getBytes());
+    }
+
+    /**
+     * Test that we can successfully retrieve the certificate information that
+     * will be used to generate a signature, on demand, for a specific MRN
+     * entity.
+     */
+    @Test
+    void testGetSignatureCertificate() {
+        doReturn(this.mrnEntity).when(this.mrnEntityService).getOrCreate(any(), any(), any(), any());
+        doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
+        doReturn(this.signatureCertificate.getRootCertificateThumbprint()).when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
+
+        // Perform the service call
+        SignatureCertificate result = this.signatureService.getSignatureCertificate(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType());
+
+        // Assert that the signature certificate seems OK
+        assertNotNull(result);
+        assertEquals(this.signatureCertificate.getCertificateId(), result.getCertificateId());
+        assertEquals(this.signatureCertificate.getCertificate(), result.getCertificate());
+        assertEquals(this.signatureCertificate.getPublicKey(), result.getPublicKey());
+        assertEquals(this.signatureCertificate.getRootCertificateThumbprint(), result.getRootCertificateThumbprint());
     }
 
     /**
@@ -93,67 +123,16 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateEntitySignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByName(this.mrnEntity.getName());
-        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntity.getId());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
         doReturn(this.signature).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
 
         // Perform the service call
-        final Pair<String, byte[]> result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
+        final byte[] result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(),
+                this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), null, this.content);
 
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
-            assertEquals(this.signature[i], result.getValue()[i]);
-        }
-    }
-
-    /**
-     * Test that we can correctly generate a signature for the provided entity
-     * MMSI and the content we want to sign, even if the respective AtoN or
-     * a certificate doesn't exist in our system. They should be created on
-     * the fly.
-     */
-    @Test
-    void testGenerateEntitySignatureAutoCreate() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, OperatorCreationException, McpConnectivityException {
-        doReturn(this.mrnEntity.getMrn()).when(this.mcpConfigService).constructMcpEntityMrn(any(), any());
-        doReturn(this.mrnEntity).when(this.mrnEntityService).save(any());
-        doReturn(Collections.emptySet()).when(this.certificateService).findAllByMrnEntityId(this.mrnEntity.getId());
-        doReturn(this.certificate).when(this.certificateService).generateMrnEntityCertificate(this.mrnEntity.getId());
-        doReturn(this.signature).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
-
-        // Perform the service call
-        final Pair<String, byte[]> result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
-
-        // Assert the signature equality byte by byte
-        for(int i=0; i<this.signature.length; i++) {
-            assertEquals(this.signature[i], result.getValue()[i]);
-        }
-    }
-
-    /**
-     * Test that we can correctly generate a signature for the provided entity
-     * MMSI and the content we want to sign, even if the respective AtoN or
-     * a certificate has been revoked. They should be created on the fly.
-     */
-    @Test
-    void testGenerateEntitySignatureAutoCreateWhenRevoked() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, OperatorCreationException, McpConnectivityException {
-        // Revoke the certificate
-        this.certificate.setRevoked(Boolean.TRUE);
-
-        doReturn(this.mrnEntity.getMrn()).when(this.mcpConfigService).constructMcpEntityMrn(any(), any());
-        doReturn(this.mrnEntity).when(this.mrnEntityService).save(any());
-        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntity.getId());
-        doReturn(this.certificate).when(this.certificateService).generateMrnEntityCertificate(this.mrnEntity.getId());
-        doReturn(this.signature).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
-
-        // Perform the service call
-        final Pair<String, byte[]> result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content);
-
-        // Assert that we called the certificate generation method
-        verify(this.certificateService, times(1)).generateMrnEntityCertificate(this.mrnEntity.getId());
-
-        // Assert the signature equality byte by byte
-        for(int i=0; i<this.signature.length; i++) {
-            assertEquals(this.signature[i], result.getValue()[i]);
+            assertEquals(this.signature[i], result[i]);
         }
     }
 
@@ -164,13 +143,13 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateEntitySignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByName(this.mrnEntity.getName());
-        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntity.getId());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
         doThrow(SignatureException.class).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
 
         // Perform the service call
         assertThrows(InvalidRequestException.class, () ->
-            this.signatureService.generateEntitySignature(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), this.content)
+            this.signatureService.generateEntitySignature(this.mrnEntity.getName(),
+                    this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), null, this.content)
         );
     }
 
@@ -181,7 +160,7 @@ class SignatureServiceTest {
     @Test
     void testVerifyEntitySignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByName(this.mrnEntity.getName());
-        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntity.getId());
+        doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
         doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(mrnEntity.getId(), this.content, this.signature);
 
         // Perform the service call
@@ -195,7 +174,7 @@ class SignatureServiceTest {
     @Test
     void testVerifyEntitySignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByName(this.mrnEntity.getName());
-        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(this.mrnEntity.getId());
+        doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
         doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(mrnEntity.getId(), this.content, this.signature);
 
         // Perform the service call
