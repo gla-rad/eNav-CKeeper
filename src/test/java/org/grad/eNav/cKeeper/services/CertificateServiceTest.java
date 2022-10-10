@@ -85,10 +85,8 @@ class CertificateServiceTest {
 
     // Test Variables
     private Certificate certificate;
+    private Certificate newCertificate;
     private MrnEntity mrnEntity;
-    private KeyPair keypair;
-    private PKCS10CertificationRequest csr;
-    private X509Certificate cert;
 
     /**
      * Add the Bouncy Castle as a security provider for the unit tests.
@@ -119,8 +117,20 @@ class CertificateServiceTest {
         this.certificate.setPublicKey("PUBLIC KEY");
         this.certificate.setPrivateKey("PRIVATE KEY");
         this.certificate.setStartDate(new Date());
-        this.certificate.setEndDate(new Date());
+        this.certificate.setEndDate(new Date(this.certificate.getStartDate().getTime() + 1000));
         this.certificate.setRevoked(Boolean.FALSE);
+
+        // Create a new certificate object
+        this.newCertificate = new Certificate();
+        this.newCertificate.setId(BigInteger.TEN);
+        this.newCertificate.setMcpMirId("2345678901");
+        this.newCertificate.setMrnEntity(this.mrnEntity);
+        this.newCertificate.setCertificate("NEW CERTIFICATE");
+        this.newCertificate.setPublicKey("NEW PUBLIC KEY");
+        this.newCertificate.setPrivateKey("NEW PRIVATE KEY");
+        this.newCertificate.setStartDate(new Date());
+        this.newCertificate.setEndDate(new Date(this.certificate.getStartDate().getTime() + 1000));
+        this.newCertificate.setRevoked(Boolean.FALSE);
     }
 
     /**
@@ -346,6 +356,107 @@ class CertificateServiceTest {
         assertThrows(SavingFailedException.class, () ->
                 this.certificateService.revoke(this.mrnEntity.getId())
         );
+    }
+
+    /**
+     * Test that when the latest certificate we have for an MRN Entity is valid,
+     * it will be returned as expected.
+     */
+    @Test
+    void testGetLatestOrCreate() {
+        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(any());
+
+        // Perform the service call
+        Certificate result = this.certificateService.getLatestOrCreate(this.mrnEntity.getId());
+
+        // Assert that the resulting certificate seems correct
+        assertNotNull(result);
+        assertEquals(this.certificate.getId(), result.getId());
+        assertEquals(this.certificate.getStartDate(), result.getStartDate());
+        assertEquals(this.certificate.getEndDate(), result.getEndDate());
+        assertEquals(this.certificate.getPrivateKey(), result.getPrivateKey());
+        assertEquals(this.certificate.getPublicKey(), result.getPublicKey());
+        assertEquals(this.certificate.getCertificate(), result.getCertificate());
+        assertEquals(this.certificate.getMcpMirId(), result.getMcpMirId());
+        assertEquals(this.certificate.getRevoked(), result.getRevoked());
+    }
+
+    /**
+     * Test that when the latest certificate we have for an MRN Entity has an
+     * invalid start date, a new one will be generated on demand.
+     */
+    @Test
+    void testGetLatestOrCreateStartDateWrong() throws InvalidAlgorithmParameterException, McpConnectivityException, NoSuchAlgorithmException, IOException, OperatorCreationException {
+        // Set the start date to be in the future
+        this.certificate.setStartDate(this.certificate.getEndDate());
+        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(any());
+        doReturn(this.newCertificate).when(this.certificateService).generateMrnEntityCertificate(this.mrnEntity.getId());
+
+        // Perform the service call
+        Certificate result = this.certificateService.getLatestOrCreate(this.mrnEntity.getId());
+
+        // Assert that the resulting certificate seems correct
+        assertNotNull(result);
+        assertEquals(this.newCertificate.getId(), result.getId());
+        assertEquals(this.newCertificate.getStartDate(), result.getStartDate());
+        assertEquals(this.newCertificate.getEndDate(), result.getEndDate());
+        assertEquals(this.newCertificate.getPrivateKey(), result.getPrivateKey());
+        assertEquals(this.newCertificate.getPublicKey(), result.getPublicKey());
+        assertEquals(this.newCertificate.getCertificate(), result.getCertificate());
+        assertEquals(this.newCertificate.getMcpMirId(), result.getMcpMirId());
+        assertEquals(this.newCertificate.getRevoked(), result.getRevoked());
+    }
+
+    /**
+     * Test that when the latest certificate we have for an MRN Entity has an
+     * invalid end date, a new one will be generated on demand.
+     */
+    @Test
+    void testGetLatestOrCreateEndDateWrong() throws InvalidAlgorithmParameterException, McpConnectivityException, NoSuchAlgorithmException, IOException, OperatorCreationException {
+        // Set the start date to be in the future
+        this.certificate.setEndDate(this.certificate.getStartDate());
+        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(any());
+        doReturn(this.newCertificate).when(this.certificateService).generateMrnEntityCertificate(this.mrnEntity.getId());
+
+        // Perform the service call
+        Certificate result = this.certificateService.getLatestOrCreate(this.mrnEntity.getId());
+
+        // Assert that the resulting certificate seems correct
+        assertNotNull(result);
+        assertEquals(this.newCertificate.getId(), result.getId());
+        assertEquals(this.newCertificate.getStartDate(), result.getStartDate());
+        assertEquals(this.newCertificate.getEndDate(), result.getEndDate());
+        assertEquals(this.newCertificate.getPrivateKey(), result.getPrivateKey());
+        assertEquals(this.newCertificate.getPublicKey(), result.getPublicKey());
+        assertEquals(this.newCertificate.getCertificate(), result.getCertificate());
+        assertEquals(this.newCertificate.getMcpMirId(), result.getMcpMirId());
+        assertEquals(this.newCertificate.getRevoked(), result.getRevoked());
+    }
+
+    /**
+     * Test that when the latest certificate we have for an MRN Entity has been
+     * revoked, a new one will be generated on demand.
+     */
+    @Test
+    void testGetLatestOrCreateRevoked() throws InvalidAlgorithmParameterException, McpConnectivityException, NoSuchAlgorithmException, IOException, OperatorCreationException {
+        // Set the start date to be in the future
+        this.certificate.setRevoked(Boolean.TRUE);
+        doReturn(Collections.singleton(this.certificate)).when(this.certificateService).findAllByMrnEntityId(any());
+        doReturn(this.newCertificate).when(this.certificateService).generateMrnEntityCertificate(this.mrnEntity.getId());
+
+        // Perform the service call
+        Certificate result = this.certificateService.getLatestOrCreate(this.mrnEntity.getId());
+
+        // Assert that the resulting certificate seems correct
+        assertNotNull(result);
+        assertEquals(this.newCertificate.getId(), result.getId());
+        assertEquals(this.newCertificate.getStartDate(), result.getStartDate());
+        assertEquals(this.newCertificate.getEndDate(), result.getEndDate());
+        assertEquals(this.newCertificate.getPrivateKey(), result.getPrivateKey());
+        assertEquals(this.newCertificate.getPublicKey(), result.getPublicKey());
+        assertEquals(this.newCertificate.getCertificate(), result.getCertificate());
+        assertEquals(this.newCertificate.getMcpMirId(), result.getMcpMirId());
+        assertEquals(this.newCertificate.getRevoked(), result.getRevoked());
     }
 
     /**

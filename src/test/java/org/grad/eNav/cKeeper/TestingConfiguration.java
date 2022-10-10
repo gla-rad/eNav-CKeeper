@@ -20,8 +20,10 @@ import org.grad.eNav.cKeeper.components.DomainDtoMapper;
 import org.grad.eNav.cKeeper.config.GlobalConfig;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
+import org.grad.eNav.cKeeper.models.domain.SignatureCertificate;
 import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.MrnEntityDto;
+import org.grad.eNav.cKeeper.models.dtos.SignatureCertificateDto;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.openfeign.support.PageJacksonModule;
 import org.springframework.cloud.openfeign.support.SortJacksonModule;
@@ -73,6 +75,14 @@ public class TestingConfiguration {
     @Bean
     public DomainDtoMapper certificateDomainToDtoMapper() {
         return new DomainDtoMapper<Certificate, CertificateDto>();
+    }
+
+    /**
+     * Certificate Signature  Mapper from Domain to DTO.
+     */
+    @Bean
+    public DomainDtoMapper<SignatureCertificate, SignatureCertificateDto> signatureCertificateDomainToDtoMapper() {
+        return new DomainDtoMapper<SignatureCertificate, SignatureCertificateDto>();
     }
 
 }

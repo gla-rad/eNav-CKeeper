@@ -1,8 +1,10 @@
 package org.grad.eNav.cKeeper.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.grad.eNav.cKeeper.models.domain.Pair;
+import org.grad.eNav.cKeeper.TestingConfiguration;
+import org.grad.eNav.cKeeper.models.domain.SignatureCertificate;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
+import org.grad.eNav.cKeeper.models.dtos.SignatureCertificateDto;
 import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.services.SignatureService;
@@ -12,24 +14,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 @WebMvcTest(controllers = SignatureController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
+@Import(TestingConfiguration.class)
 class SignatureControllerTest {
 
     /**
@@ -57,9 +62,10 @@ class SignatureControllerTest {
     SignatureService signatureService;
 
     // Test Variables
-    private String entityId;
+    private String entityName;
     private Integer mmsi;
     private McpEntityType mcpEntityType;
+    private SignatureCertificate signatureCertificate;
     private SignatureVerificationRequestDto svr;
 
     /**
@@ -68,10 +74,43 @@ class SignatureControllerTest {
     @BeforeEach
     void setUp() throws NoSuchAlgorithmException {
         this.mmsi = 123456789;
-        this.entityId = "test_aton";
+        this.entityName = "test_aton";
+        this.mcpEntityType = McpEntityType.SERVICE;
+
+        // Create a new signature certificate
+        this.signatureCertificate = new SignatureCertificate();
+        this.signatureCertificate.setCertificateId(BigInteger.ONE);
+        this.signatureCertificate.setCertificate("Certificate");
+        this.signatureCertificate.setPublicKey("PublicKey");
+        this.signatureCertificate.setRootCertificateThumbprint("rootCertificateThumbprint");
+
+        // Create a new signature verification request
         this.svr = new SignatureVerificationRequestDto();
         this.svr.setContent(Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest("Hello World".getBytes())));
         this.svr.setSignature(Base64.getEncoder().encodeToString("That's the signature?".getBytes()));
+    }
+
+    /**
+     * Test that we can correctly retrieve the signature certificate that will be
+     * used for the signing requests of an MRN entity.
+     */
+    @Test
+    void testGetSignatureCertificate() throws Exception {
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/signature/entity/certificate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.SERVICE.getValue())
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .content(this.svr.getContent()))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // Parse and validate the response
+        SignatureCertificateDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignatureCertificateDto.class);
+        assertEquals(this.signatureCertificate.getCertificateId(), result.getCertificateId());
+        assertEquals(this.signatureCertificate.getCertificate(), result.getCertificate());
+        assertEquals(this.signatureCertificate.getPublicKey(), result.getPublicKey());
+        assertEquals(this.signatureCertificate.getRootCertificateThumbprint(), result.getRootCertificateThumbprint());
     }
 
     /**
@@ -80,14 +119,11 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForDevice() throws Exception {
-        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
         doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.DEVICE.getValue())
-                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
-                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
-                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.DEVICE.getValue())
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -106,14 +142,11 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForService() throws Exception {
-        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
         doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.SERVICE.getValue())
-                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
-                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
-                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.SERVICE.getValue())
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -132,14 +165,11 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForVessel() throws Exception {
-        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
         doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.VESSEL.getValue())
-                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
-                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
-                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.VESSEL.getValue())
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -158,14 +188,11 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForUser() throws Exception {
-        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
         doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityId}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.USER.getValue())
-                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
-                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
-                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.USER.getValue())
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -184,14 +211,11 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureFoRole() throws Exception {
-        doReturn(new Pair<>("Certificate", this.svr.getSignature().getBytes())).when(this.signatureService).generateEntitySignature(any(), any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
         doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityI}?mmsi={mmsi}&entityType={entityType}", this.entityId, this.mmsi, McpEntityType.ROLE.getValue())
-                        .header(SignatureController.CKEEPER_PUBLIC_CERTIFICATE_HEADER, "Certificate")
-                        .header(SignatureController.CKEEPER_SIGNATURE_ALGORITHM, "SHA256withCVC-ECDSA")
-                        .header(SignatureController.CKEEPER_ROOT_CERTIFICATE_THUMBPRINT, "Thumbprint")
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.ROLE.getValue())
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -213,7 +237,7 @@ class SignatureControllerTest {
         doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignature(any(), any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/signature/entity/verify/{entityId}", this.entityId)
+        this.mockMvc.perform(post("/api/signature/entity/verify/{entityName}", this.entityName)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.svr)))
                 .andExpect(status().isOk())
@@ -229,7 +253,7 @@ class SignatureControllerTest {
         doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignature(any(), any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/signature/entity/verify/{entityId}", this.entityId)
+        this.mockMvc.perform(post("/api/signature/entity/verify/{entityName}", this.entityName)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.svr)))
                 .andExpect(status().isBadRequest())

@@ -17,26 +17,25 @@
 package org.grad.eNav.cKeeper.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
-import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
-import org.grad.eNav.cKeeper.models.domain.Pair;
+import org.grad.eNav.cKeeper.models.domain.SignatureCertificate;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
-import java.util.*;
-
-import static java.util.function.Predicate.not;
+import java.util.Base64;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The Signature Service Class
@@ -48,6 +47,18 @@ import static java.util.function.Predicate.not;
 @Service
 @Slf4j
 public class SignatureService {
+
+    /**
+     * The X.509 Trust-Store Root Certificate Alias.
+     */
+    @Value("${gla.rad.ckeeper.mcp.trustStore.rootCertificate.alias:root}")
+    String rootCertAlias;
+
+    /**
+     * The X.509 Trust-Store Certificate Thumbprint Algorithm.
+     */
+    @Value("${gla.rad.ckeeper.mcp.trustStore.rootCertificate.thumbprintAlgorithm:SHA-1}")
+    String rootCertThumbprintAlgorithm;
 
     /**
      * The MRN Entity Service.
@@ -68,59 +79,63 @@ public class SignatureService {
     McpConfigService mcpConfigService;
 
     /**
+     * This function will attempt to access the most recent valid certificate
+     * to be used for signing and will return its information so that it can
+     * be accessed and used, before the actual signing process.
+     *
+     * @param entityName        The name of the entity to retrieve the certificate for
+     * @param mmsi              The mmsi of the entity to retrieve the certificate for
+     * @param entityType        The type of the entity to retrieve the certificate for
+     * @return the most recent valid certificate for the specified entity
+     */
+    public SignatureCertificate getSignatureCertificate(@NotNull String entityName, String mmsi, McpEntityType entityType) {
+        // Get or create a new MRN Entity if it doesn't exist
+        final MrnEntity mrnEntity = this.mrnEntityService.getOrCreate(
+                entityName, mmsi, this.mcpConfigService.constructMcpEntityMrn(entityType, entityName), entityType);
+
+        // Get the latest or create a certificate if it doesn't exist
+        final Certificate certificate = this.certificateService.getLatestOrCreate(
+                mrnEntity.getId());
+
+        // Create the signature certificate response
+        SignatureCertificate signatureCertificate = new SignatureCertificate();
+        signatureCertificate.setCertificateId(certificate.getId());
+        signatureCertificate.setCertificate(certificate.getCertificate());
+        signatureCertificate.setPublicKey(certificate.getPublicKey());
+        signatureCertificate.setRootCertificateThumbprint(this.certificateService.getTrustedCertificateThumbprint(this.rootCertAlias, this.rootCertThumbprintAlgorithm));
+
+        // And return the signature certificate
+        return signatureCertificate;
+    }
+
+    /**
      * Generates and returns a signature for the provided payload using the
      * keys from the latest certificate assigned to the MRN entity identified
      * by the MRN constructed from the AtoN UID provided.
      *
-     * @param entityId      The entity ID to generate the signature for
-     * @param entityId      The ID of the entity to generate the signature for
+     * @param entityName    The entity ID to generate the signature for
+     * @param mmsi          The mmsi of the entity to generate the signature for
      * @param entityType    The MCP type of the entity to generate the signature for
      * @param payload       The payload to be signed
      * @return The signature for the provided payload
      */
-    public Pair<String, byte[]> generateEntitySignature(@NotNull String entityId, String mmsi, @NotNull McpEntityType entityType, @NotNull byte[] payload) {
-        final MrnEntity mrnEntity = Optional.of(entityId)
-                .map(mrn -> {
-                    try {
-                        return this.mrnEntityService.findOneByName(entityId);
-                    } catch (DataNotFoundException ex) {
-                        return null;
-                    }
-                })
-                .orElseGet(() -> {
-                    try {
-                        final MrnEntity newMrnEntity = new MrnEntity();
-                        newMrnEntity.setName(entityId);
-                        newMrnEntity.setMrn(this.mcpConfigService.constructMcpEntityMrn(entityType, entityId));
-                        newMrnEntity.setMmsi(mmsi);
-                        newMrnEntity.setEntityType(entityType);
-                        newMrnEntity.setVersion(entityType == McpEntityType.SERVICE ? "0.0.1" : null);
-                        return this.mrnEntityService.save(newMrnEntity);
-                    } catch (Exception ex) {
-                        throw new SavingFailedException(ex.getMessage());
-                    }
-                });
+    public byte[] generateEntitySignature(@NotNull String entityName,
+                                          String mmsi,
+                                          McpEntityType entityType,
+                                           BigInteger certificateId,
+                                          @NotNull byte[] payload) {
+        // Get the latest or create a certificate if it doesn't exist
+        final SignatureCertificate signatureCertificate = Objects.isNull(certificateId) ?
+                this.getSignatureCertificate(entityName, mmsi, entityType) : null;
 
-        // Now get the latest certificate for it if it exists, or create a new one
-        Certificate certificate = this.certificateService.findAllByMrnEntityId(mrnEntity.getId())
-                .stream()
-                .filter(not(c -> Objects.equals(c.getRevoked(), Boolean.TRUE)))
-                .filter(not(c -> Objects.isNull(c.getStartDate())))
-                .max(Comparator.comparing(Certificate::getStartDate))
-                .orElseGet(() -> {
-                    try {
-                        return this.certificateService.generateMrnEntityCertificate(mrnEntity.getId());
-                    } catch (Exception ex) {
-                        throw new SavingFailedException(ex.getMessage());
-                    }
-                });
-
-        // Finally, sing the payload
+        // Sing the payload
         try {
-            this.log.debug("Signature service signing payload: {}", Base64.getEncoder().encodeToString(payload));
-            final byte[] signature = this.certificateService.signContent(certificate.getId(), payload);
-            this.log.debug("Signature service generated signature: {}", Base64.getEncoder().encodeToString(signature));
-            return new Pair<>(certificate.getCertificate(), signature);
+            log.debug("Signature service signing payload: {}", Base64.getEncoder().encodeToString(payload));
+            final byte[] signature = this.certificateService.signContent(Optional.ofNullable(signatureCertificate)
+                    .map(SignatureCertificate::getCertificateId)
+                    .orElse(certificateId), payload);
+            log.debug("Signature service generated signature: {}", Base64.getEncoder().encodeToString(signature));
+            return signature;
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException | InvalidKeyException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
@@ -142,15 +157,11 @@ public class SignatureService {
         return Optional.of(entityId)
                 .map(this.mrnEntityService::findOneByName)
                 .map(MrnEntity::getId)
-                .map(this.certificateService::findAllByMrnEntityId)
-                .orElseGet(() -> Collections.emptySet())
-                .stream()
-                .filter(c -> Objects.nonNull(c.getStartDate()))
-                .max(Comparator.comparing(Certificate::getStartDate))
+                .map(this.certificateService::getLatestOrCreate)
                 .map(Certificate::getId)
                 .map(id -> {
                     try {
-                        this.log.debug("Signature service verifying payload: {}\n with signature: {}", b64Content, b64Signature);
+                        log.debug("Signature service verifying payload: {}\n with signature: {}", b64Content, b64Signature);
                         return this.certificateService.verifyContent(id, Base64.getDecoder().decode(b64Content), Base64.getDecoder().decode(b64Signature));
                     } catch (Exception ex) {
                         return false;
