@@ -133,6 +133,7 @@ public class SignatureService {
             log.debug("Signature service generated signature: {}", Base64.getEncoder().encodeToString(signature));
             return signature;
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException | InvalidKeyException ex) {
+            log.error(ex.getMessage());
             throw new InvalidRequestException(ex.getMessage());
         }
     }
