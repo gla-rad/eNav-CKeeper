@@ -26,7 +26,6 @@ import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
-import org.grad.eNav.cKeeper.models.dtos.CertificateDto;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
@@ -195,21 +194,24 @@ class CertificateServiceTest {
 
     /**
      * Test that we can correctly retrieve the root certificate from the
-     * truststore in the classpath and generate a thumbprint value for it.
+     * truststore in the classpath..
      */
     @Test
-    void testGetTrustedCertificateThumbprint() {
+    void testGetTrustedCertificate() {
         // Initialise the service parameters
         this.certificateService.trustStore="truststore.jks";
         this.certificateService.trustStorePassword="password";
         this.certificateService.trustStoreType="JKS";
 
         // Call the service
-        String thumbprint = this.certificateService.getTrustedCertificateThumbprint("test-cert", "SHA-1");
+        X509Certificate certificate = this.certificateService.getTrustedCertificate("test-cert");
 
         // Make sure the thumbprint looks OK
-        assertNotNull(thumbprint);
-        assertEquals("4328a4dc335c1ce73d8d8cdce4ed5afa8c1caa53", thumbprint);
+        assertNotNull(certificate);
+        assertNotNull(certificate.getPublicKey());
+        assertNotNull(certificate.getIssuerX500Principal());
+        assertNotNull(certificate.getSubjectX500Principal());
+        assertEquals("SHA256withRSA", certificate.getSigAlgName());
     }
 
     /**
@@ -467,12 +469,11 @@ class CertificateServiceTest {
     void testSignContent() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         // Initialise the service parameters
         this.certificateService.keyPairCurve="secp256r1";
-        this.certificateService.certAlgorithm="SHA256WITHECDSA";
         this.certificateService.certDirName="CN=Test";
 
         // Spin up a self-signed certificate
         final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
-        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.certAlgorithm);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningtAlgorithm);
 
         // Populate the mock certificate with the actual keys
         this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
@@ -480,7 +481,7 @@ class CertificateServiceTest {
         this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
 
         // Initialise the verification signature
-        final Signature sign = Signature.getInstance(this.certificateService.certAlgorithm);
+        final Signature sign = Signature.getInstance("SHA256WITHECDSA");
         sign.initVerify(keyPair.getPublic());
 
         // Create a dummy payload
@@ -490,7 +491,7 @@ class CertificateServiceTest {
         doReturn(Optional.of(this.certificate)).when(this.certificateRepo).findById(this.certificate.getId());
 
         // Perform the service call
-        final byte[] signature = this.certificateService.signContent(this.certificate.getId(), payload);
+        final byte[] signature = this.certificateService.signContent(this.certificate.getId(), sign.getAlgorithm(), payload);
 
         // Verify that the signature is correct
         sign.update(payload);
@@ -509,7 +510,7 @@ class CertificateServiceTest {
 
         // Perform the service call
         assertThrows(DataNotFoundException.class, () ->
-                this.certificateService.signContent(this.certificate.getId(), payload)
+                this.certificateService.signContent(this.certificate.getId(), "SHA-256", payload)
         );
     }
 
@@ -521,12 +522,12 @@ class CertificateServiceTest {
     void testVerifyContent() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeyException, SignatureException, InvalidKeySpecException {
         // Initialise the service parameters
         this.certificateService.keyPairCurve="secp256r1";
-        this.certificateService.certAlgorithm="SHA256WITHECDSA";
+        this.certificateService.defaultSigningtAlgorithm ="SHA256WITHECDSA";
         this.certificateService.certDirName="CN=Test";
 
         // Spin up a self-signed certificate
         final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
-        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.certAlgorithm);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningtAlgorithm);
 
         // Populate the mock certificate with the actual keys
         this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
@@ -534,7 +535,7 @@ class CertificateServiceTest {
         this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
 
         // Initialise the signing signature
-        final Signature sign = Signature.getInstance(this.certificateService.certAlgorithm);
+        final Signature sign = Signature.getInstance(this.certificateService.defaultSigningtAlgorithm);
         sign.initSign(keyPair.getPrivate());
 
         // Create a dummy payload

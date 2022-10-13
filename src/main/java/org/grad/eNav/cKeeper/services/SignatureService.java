@@ -18,10 +18,12 @@ package org.grad.eNav.cKeeper.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
+import org.grad.eNav.cKeeper.exceptions.ValidationException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.SignatureCertificate;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
+import org.grad.secom.core.utils.SecomPemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,9 +34,9 @@ import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -98,11 +100,15 @@ public class SignatureService {
                 mrnEntity.getId());
 
         // Create the signature certificate response
-        SignatureCertificate signatureCertificate = new SignatureCertificate();
-        signatureCertificate.setCertificateId(certificate.getId());
-        signatureCertificate.setCertificate(certificate.getCertificate());
-        signatureCertificate.setPublicKey(certificate.getPublicKey());
-        signatureCertificate.setRootCertificateThumbprint(this.certificateService.getTrustedCertificateThumbprint(this.rootCertAlias, this.rootCertThumbprintAlgorithm));
+        final SignatureCertificate signatureCertificate = new SignatureCertificate();
+        try {
+            signatureCertificate.setCertificateId(certificate.getId());
+            signatureCertificate.setCertificate(SecomPemUtils.getMinifiedPemFromCertString(certificate.getCertificate()));
+            signatureCertificate.setPublicKey(SecomPemUtils.getMinifiedPemFromPublicKeyString(certificate.getPublicKey()));
+            signatureCertificate.setRootCertificate(SecomPemUtils.getMinifiedPemFromCert(this.certificateService.getTrustedCertificate(this.rootCertAlias)));
+        } catch (CertificateEncodingException ex) {
+            throw new ValidationException(ex.getMessage());
+        }
 
         // And return the signature certificate
         return signatureCertificate;
@@ -113,27 +119,17 @@ public class SignatureService {
      * keys from the latest certificate assigned to the MRN entity identified
      * by the MRN constructed from the AtoN UID provided.
      *
-     * @param entityName    The entity ID to generate the signature for
-     * @param mmsi          The mmsi of the entity to generate the signature for
-     * @param entityType    The MCP type of the entity to generate the signature for
+     * @param certificateId The ID of the certificate to generate the signature for
+     * @param algorithm     The algorithm to use for generating the signature
      * @param payload       The payload to be signed
      * @return The signature for the provided payload
      */
-    public byte[] generateEntitySignature(@NotNull String entityName,
-                                          String mmsi,
-                                          McpEntityType entityType,
-                                           BigInteger certificateId,
+    public byte[] generateEntitySignature(@NotNull BigInteger certificateId,
+                                          String algorithm,
                                           @NotNull byte[] payload) {
-        // Get the latest or create a certificate if it doesn't exist
-        final SignatureCertificate signatureCertificate = Objects.isNull(certificateId) ?
-                this.getSignatureCertificate(entityName, mmsi, entityType) : null;
-
-        // Sing the payload
         try {
             log.debug("Signature service signing payload: {}", Base64.getEncoder().encodeToString(payload));
-            final byte[] signature = this.certificateService.signContent(Optional.ofNullable(signatureCertificate)
-                    .map(SignatureCertificate::getCertificateId)
-                    .orElse(certificateId), payload);
+            final byte[] signature = this.certificateService.signContent(certificateId, algorithm, payload);
             log.debug("Signature service generated signature: {}", Base64.getEncoder().encodeToString(signature));
             return signature;
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException | InvalidKeyException ex) {
@@ -148,13 +144,13 @@ public class SignatureService {
      * Note that the content and signature need to be Base64 encoded, coming
      * from the controller.
      *
-     * @param entityId      The entity ID to get the certificate for
+     * @param entityName    The name of the entity to get the certificate for
      * @param b64Content    The Base64 encoded content to be verified
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyEntitySignature(@NotNull String entityId, String b64Content, String b64Signature) {
-        return Optional.of(entityId)
+    public boolean verifyEntitySignature(@NotNull String entityName, String b64Content, String b64Signature) {
+        return Optional.of(entityName)
                 .map(this.mrnEntityService::findOneByName)
                 .map(MrnEntity::getId)
                 .map(this.certificateService::getLatestOrCreate)
