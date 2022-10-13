@@ -19,6 +19,8 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.Date;
@@ -82,13 +84,15 @@ class SignatureServiceTest {
         this.certificate.setStartDate(new Date());
         this.certificate.setEndDate(new Date());
         this.certificate.setCertificate("CERTIFICATE");
+        this.certificate.setPublicKey("PUBLIC_KEY");
+        this.certificate.setPrivateKey("PRIVATE_KEY");
 
         // Create a new Signature Certificate
         this.signatureCertificate = new SignatureCertificate();
         this.signatureCertificate.setCertificateId(this.certificate.getId());
         this.signatureCertificate.setCertificate(this.certificate.getCertificate());
         this.signatureCertificate.setPublicKey(this.certificate.getPublicKey());
-        this.signatureCertificate.setRootCertificateThumbprint("rootCertificateThumbprint");
+        this.signatureCertificate.setRootCertificate("ROOT_CERTIFICATE");
 
         // Generate a dummy content and signature
         this.content = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
@@ -101,20 +105,24 @@ class SignatureServiceTest {
      * entity.
      */
     @Test
-    void testGetSignatureCertificate() {
+    void testGetSignatureCertificate() throws CertificateEncodingException {
+        // Mock a root certificate
+        X509Certificate rootCertificate = mock(X509Certificate.class);
+        doReturn(new byte[]{0x01, 0x02, 0x03, 0x04}).when(rootCertificate).getEncoded();
+
         doReturn(this.mrnEntity).when(this.mrnEntityService).getOrCreate(any(), any(), any(), any());
         doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
-        doReturn(this.signatureCertificate.getRootCertificateThumbprint()).when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
+        doReturn(rootCertificate).when(this.certificateService).getTrustedCertificate(any());
 
         // Perform the service call
         SignatureCertificate result = this.signatureService.getSignatureCertificate(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType());
 
         // Assert that the signature certificate seems OK
         assertNotNull(result);
-        assertEquals(this.signatureCertificate.getCertificateId(), result.getCertificateId());
-        assertEquals(this.signatureCertificate.getCertificate(), result.getCertificate());
-        assertEquals(this.signatureCertificate.getPublicKey(), result.getPublicKey());
-        assertEquals(this.signatureCertificate.getRootCertificateThumbprint(), result.getRootCertificateThumbprint());
+        assertEquals(this.certificate.getId(), result.getCertificateId());
+        assertEquals(this.certificate.getCertificate(), result.getCertificate());
+        assertEquals(this.certificate.getPublicKey(), result.getPublicKey());
+        assertEquals(Base64.getEncoder().encodeToString(new byte[]{0x01, 0x02, 0x03, 0x04}), result.getRootCertificate());
     }
 
     /**
@@ -123,12 +131,10 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateEntitySignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
-        doReturn(this.signature).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
+        doReturn(this.signature).when(this.certificateService).signContent(this.certificate.getId(), "SHA-256", this.content);
 
         // Perform the service call
-        final byte[] result = this.signatureService.generateEntitySignature(this.mrnEntity.getName(),
-                this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), null, this.content);
+        final byte[] result = this.signatureService.generateEntitySignature(this.certificate.getId(), "SHA-256", this.content);
 
         // Assert the signature equality byte by byte
         for(int i=0; i<this.signature.length; i++) {
@@ -143,13 +149,11 @@ class SignatureServiceTest {
      */
     @Test
     void testGenerateEntitySignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
-        doThrow(SignatureException.class).when(this.certificateService).signContent(mrnEntity.getId(), this.content);
+        doThrow(SignatureException.class).when(this.certificateService).signContent(this.certificate.getId(), "SHA-256", this.content);
 
         // Perform the service call
         assertThrows(InvalidRequestException.class, () ->
-            this.signatureService.generateEntitySignature(this.mrnEntity.getName(),
-                    this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType(), null, this.content)
+            this.signatureService.generateEntitySignature(this.certificate.getId(), "SHA-256", this.content)
         );
     }
 

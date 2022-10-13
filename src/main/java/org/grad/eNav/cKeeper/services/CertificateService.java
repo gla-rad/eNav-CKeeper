@@ -30,7 +30,6 @@ import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.grad.secom.core.utils.KeyStoreUtils;
-import org.grad.secom.core.utils.SecomPemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -40,6 +39,7 @@ import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -71,7 +71,7 @@ public class CertificateService {
      * The X.509 Certificate Algorithm.
      */
     @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA256withCVC-ECDSA}")
-    String certAlgorithm;
+    String defaultSigningtAlgorithm;
 
     /**
      * The X.509 Certificate Name String.
@@ -208,15 +208,13 @@ public class CertificateService {
     }
 
     /**
-     * Generate a certificate thumbprint based on the selection from the
-     * provided truststore, using the certificate alias. Also, the
-     * thumbprint generation algorithm can be adjusted.
+     * Generate a certificate PEM string based on the selection from the
+     * provided truststore, using the certificate alias.
      *
-     * @param alias                 The alias of the certificate to generate the thumbprint from
-     * @param thumbprintAlgorithm   The algorithm to be used for generating the thumbprint
+     * @param alias                 The alias of the certificate to be returned
      * @return the generated certificate thumbprint
      */
-    public String getTrustedCertificateThumbprint(String alias, String thumbprintAlgorithm) {
+    public X509Certificate getTrustedCertificate(String alias) {
             return Optional.of(alias)
                     .map(a -> {
                         try {
@@ -231,14 +229,6 @@ public class CertificateService {
                     })
                     .filter(X509Certificate.class::isInstance)
                     .map(X509Certificate.class::cast)
-                    .map(c -> {
-                        try {
-                            return SecomPemUtils.getCertThumbprint(c, thumbprintAlgorithm);
-                        } catch (Exception ex) {
-                            log.error(ex.getMessage());
-                            return null;
-                        }
-                    })
                     .orElse(null);
     }
 
@@ -265,7 +255,7 @@ public class CertificateService {
         KeyPair keyPair = X509Utils.generateKeyPair(this.keyPairCurve);
 
         // Generate a new X509 certificate signing request
-        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, this.certAlgorithm);
+        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, this.defaultSigningtAlgorithm);
 
         // Get the X509 certificate signed by the MCP
         Pair<String, X509Certificate> certificateInfo = this.mcpService.issueMcpEntityCertificate(mrnEntity.getEntityType(), mrnEntity.getMrn(), mrnEntity.getVersion(), csr);
@@ -370,7 +360,7 @@ public class CertificateService {
      * @throws SignatureException when the signature generation process fails
      * @throws InvalidKeyException if the key provided for the signature is invalid
      */
-    public byte[] signContent(BigInteger id, byte[] payload) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public byte[] signContent(BigInteger id, String algorithm, byte[] payload) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         // Pick up the certificate by the provided ID
         Certificate certificate = this.certificateRepo.findById(id)
                 .orElseThrow(() ->
@@ -378,7 +368,7 @@ public class CertificateService {
                 );
 
         // Create a new signature to sign the provided content
-        Signature sign = Signature.getInstance(this.certAlgorithm);
+        Signature sign = Signature.getInstance(Optional.ofNullable(algorithm).orElse(this.defaultSigningtAlgorithm));
         sign.initSign(X509Utils.privateKeyFromPem(certificate.getPrivateKey(), this.keyPairCurve));
         sign.update(payload);
 
@@ -408,7 +398,7 @@ public class CertificateService {
                 );
 
         // Create a new signature to sign the provided content
-        Signature sign = Signature.getInstance(this.certAlgorithm);
+        Signature sign = Signature.getInstance(this.defaultSigningtAlgorithm);
         sign.initVerify(X509Utils.publicKeyFromPem(certificate.getPublicKey()));
         sign.update(content);
 

@@ -30,7 +30,7 @@ public class SignatureCertificateDto {
     private BigInteger certificateId;
     private String certificate;
     private String publicKey;
-    private String rootCertificateThumbprint;
+    private String rootCertificate;
 
     /**
      * Gets certificate id.
@@ -87,21 +87,21 @@ public class SignatureCertificateDto {
     }
 
     /**
-     * Gets root certificate thumbprint.
+     * Gets root certificate.
      *
-     * @return the root certificate thumbprint
+     * @return the root certificate
      */
-    public String getRootCertificateThumbprint() {
-        return rootCertificateThumbprint;
+    public String getRootCertificate() {
+        return rootCertificate;
     }
 
     /**
-     * Sets root certificate thumbprint.
+     * Sets root certificate.
      *
-     * @param rootCertificateThumbprint the root certificate thumbprint
+     * @param rootCertificate the root certificate
      */
-    public void setRootCertificateThumbprint(String rootCertificateThumbprint) {
-        this.rootCertificateThumbprint = rootCertificateThumbprint;
+    public void setRootCertificate(String rootCertificate) {
+        this.rootCertificate = rootCertificate;
     }
 
 }

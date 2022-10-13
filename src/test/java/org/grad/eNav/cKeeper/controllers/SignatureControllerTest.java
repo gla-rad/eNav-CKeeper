@@ -27,6 +27,7 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -82,7 +83,7 @@ class SignatureControllerTest {
         this.signatureCertificate.setCertificateId(BigInteger.ONE);
         this.signatureCertificate.setCertificate("Certificate");
         this.signatureCertificate.setPublicKey("PublicKey");
-        this.signatureCertificate.setRootCertificateThumbprint("rootCertificateThumbprint");
+        this.signatureCertificate.setRootCertificate("rootCertificateThumbprint");
 
         // Create a new signature verification request
         this.svr = new SignatureVerificationRequestDto();
@@ -99,7 +100,7 @@ class SignatureControllerTest {
         doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(get("/api/signature/entity/certificate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.SERVICE.getValue())
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/signature/certificate?entityName={entityName}&mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.SERVICE.getValue())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -110,7 +111,52 @@ class SignatureControllerTest {
         assertEquals(this.signatureCertificate.getCertificateId(), result.getCertificateId());
         assertEquals(this.signatureCertificate.getCertificate(), result.getCertificate());
         assertEquals(this.signatureCertificate.getPublicKey(), result.getPublicKey());
-        assertEquals(this.signatureCertificate.getRootCertificateThumbprint(), result.getRootCertificateThumbprint());
+        assertEquals(this.signatureCertificate.getRootCertificate(), result.getRootCertificate());
+    }
+
+    /**
+     * Test that we can generate a signature based on a specific certificate
+     * assigned to an entity.
+     */
+    @Test
+    void testGenerateCertificateSignature() throws Exception {
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(eq(this.signatureCertificate.getCertificateId()), any(), any());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/certificate/{certificateId}", this.signatureCertificate.getCertificateId())
+                        .contentType(MediaType.TEXT_PLAIN_VALUE)
+                        .content(this.svr.getContent()))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // Assert the signature equality byte by byte
+        byte[] signatureBytes = this.svr.getSignature().getBytes();
+        for(int i=0; i<signatureBytes.length; i++) {
+            assertEquals(signatureBytes[i], mvcResult.getResponse().getContentAsByteArray()[i]);
+        }
+    }
+
+    /**
+     * Test that we can generate a signature based on a specific certificate
+     * assigned to an entity, and also provide the algorithm to be used for the
+     * signature generation.
+     */
+    @Test
+    void testGenerateCertificateSignatureWithAlgorithm() throws Exception {
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(eq(this.signatureCertificate.getCertificateId()), eq("DSA"), any());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/certificate/{certificateId}?algorithm={algorithm}", this.signatureCertificate.getCertificateId(), "DSA")
+                        .contentType(MediaType.TEXT_PLAIN_VALUE)
+                        .content(this.svr.getContent()))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // Assert the signature equality byte by byte
+        byte[] signatureBytes = this.svr.getSignature().getBytes();
+        for(int i=0; i<signatureBytes.length; i++) {
+            assertEquals(signatureBytes[i], mvcResult.getResponse().getContentAsByteArray()[i]);
+        }
     }
 
     /**
@@ -119,8 +165,8 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForDevice() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
-        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.DEVICE.getValue())
@@ -142,8 +188,8 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForService() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
-        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.SERVICE.getValue())
@@ -165,8 +211,8 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForVessel() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
-        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.VESSEL.getValue())
@@ -188,8 +234,8 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForUser() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
-        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.USER.getValue())
@@ -211,11 +257,34 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureFoRole() throws Exception {
-        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any(), any(), any());
-        doReturn("Thumbprint").when(this.certificateService).getTrustedCertificateThumbprint(any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.ROLE.getValue())
+                        .contentType(MediaType.TEXT_PLAIN_VALUE)
+                        .content(this.svr.getContent()))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // Assert the signature equality byte by byte
+        byte[] signatureBytes = this.svr.getSignature().getBytes();
+        for(int i=0; i<signatureBytes.length; i++) {
+            assertEquals(signatureBytes[i], mvcResult.getResponse().getContentAsByteArray()[i]);
+        }
+    }
+
+    /**
+     * Test that we can correctly generate a new signature for an MRN device
+     * entity, with a specified signature algorithm.
+     */
+    @Test
+    void testGenerateEntitySignatureWithAlgorithm() throws Exception {
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), eq("someAlgorithm"), any());
+
+        // Perform the MVC request
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}&algorithm={algorithm}", this.entityName, this.mmsi, McpEntityType.DEVICE.getValue(), "someAlgorithm")
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())

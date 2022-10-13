@@ -25,6 +25,7 @@ import org.grad.eNav.cKeeper.models.dtos.SignatureVerificationRequestDto;
 import org.grad.eNav.cKeeper.services.CertificateService;
 import org.grad.eNav.cKeeper.services.SignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +42,12 @@ import java.util.Optional;
 @RequestMapping("/api/signature")
 @Slf4j
 public class SignatureController {
+
+    /**
+     * The X.509 Certificate Algorithm.
+     */
+    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA256withCVC-ECDSA}")
+    String defaultSigningtAlgorithm;
 
     /**
      * The Certificate Service.
@@ -60,25 +67,41 @@ public class SignatureController {
     @Autowired
     DomainDtoMapper<SignatureCertificate, SignatureCertificateDto> signatureCertificateDomainToDtoMapper;
 
-    // Class Variables
-    final public static String CKEEPER_PUBLIC_CERTIFICATE_HEADER = "PUBLIC_CERTIFICATE";
-    final public static String CKEEPER_SIGNATURE_ALGORITHM = "SIGNATURE_ALGORITHM";
-    final public static String CKEEPER_ROOT_CERTIFICATE_THUMBPRINT = "ROOT_CERTIFICATE_THUMBPRINT";
-
     /**
-     * GET /api/signature/entity/certificate/{entityName} : Requests a signature
-     * for the provided payload based on the entity ID.
+     * GET /api/signature//certificate : Requests the certificate to be used for
+     * singing payload of a specific entity based on its name, MMSI and type.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @GetMapping(value = "/entity/certificate/{entityName}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<SignatureCertificateDto> getSignatureCertificate(@PathVariable String entityName,
-                                                                           @RequestParam(value = "mmsi", required = false) String mmsi,
-                                                                           @RequestParam("entityType") McpEntityType entityType) {
-        log.debug("REST request to get Signature Certificate for : {}", entityName);
+    @GetMapping(value = "/certificate", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SignatureCertificateDto> getCertificate(@RequestParam String entityName,
+                                                                  @RequestParam(value = "mmsi", required = false) String mmsi,
+                                                                  @RequestParam(value = "entityType", required = false, defaultValue="device") McpEntityType entityType) {
+        log.debug("REST request to get signature certificate for entity with name : {}", entityName);
+        final SignatureCertificate signatureCertificate = this.signatureService.getSignatureCertificate(entityName, mmsi, entityType);
         return ResponseEntity.ok()
-                .body(this.signatureCertificateDomainToDtoMapper.convertTo(this.signatureService.getSignatureCertificate(entityName, mmsi, entityType), SignatureCertificateDto.class));
+                .body(this.signatureCertificateDomainToDtoMapper.convertTo(signatureCertificate, SignatureCertificateDto.class));
+    }
+
+    /**
+     * POST /api/signature//certificate/{certificateId} : Requests a signature
+     * for the provided payload based on the provided certificate ID.
+     *
+     * @return the ResponseEntity with status 200 (OK) if successful, or with
+     * status 400 (Bad Request)
+     */
+    @PostMapping(value = "/certificate/{certificateId}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<byte[]> generateCertificateSignature(@PathVariable BigInteger certificateId,
+                                                               @RequestParam(value = "algorithm", required = false) String algorithm,
+                                                               @RequestBody byte[] signaturePayload) {
+        log.debug("REST request to get a signature for certificate with ID : {}", certificateId);
+        final byte[] result = signatureService.generateEntitySignature(
+                certificateId,
+                Optional.ofNullable(algorithm).orElse(this.defaultSigningtAlgorithm),
+                signaturePayload);
+        return ResponseEntity.ok()
+                .body(result);
     }
 
     /**
@@ -91,12 +114,18 @@ public class SignatureController {
     @PostMapping(value = "/entity/generate/{entityName}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateEntitySignature(@PathVariable String entityName,
                                                           @RequestParam(value = "mmsi", required = false) String mmsi,
-                                                          @RequestParam(value = "entityType", required = false) McpEntityType entityType,
-                                                          @RequestParam(value = "certificateId", required = false) BigInteger certificateId,
+                                                          @RequestParam(value = "entityType", required = false, defaultValue = "device") McpEntityType entityType,
+                                                          @RequestParam(value = "algorithm", required = false) String algorithm,
                                                           @RequestBody byte[] signaturePayload) {
-        log.debug("REST request to get a signature for entity with ID : {}", entityName);
-        final byte[] result = signatureService.generateEntitySignature(entityName,
-                mmsi, Optional.ofNullable(entityType).orElse(McpEntityType.DEVICE), certificateId, signaturePayload);
+        log.debug("REST request to get a signature for entity with name : {}", entityName);
+        final SignatureCertificate signatureCertificate =  this.signatureService.getSignatureCertificate(
+                entityName,
+                mmsi,
+                entityType);
+        final byte[] result = signatureService.generateEntitySignature(
+                signatureCertificate.getCertificateId(),
+                Optional.ofNullable(algorithm).orElse(this.defaultSigningtAlgorithm),
+                signaturePayload);
         return ResponseEntity.ok()
                 .body(result);
     }
@@ -111,7 +140,7 @@ public class SignatureController {
     @PostMapping(value = "/entity/verify/{entityName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> verifyEntitySignature(@PathVariable String entityName,
                                                       @RequestBody SignatureVerificationRequestDto svr) {
-        log.debug("REST request to get verify the signed content for entity with ID : {}", entityName);
+        log.debug("REST request to get verify the signed content for entity with name : {}", entityName);
         // Verify the posted signature
         if(this.signatureService.verifyEntitySignature(entityName, svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
