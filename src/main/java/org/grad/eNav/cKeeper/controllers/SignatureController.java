@@ -68,14 +68,14 @@ public class SignatureController {
     DomainDtoMapper<SignatureCertificate, SignatureCertificateDto> signatureCertificateDomainToDtoMapper;
 
     /**
-     * GET /api/signature//certificate : Requests the certificate to be used for
+     * GET /api/signature/certificate : Requests the certificate to be used for
      * singing payload of a specific entity based on its name, MMSI and type.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
     @GetMapping(value = "/certificate", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<SignatureCertificateDto> getCertificate(@RequestParam String entityName,
+    public ResponseEntity<SignatureCertificateDto> getCertificate(@RequestParam(value = "entityName") String entityName,
                                                                   @RequestParam(value = "mmsi", required = false) String mmsi,
                                                                   @RequestParam(value = "entityType", required = false, defaultValue="device") McpEntityType entityType) {
         log.debug("REST request to get signature certificate for entity with name : {}", entityName);
@@ -85,7 +85,7 @@ public class SignatureController {
     }
 
     /**
-     * POST /api/signature//certificate/{certificateId} : Requests a signature
+     * POST /api/signature/certificate/{certificateId} : Requests a signature
      * for the provided payload based on the provided certificate ID.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
