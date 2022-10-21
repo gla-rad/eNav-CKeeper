@@ -57,7 +57,7 @@ public class DtPage<T> {
      */
     public DtPage(Page<T> page, DtPagingRequest dtPagingRequest) {
         this(page.getContent().stream().collect(Collectors.toList()));
-        this.setRecordsFiltered((int)  page.getNumberOfElements());
+        this.setRecordsFiltered((int) page.getTotalElements());
         this.setRecordsTotal((int) page.getTotalElements());
         this.setDraw(dtPagingRequest.getDraw());
     }

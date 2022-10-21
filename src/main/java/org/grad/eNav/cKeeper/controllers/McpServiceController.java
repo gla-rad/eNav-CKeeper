@@ -63,7 +63,7 @@ public class McpServiceController {
         try {
             return ResponseEntity.ok()
                     .body(this.mcpService.getMcpEntity(mrn, version, McpServiceDto.class));
-        } catch (IOException | McpConnectivityException ex) {
+        } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
     }
@@ -89,7 +89,7 @@ public class McpServiceController {
         // Save the MRN Entity
         try {
             mcpServiceDto = this.mcpService.createMcpEntity(mcpServiceDto);
-        } catch (IOException | McpConnectivityException ex) {
+        } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
 
@@ -120,7 +120,7 @@ public class McpServiceController {
         // Save the MRN Entity
         try {
             this.mcpService.updateMcpEntity(mrn, mcpServiceDto);
-        } catch (IOException | McpConnectivityException ex) {
+        } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
 
@@ -145,7 +145,7 @@ public class McpServiceController {
         // Delete the MRN Entity
         try {
             this.mcpService.deleteMcpEntity(mrn, version, McpServiceDto.class);
-        } catch (IOException | McpConnectivityException ex) {
+        } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
 

@@ -19,6 +19,7 @@ package org.grad.eNav.cKeeper.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
+import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpServiceDto;
@@ -102,11 +103,11 @@ class McpDeviceControllerTest {
      */
     @Test
     void testGetMcpDeviceFailed() throws Exception {
-        doThrow(IOException.class).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
+        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn()))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andReturn();
     }
 
@@ -116,7 +117,7 @@ class McpDeviceControllerTest {
      */
     @Test
     void testGetMcpDeviceMcpConnectivityFailed() throws Exception {
-        doThrow(IOException.class).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
+        doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn()))
@@ -189,13 +190,13 @@ class McpDeviceControllerTest {
      */
     @Test
     void testCreateMcpDeviceFailed() throws Exception {
-        doThrow(IOException.class).when(this.mcpService).createMcpEntity(this.mcpDeviceDto);
+        doThrow(SavingFailedException.class).when(this.mcpService).createMcpEntity(this.mcpDeviceDto);
 
         // Perform the MVC request
         this.mockMvc.perform(post("/api/mcp/{mcpEntityType}", McpEntityType.DEVICE.getValue())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpDeviceDto)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnprocessableEntity())
                 .andReturn();
     }
 
@@ -284,18 +285,18 @@ class McpDeviceControllerTest {
      * of the error in the header.
      */
     @Test
-    void testUpdateMcpDeviceFailure() throws Exception {
+    void testUpdateMcpDeviceFailed() throws Exception {
         // For an update set an ID in the MCP device
         this.mcpDeviceDto.setId(BigInteger.ONE);
 
         // Mock a general Exception when saving the instance
-        doThrow(IOException.class).when(this.mcpService).updateMcpEntity(any(), any());
+        doThrow(SavingFailedException.class).when(this.mcpService).updateMcpEntity(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpDeviceDto)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnprocessableEntity())
                 .andReturn();
     }
 
@@ -353,12 +354,12 @@ class McpDeviceControllerTest {
      */
     @Test
     void testDeleteMcpDeviceFailed() throws Exception {
-        doThrow(IOException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andReturn();
     }
 

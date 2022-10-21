@@ -79,6 +79,16 @@ public class McpConfigService {
     String keyStorePass;
 
     /**
+     * A helper function to construct the appropriate MCP base URL, based
+     * on the currently loaded host and registered organisation.
+     *
+     * @return the complete MCP endpoint URL
+     */
+    public String constructMcpBaseUrl() {
+        return String.format("https://%s/x509/api/org/%s:%s/", this.host, this.mcpOrgPrefix, this.organisation);
+    }
+
+    /**
      * A helper function to construct the appropriate MCP endpoint URL, based
      * on the currently loaded host, registered organisation and endpoint to
      * be reached.

@@ -307,7 +307,7 @@ public class CertificateService {
         this.mcpService.revokeMcpEntityCertificate(certificate.getMrnEntity().getEntityType(), certificate.getMrnEntity().getMrn(), certificate.getMrnEntity().getVersion(), certificate.getMcpMirId());
 
         // And if successful, make it locally as well
-        certificate.setRevoked(true);
+        certificate.setRevoked(Boolean.TRUE);
 
         // Save and return
         return Optional.of(certificate)

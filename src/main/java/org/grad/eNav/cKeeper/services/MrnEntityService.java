@@ -227,7 +227,8 @@ public class MrnEntityService {
 
                         // Always read the MRN from the MCP MIR
                         entity.setMrn(mcpEntity.getMrn());
-                    } catch (IOException | McpConnectivityException ex) {
+                        entity.setVersion(Optional.of(entity).map(MrnEntity::getVersion).orElse(""));
+                    } catch (McpConnectivityException ex) {
                         // If the MCP connectivity failed, don't continue
                         log.error(ex.getMessage());
                         return null;
@@ -265,7 +266,7 @@ public class MrnEntityService {
                         this.mcpService.deleteMcpEntity(entity.getMrn(), entity.getVersion(), entity.getEntityType().getEntityClass());
                     } catch(DeletingFailedException ex) {
                         // Not found? Not problem!
-                    } catch(IOException | McpConnectivityException ex) {
+                    } catch(McpConnectivityException ex) {
                         // If the MCP connectivity failed, don't continue
                         return null;
                     }
