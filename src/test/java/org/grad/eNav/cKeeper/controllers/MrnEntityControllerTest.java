@@ -202,9 +202,9 @@ class MrnEntityControllerTest {
         DtPage<Map<String, String>> result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), DtPage.class);
         assertNotNull(result);
         assertEquals(this.entities.size(), result.getRecordsTotal());
-        assertEquals(5, result.getRecordsFiltered());
+        assertEquals(this.entities.size(), result.getRecordsFiltered());
         assertNotNull(result.getData());
-        for(int i=0; i< result.getRecordsFiltered(); i++) {
+        for(int i=0; i< result.getData().size(); i++) {
             assertNotNull(result.getData().get(i));
             assertEquals(this.entities.get(i).getId().intValue(), result.getData().get(i).get("id"));
             assertEquals(this.entities.get(i).getName(), result.getData().get(i).get("name"));

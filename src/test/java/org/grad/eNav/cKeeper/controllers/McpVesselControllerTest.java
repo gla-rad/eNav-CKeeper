@@ -20,6 +20,7 @@ package org.grad.eNav.cKeeper.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
+import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpVesselDto;
@@ -105,11 +106,11 @@ class McpVesselControllerTest {
      */
     @Test
     void testGetMcpVesselFailed() throws Exception {
-        doThrow(IOException.class).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), null,  McpVesselDto.class);
+        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), null,  McpVesselDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn()))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andReturn();
     }
 
@@ -119,7 +120,7 @@ class McpVesselControllerTest {
      */
     @Test
     void testGetMcpVesselMcpConnectivityFailed() throws Exception {
-        doThrow(IOException.class).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), null, McpVesselDto.class);
+        doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), null, McpVesselDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn()))
@@ -192,13 +193,13 @@ class McpVesselControllerTest {
      */
     @Test
     void testCreateMcpVesselFailed() throws Exception {
-        doThrow(IOException.class).when(this.mcpService).createMcpEntity(this.mcpVesselDto);
+        doThrow(SavingFailedException.class).when(this.mcpService).createMcpEntity(this.mcpVesselDto);
 
         // Perform the MVC request
         this.mockMvc.perform(post("/api/mcp/{mcpEntityType}", McpEntityType.VESSEL.getValue())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpVesselDto)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnprocessableEntity())
                 .andReturn();
     }
 
@@ -287,18 +288,18 @@ class McpVesselControllerTest {
      * of the error in the header.
      */
     @Test
-    void testUpdateMcpVesselFailure() throws Exception {
+    void testUpdateMcpVesselFailed() throws Exception {
         // For an update set an ID in the MCP vessel
         this.mcpVesselDto.setId(BigInteger.ONE);
 
         // Mock a general Exception when saving the instance
-        doThrow(IOException.class).when(this.mcpService).updateMcpEntity(any(), any());
+        doThrow(SavingFailedException.class).when(this.mcpService).updateMcpEntity(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpVesselDto)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnprocessableEntity())
                 .andReturn();
     }
 
@@ -356,12 +357,12 @@ class McpVesselControllerTest {
      */
     @Test
     void testDeleteMcpVesselFailed() throws Exception {
-        doThrow(IOException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andReturn();
     }
 
