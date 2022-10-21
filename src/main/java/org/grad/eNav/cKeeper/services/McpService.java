@@ -98,19 +98,19 @@ public class McpService {
     /**
      * The X.509 Trust-Store.
      */
-    //@Value("${gla.rad.ckeeper.mcp.trustStore:mcp/truststore.p12}")
+    @Value("${gla.rad.ckeeper.mcp.trustStore:mcp/truststore.p12}")
     String trustStore;
 
     /**
      * The X.509 Trust-Store Password.
      */
-    //@Value("${gla.rad.ckeeper.mcp.trustStorePassword:password}")
+    @Value("${gla.rad.ckeeper.mcp.trustStorePassword:password}")
     String trustStorePassword;
 
     /**
      * The X.509 Trust-Store Type.
      */
-    //@Value("${gla.rad.ckeeper.mcp.trustStoreType:PKCS12}")
+    @Value("${gla.rad.ckeeper.mcp.trustStoreType:PKCS12}")
     String trustStoreType;
 
     /**
