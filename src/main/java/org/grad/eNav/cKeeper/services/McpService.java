@@ -27,10 +27,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
-import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
-import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
-import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.exceptions.*;
 import org.grad.eNav.cKeeper.models.domain.Pair;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpCertitifateDto;
@@ -363,7 +360,7 @@ public class McpService {
                     .blockOptional()
                     .isPresent();
         } catch (WebClientResponseException ex) {
-            throw new DataNotFoundException((ex.getMessage()));
+            throw new DeletingFailedException((ex.getMessage()));
         }
     }
 
@@ -376,17 +373,17 @@ public class McpService {
      * @param mrn           The MCP entity MRN to retrieve the certificates for
      * @param version       The version (if applicable) of the MCP entity
      * @return the list of available certificates
-     * @throws IOException if the response parsing operation fails
+     * @throws McpConnectivityException if the connection to the MCP is not active
      */
     public Map<String, X509Certificate> getMcpEntityCertificates(@NotNull McpEntityType mcpEntityType,
                                                                  @NotNull String mrn,
-                                                                 String version) throws IOException, McpConnectivityException {
+                                                                 String version) throws McpConnectivityException {
         log.debug("Request to retrieve an existing certificate for the MCP {} with MRN {}", mcpEntityType.getValue(), mrn);
 
         // Get the MCP Entity certificates directly from the MCP MIR
-        return this.getMcpEntity(mrn, version, mcpEntityType.getEntityClass()).getCertificates()
+        return this.getMcpEntity(mrn, version, mcpEntityType.getEntityClass())
+                .getCertificates()
                 .stream()
-                .map(McpCertitifateDto.class::cast)
                 .filter(not(McpCertitifateDto::isRevoked))
                 .map(McpCertitifateDto::getCertificate)
                 .map(s -> s.replace("\\n","\n"))
@@ -531,6 +528,7 @@ public class McpService {
             assert this.mcpMirClient.options()
                     .retrieve()
                     .toBodilessEntity()
+                    .filter(response -> response.getStatusCode().is2xxSuccessful())
                     .blockOptional()
                     .isPresent();
         } catch (WebClientResponseException | AssertionError ex) {

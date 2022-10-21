@@ -155,7 +155,7 @@ public class CertificateService {
                 .map(entity -> {
                     try {
                         return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn(), mrnEntity.getVersion());
-                    } catch (IOException | McpConnectivityException ex) {
+                    } catch (McpConnectivityException ex) {
                         // If the MCP connectivity failed, just don't use it
                         return null;
                     }
@@ -329,8 +329,8 @@ public class CertificateService {
     public Certificate getLatestOrCreate(BigInteger mrnEntityId) {
         return this.findAllByMrnEntityId(mrnEntityId)
                 .stream()
-                .filter(c -> Optional.of(c).map(Certificate::getStartDate).map(d -> d.before(Date.from(Instant.now()))).orElse(true))
-                .filter(c -> Optional.of(c).map(Certificate::getEndDate).map(d -> d.after(Date.from(Instant.now()))).orElse(true))
+                .filter(c -> Optional.of(c).map(Certificate::getStartDate).map(d -> d.compareTo(Date.from(Instant.now())) <= 0).orElse(true))
+                .filter(c -> Optional.of(c).map(Certificate::getEndDate).map(d -> d.compareTo(Date.from(Instant.now())) >= 0).orElse(true))
                 .filter(not(c -> Objects.equals(c.getRevoked(), Boolean.TRUE)))
                 .filter(not(c -> Objects.isNull(c.getStartDate())))
                 .max(Comparator.comparing(Certificate::getStartDate))
