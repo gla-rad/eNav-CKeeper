@@ -155,7 +155,7 @@ public class CertificateService {
                 .map(entity -> {
                     try {
                         return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn(), mrnEntity.getVersion());
-                    } catch (McpConnectivityException ex) {
+                    } catch (DataNotFoundException | McpConnectivityException ex) {
                         // If the MCP connectivity failed, just don't use it
                         return null;
                     }
