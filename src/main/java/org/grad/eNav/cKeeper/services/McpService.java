@@ -23,7 +23,6 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -48,6 +47,7 @@ import reactor.netty.http.client.HttpClient;
 
 import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -389,7 +389,7 @@ public class McpService {
                 .map(s -> s.replace("\\n","\n"))
                 .map(pem -> {
                     try {
-                        return (X509Certificate) this.certificateFactory.generateCertificate(IOUtils.toInputStream(pem));
+                        return (X509Certificate) this.certificateFactory.generateCertificate(new ByteArrayInputStream(pem.getBytes()));
                     } catch (CertificateException ex) {
                         // Don't include invalid certificates
                         return null;
@@ -461,7 +461,7 @@ public class McpService {
                 .map(s -> s.replace("\\n","\n"))
                 .orElseThrow(() -> new InvalidRequestException(String.format("Empty certificate issued for entity with MRN: %s", fullMrn)));
         try {
-            return new Pair<>(mcpMirId, (X509Certificate) this.certificateFactory.generateCertificate(IOUtils.toInputStream(certificate)));
+            return new Pair<>(mcpMirId, (X509Certificate) this.certificateFactory.generateCertificate(new ByteArrayInputStream(certificate.getBytes())));
         } catch (CertificateException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
