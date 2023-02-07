@@ -15,9 +15,9 @@
   -->
 
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <th:block th:include="fragments/general.html :: headerfiles"></th:block>
+    <th:block th:insert="~{fragments/general.html :: headerfiles}"></th:block>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.0/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.0.0/css/buttons.bootstrap5.min.css" />
 </head>
@@ -30,10 +30,10 @@
         </h2>
     </noscript>
     <div class="d-flex flex-column vh-100">
-        <div th:replace="fragments/general.html :: navbar"></div>
+        <div th:replace="~{fragments/general.html :: navbar}"></div>
         <div class="flex-fill flex-grow-1 flex-shrink-0 sky-bg">
             <div id="main-content" class="container mt-3">
-                <div th:replace="fragments/general.html :: login-card"></div>
+                <div th:replace="~{fragments/general.html :: login-card}"></div>
                 <div class="card shadow" sec:authorize="isAuthenticated()">
                     <div class="card-header">
                         <h2>X.509 Certificate Dashboard</h2>
@@ -106,8 +106,8 @@
                 </div>
             </div>
         </div>
-        <div th:replace="fragments/general.html :: error-dialog"></div>
-        <div th:replace="fragments/general.html :: footer"></div>
+        <div th:replace="~{fragments/general.html :: error-dialog}"></div>
+        <div th:replace="~{fragments/general.html :: footer}"></div>
     </div>
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>

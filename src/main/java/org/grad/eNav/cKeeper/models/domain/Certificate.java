@@ -20,13 +20,14 @@ import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.hibernate.annotations.*;
 import org.hibernate.annotations.Cache;
 
-import javax.persistence.*;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
+import java.sql.Types;
 import java.util.Date;
 import java.util.Objects;
 
@@ -48,16 +49,16 @@ public class Certificate {
     private BigInteger id;
 
     @NotNull
-    @Type(type="text")
+    @JdbcTypeCode(Types.LONGVARCHAR)
     @Column(name = "certificate")
     private String certificate;
 
     @NotNull
-    @Type(type="text")
+    @JdbcTypeCode(Types.LONGVARCHAR)
     @Column(name = "publicKey")
     private String publicKey;
 
-    @Type(type="text")
+    @JdbcTypeCode(Types.LONGVARCHAR)
     @Column(name = "privateKey")
     private String privateKey;
 

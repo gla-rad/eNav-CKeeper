@@ -17,7 +17,7 @@
 
 package org.grad.eNav.cKeeper.models.dtos.mcp;
 
-import javax.validation.constraints.Email;
+import jakarta.validation.constraints.Email;
 import java.util.Objects;
 
 /**
