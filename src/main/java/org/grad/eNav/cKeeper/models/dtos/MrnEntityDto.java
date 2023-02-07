@@ -19,8 +19,8 @@ package org.grad.eNav.cKeeper.models.dtos;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.math.BigInteger;
 import java.util.Objects;
 

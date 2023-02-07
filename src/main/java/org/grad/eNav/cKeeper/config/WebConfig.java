@@ -20,10 +20,7 @@ import org.grad.eNav.cKeeper.components.McpEntityTypeConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.FormatterRegistry;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
 
 /**
  * The WebConfig Class
@@ -41,6 +38,22 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Autowired
     McpEntityTypeConverter mcpEntityTypeConverter;
+
+    /**
+     * As of Spring Framework 6.0, the trailing slash matching configuration
+     * option has been deprecated and its default value set to false. This
+     * means that previously, the following controller would match both
+     * "GET /some/greeting" and "GET /some/greeting/". To disable this
+     * functionality and mirror the previous version behaviour we need to
+     * do this. Note that this functionality has been deprecated so we need
+     * to be careful.
+     *
+     * @param pathMatchConfigurer   the path match configurer
+     */
+    @Override
+    public void configurePathMatch(PathMatchConfigurer pathMatchConfigurer) {
+        pathMatchConfigurer.setUseTrailingSlashMatch(true);
+    }
 
     /**
      * Add the static resources and webjars to the web resources.
