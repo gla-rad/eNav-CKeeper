@@ -181,8 +181,8 @@ class SpringSecurityConfig {
         http.logout()
                 .deleteCookies("JSESSIONID")
                 .addLogoutHandler(keycloakLogoutHandler(restTemplate))
-                .logoutSuccessHandler(new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository))
                 .logoutSuccessUrl("/");
+//                .logoutSuccessHandler(new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository));
         // Require authentication for specific requests
         http.authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers(EndpointRequest.to(
