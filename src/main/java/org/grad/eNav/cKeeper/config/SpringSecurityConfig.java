@@ -65,7 +65,7 @@ class SpringSecurityConfig {
     /**
      * The default application name.
      */
-    @Value("${spring.application.name:cKeeper}")
+    @Value("${spring.security.oauth2.clientId:c-keeper}")
     private String appName;
 
     /**
