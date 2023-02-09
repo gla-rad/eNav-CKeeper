@@ -37,7 +37,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
@@ -65,8 +64,8 @@ class SpringSecurityConfig {
     /**
      * The default application name.
      */
-    @Value("${spring.security.oauth2.clientId:c-keeper}")
-    private String appName;
+    @Value("${keycloak.clientId:c-keeper}")
+    private String clientId;
 
     /**
      * The default application name.
@@ -125,7 +124,7 @@ class SpringSecurityConfig {
      */
     @Bean
     Converter<Jwt, ? extends AbstractAuthenticationToken> keycloakJwtAuthenticationConverter() {
-        return new KeycloakJwtAuthenticationConverter(appName);
+        return new KeycloakJwtAuthenticationConverter(this.clientId);
     }
 
     /**
@@ -135,7 +134,7 @@ class SpringSecurityConfig {
      */
     @Bean
     protected GrantedAuthoritiesMapper keycloakGrantedAuthoritiesMapper() {
-        return new KeycloakGrantedAuthoritiesMapper(this.appName);
+        return new KeycloakGrantedAuthoritiesMapper(this.clientId);
     }
 
     /**
