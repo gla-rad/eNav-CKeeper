@@ -16,6 +16,10 @@
 
 package org.grad.eNav.cKeeper.controllers;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.components.DomainDtoMapper;
 import org.grad.eNav.cKeeper.models.domain.SignatureCertificate;
@@ -91,6 +95,12 @@ public class SignatureController {
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
+    @ApiResponses(value = {
+            @ApiResponse(
+                content = {
+                        @Content(mediaType="text/plain", schema = @Schema(type = "string", format = "binary"))
+                })
+    })
     @PostMapping(value = "/certificate/{certificateId}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateCertificateSignature(@PathVariable BigInteger certificateId,
                                                                @RequestParam(value = "algorithm", required = false) String algorithm,
@@ -111,6 +121,12 @@ public class SignatureController {
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
+    @ApiResponses(value = {
+            @ApiResponse(
+                    content = {
+                            @Content(mediaType="text/plain", schema = @Schema(type = "string", format = "binary"))
+                    })
+    })
     @PostMapping(value = "/entity/generate/{entityName}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateEntitySignature(@PathVariable String entityName,
                                                           @RequestParam(value = "mmsi", required = false) String mmsi,

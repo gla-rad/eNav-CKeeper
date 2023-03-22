@@ -121,8 +121,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
@@ -146,8 +146,8 @@
 		<!-- SECOM -->
 		<dependency>
 			<groupId>org.grad.secom</groupId>
-			<artifactId>secom-core</artifactId>
-			<version>0.0.6-SNAPSHOT</version>
+			<artifactId>secom-core-jakarta</artifactId>
+			<version>0.0.13</version>
 		</dependency>
 
 		<!-- Swagger -->
