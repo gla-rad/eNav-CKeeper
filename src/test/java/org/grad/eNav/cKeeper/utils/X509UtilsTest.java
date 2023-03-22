@@ -266,7 +266,7 @@ class X509UtilsTest {
         // Basic Assertions
         assertNotNull(privateKeyPem);
         assertTrue(privateKeyPem.startsWith("-----BEGIN CERTIFICATE-----"));
-        assertTrue(privateKeyPem.endsWith("-----END CERTIFICATE-----\n"));
+        assertTrue(privateKeyPem.endsWith("-----END CERTIFICATE-----" + System.lineSeparator()));
         assertTrue(privateKeyPem.length() > 100);
     }
 
@@ -289,7 +289,7 @@ class X509UtilsTest {
         // Basic Assertions
         assertNotNull(publicKeyPem);
         assertTrue(publicKeyPem.startsWith("-----BEGIN PUBLIC KEY-----"));
-        assertTrue(publicKeyPem.endsWith("-----END PUBLIC KEY-----\n"));
+        assertTrue(publicKeyPem.endsWith("-----END PUBLIC KEY-----" + System.lineSeparator()));
         assertTrue(publicKeyPem.length() > 100);
     }
 
@@ -312,7 +312,7 @@ class X509UtilsTest {
         // Basic Assertions
         assertNotNull(privateKeyPem);
         assertTrue(privateKeyPem.startsWith("-----BEGIN PRIVATE KEY-----"));
-        assertTrue(privateKeyPem.endsWith("-----END PRIVATE KEY-----\n"));
+        assertTrue(privateKeyPem.endsWith("-----END PRIVATE KEY-----" + System.lineSeparator()));
         assertTrue(privateKeyPem.length() > 100);
     }
 
