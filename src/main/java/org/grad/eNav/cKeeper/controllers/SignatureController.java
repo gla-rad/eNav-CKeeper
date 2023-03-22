@@ -98,13 +98,13 @@ public class SignatureController {
     @ApiResponses(value = {
             @ApiResponse(
                 content = {
-                        @Content(mediaType="text/plain", schema = @Schema(type = "string", format = "binary"))
+                        @Content(mediaType="text/plain", schema = @Schema(type = "string", format = "byte"))
                 })
     })
     @PostMapping(value = "/certificate/{certificateId}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateCertificateSignature(@PathVariable BigInteger certificateId,
                                                                @RequestParam(value = "algorithm", required = false) String algorithm,
-                                                               @RequestBody byte[] signaturePayload) {
+                                                               @RequestBody @Schema(type = "string", format = "byte") byte[] signaturePayload) {
         log.debug("REST request to get a signature for certificate with ID : {}", certificateId);
         final byte[] result = signatureService.generateEntitySignature(
                 certificateId,
@@ -124,7 +124,7 @@ public class SignatureController {
     @ApiResponses(value = {
             @ApiResponse(
                     content = {
-                            @Content(mediaType="text/plain", schema = @Schema(type = "string", format = "binary"))
+                            @Content(mediaType="text/plain", schema = @Schema(type = "string", format = "byte"))
                     })
     })
     @PostMapping(value = "/entity/generate/{entityName}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
@@ -132,7 +132,7 @@ public class SignatureController {
                                                           @RequestParam(value = "mmsi", required = false) String mmsi,
                                                           @RequestParam(value = "entityType", required = false, defaultValue = "device") McpEntityType entityType,
                                                           @RequestParam(value = "algorithm", required = false) String algorithm,
-                                                          @RequestBody byte[] signaturePayload) {
+                                                          @RequestBody @Schema(type = "string", format = "byte") byte[] signaturePayload) {
         log.debug("REST request to get a signature for entity with name : {}", entityName);
         final SignatureCertificate signatureCertificate =  this.signatureService.getSignatureCertificate(
                 entityName,
