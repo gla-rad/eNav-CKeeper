@@ -93,7 +93,7 @@ public class SignatureService {
     public SignatureCertificate getSignatureCertificate(@NotNull String entityName, String mmsi, McpEntityType entityType) {
         // Get or create a new MRN Entity if it doesn't exist
         final MrnEntity mrnEntity = this.mrnEntityService.getOrCreate(
-                entityName, mmsi, this.mcpConfigService.constructMcpEntityMrn(entityType, entityName), entityType);
+                entityName, this.mcpConfigService.constructMcpEntityMrn(entityType, entityName),  mmsi, entityType);
 
         // Get the latest or create a certificate if it doesn't exist
         final Certificate certificate = this.certificateService.getLatestOrCreate(
