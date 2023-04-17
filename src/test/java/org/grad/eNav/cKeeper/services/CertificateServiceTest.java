@@ -115,8 +115,8 @@ class CertificateServiceTest {
         this.certificate.setCertificate("CERTIFICATE");
         this.certificate.setPublicKey("PUBLIC KEY");
         this.certificate.setPrivateKey("PRIVATE KEY");
-        this.certificate.setStartDate(new Date());
-        this.certificate.setEndDate(new Date(this.certificate.getStartDate().getTime() + 1000));
+        this.certificate.setStartDate(new Date(new Date().getTime() - 1000));
+        this.certificate.setEndDate(new Date(new Date().getTime() + 1000));
         this.certificate.setRevoked(Boolean.FALSE);
 
         // Create a new certificate object
