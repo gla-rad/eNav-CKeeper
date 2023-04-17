@@ -147,18 +147,18 @@ public class SignatureController {
     }
 
     /**
-     * POST /api/signature/entity/verify/{entityName} : Verify the provided
-     * content based on the provided entity name.
+     * POST /api/signature/entity/verify/{entityMrn} : Verify the provided
+     * content based on the provided entity MRN.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @PostMapping(value = "/entity/verify/{entityName}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> verifyEntitySignature(@PathVariable String entityName,
-                                                      @RequestBody SignatureVerificationRequestDto svr) {
-        log.debug("REST request to get verify the signed content for entity with name : {}", entityName);
+    @PostMapping(value = "/entity/verify/{entityMrn}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> verifyEntitySignatureByMrn(@PathVariable String entityMrn,
+                                                           @RequestBody SignatureVerificationRequestDto svr) {
+        log.debug("REST request to get verify the signed content for entity with name : {}", entityMrn);
         // Verify the posted signature
-        if(this.signatureService.verifyEntitySignature(entityName, svr.getContent(), svr.getSignature())) {
+        if(this.signatureService.verifyEntitySignatureByMrn(entityMrn, svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
         }
         // Otherwise, always return a bad request
@@ -167,7 +167,7 @@ public class SignatureController {
 
     /**
      * POST /api/signature/mmsi/verify/{mmsi} : Verify the provided content
-     * based on the provided MMSI.
+     * based on the provided entity MMSI.
      *
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)

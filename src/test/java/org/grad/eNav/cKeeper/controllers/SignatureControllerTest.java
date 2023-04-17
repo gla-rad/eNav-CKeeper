@@ -64,6 +64,7 @@ class SignatureControllerTest {
 
     // Test Variables
     private String entityName;
+    private String entityMrn;
     private Integer mmsi;
     private McpEntityType mcpEntityType;
     private SignatureCertificate signatureCertificate;
@@ -77,6 +78,7 @@ class SignatureControllerTest {
         this.mmsi = 123456789;
         this.entityName = "test_aton";
         this.mcpEntityType = McpEntityType.SERVICE;
+        this.entityMrn = "urn:mrn:mcp:" + this.mcpEntityType.getValue() + ":mcc:grad:instance:" + this.entityName;
 
         // Create a new signature certificate
         this.signatureCertificate = new SignatureCertificate();
@@ -299,14 +301,14 @@ class SignatureControllerTest {
 
     /**
      * Test that we can correctly verify that some content matches the provided
-     * signature, for a given entity ID.
+     * signature, for a given entity MRN.
      */
     @Test
-    void testVerifyEntitySignature() throws Exception {
-        doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignature(any(), any(), any());
+    void testVerifyEntitySignatureByMrn() throws Exception {
+        doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignatureByMrn(any(), any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/signature/entity/verify/{entityName}", this.entityName)
+        this.mockMvc.perform(post("/api/signature/entity/verify/{entityMrn}", this.entityMrn)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.svr)))
                 .andExpect(status().isOk())
@@ -318,11 +320,11 @@ class SignatureControllerTest {
      * provided signature, an HTTP BAD REQUEST will be returned.
      */
     @Test
-    void testVerifyEntitySignatureFail() throws Exception {
-        doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignature(any(), any(), any());
+    void testVerifyEntitySignatureByMrnFail() throws Exception {
+        doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignatureByMrn(any(), any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(post("/api/signature/entity/verify/{entityName}", this.entityName)
+        this.mockMvc.perform(post("/api/signature/entity/verify/{entityMrn}", this.entityMrn)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.svr)))
                 .andExpect(status().isBadRequest())

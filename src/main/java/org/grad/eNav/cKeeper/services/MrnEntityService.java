@@ -128,7 +128,7 @@ public class MrnEntityService {
      */
     @Transactional(readOnly = true)
     public MrnEntity findOneByName(@NotNull String name) {
-        log.debug("Request to get MRN Entity with MRN : {}", name);
+        log.debug("Request to get MRN Entity with name : {}", name);
         return this.mrnEntityRepo.findByName(name)
                 .orElseThrow(() ->
                         new DataNotFoundException(String.format("No MRN Entity found for the provided name: %s", name))

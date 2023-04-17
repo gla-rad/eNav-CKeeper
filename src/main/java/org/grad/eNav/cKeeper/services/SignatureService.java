@@ -139,20 +139,20 @@ public class SignatureService {
     }
 
     /**
-     * Verify that for the MRN constructed for the provided entity ID (name),
-     * the signature is a valid one for the specified content.
+     * Verify that for the MRN constructed for the provided entity MRN, the
+     * signature is a valid one for the specified content.
      *
      * Note that the content and signature need to be Base64 encoded, coming
      * from the controller.
      *
-     * @param entityName    The name of the entity to get the certificate for
+     * @param entityMrn     The entity MRN to get the certificate for
      * @param b64Content    The Base64 encoded content to be verified
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyEntitySignature(@NotNull String entityName, String b64Content, String b64Signature) {
-        return Optional.of(entityName)
-                .map(this.mrnEntityService::findOneByName)
+    public boolean verifyEntitySignatureByMrn(@NotNull String entityMrn, String b64Content, String b64Signature) {
+        return Optional.of(entityMrn)
+                .map(this.mrnEntityService::findOneByMrn)
                 .map(MrnEntity::getId)
                 .map(this.certificateService::getLatestOrCreate)
                 .map(Certificate::getId)
@@ -182,8 +182,8 @@ public class SignatureService {
     public boolean verifyEntitySignatureByMmsi(@NotNull String mmsi, String b64Content, String b64Signature) {
         return Optional.of(mmsi)
                 .map(this.mrnEntityService::findOneByMmsi)
-                .map(MrnEntity::getName)
-                .map(name -> this.verifyEntitySignature(name, b64Content, b64Signature))
+                .map(MrnEntity::getMrn)
+                .map(mrn -> this.verifyEntitySignatureByMrn(mrn, b64Content, b64Signature))
                 .orElse(Boolean.FALSE);
     }
 }

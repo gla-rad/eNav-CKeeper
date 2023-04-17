@@ -162,13 +162,13 @@ class SignatureServiceTest {
      * ID and the content we submit.
      */
     @Test
-    void testVerifyEntitySignature() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByName(this.mrnEntity.getName());
+    void testVerifyEntitySignatureByMrn() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByMrn(this.mrnEntity.getMrn());
         doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
         doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(mrnEntity.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertTrue(this.signatureService.verifyEntitySignature(this.mrnEntity.getName(), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString((this.signature))));
+        assertTrue(this.signatureService.verifyEntitySignatureByMrn(this.mrnEntity.getMrn(), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString((this.signature))));
     }
 
     /**
@@ -176,13 +176,13 @@ class SignatureServiceTest {
      * entity ID and the content we submit is NOT valid.
      */
     @Test
-    void testVerifyEntitySignatureFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByName(this.mrnEntity.getName());
+    void testVerifyEntitySignatureByMrnFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByMrn(this.mrnEntity.getMrn());
         doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
         doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(mrnEntity.getId(), this.content, this.signature);
 
         // Perform the service call
-        assertFalse(this.signatureService.verifyEntitySignature(this.mrnEntity.getName(), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString(this.signature)));
+        assertFalse(this.signatureService.verifyEntitySignatureByMrn(this.mrnEntity.getMrn(), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString(this.signature)));
     }
 
     /**
@@ -192,7 +192,7 @@ class SignatureServiceTest {
     @Test
     void testVerifyEntitySignatureByMmsi() {
         doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByMmsi(this.mrnEntity.getMmsi());
-        doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignature(eq(this.mrnEntity.getName()), any(), any());
+        doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignatureByMrn(eq(this.mrnEntity.getMrn()), any(), any());
 
         // Perform the service call
         assertTrue(this.signatureService.verifyEntitySignatureByMmsi(this.mrnEntity.getMmsi(), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString((this.signature))));
@@ -205,7 +205,7 @@ class SignatureServiceTest {
     @Test
     void testVerifyEntitySignatureByMmsiFail() {
         doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByMmsi(this.mrnEntity.getMmsi());
-        doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignature(eq(this.mrnEntity.getName()), any(), any());
+        doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignatureByMrn(eq(this.mrnEntity.getMrn()), any(), any());
 
         // Perform the service call
         assertFalse(this.signatureService.verifyEntitySignatureByMmsi(this.mrnEntity.getMmsi(), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString(this.signature)));
