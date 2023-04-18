@@ -158,7 +158,7 @@ public class SignatureController {
                                                            @RequestBody SignatureVerificationRequestDto svr) {
         log.debug("REST request to get verify the signed content for entity with name : {}", entityMrn);
         // Verify the posted signature
-        if(this.signatureService.verifyEntitySignatureByMrn(entityMrn, svr.getContent(), svr.getSignature())) {
+        if(this.signatureService.verifyEntitySignatureByMrn(entityMrn, svr.getAlgorithm(), svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
         }
         // Otherwise, always return a bad request
@@ -177,7 +177,7 @@ public class SignatureController {
                                                             @RequestBody SignatureVerificationRequestDto svr) {
         log.debug("REST request to get verify the signed content for AtoN with MMSI : {}", mmsi);
         // Verify the posted signature
-        if(this.signatureService.verifyEntitySignatureByMmsi(mmsi, svr.getContent(), svr.getSignature())) {
+        if(this.signatureService.verifyEntitySignatureByMmsi(mmsi, svr.getAlgorithm(), svr.getContent(), svr.getSignature())) {
             return ResponseEntity.ok().build();
         }
         // Otherwise, always return a bad request
