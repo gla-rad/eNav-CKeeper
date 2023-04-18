@@ -352,6 +352,7 @@ public class CertificateService {
      * application.properties file.
      *
      * @param id            The ID of the certificate to use the private key of
+     * @param algorithm     The algorithm to be used for the signature generation
      * @param payload       The payload bytes to be signed
      * @return The signed payload
      * @throws NoSuchAlgorithmException if the selected certificate algorithm is not found
@@ -380,8 +381,9 @@ public class CertificateService {
      * Attempts to verify the provided content using the signature specified. The
      * certificate used in this process is identified through the specified ID.
      *
-     * @param id        The ID of the certificate to be used for the verification
-     * @param content       The content to be verified
+     * @param id            The ID of the certificate to be used for the verification
+     * @param algorithm     The algorithm to be used for the signature generation
+     * @param payload       The payload to be verified
      * @param signature     The signature to verify the content with
      * @return Whether the content verification was successful or not
      * @throws NoSuchAlgorithmException if the selected certificate algorithm is not found
@@ -390,7 +392,7 @@ public class CertificateService {
      * @throws SignatureException when the signature generation process fails
      * @throws InvalidKeyException if the key provided for the signature is invalid
      */
-    public boolean verifyContent(BigInteger id, byte[] content, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public boolean verifyContent(BigInteger id, String algorithm, byte[] payload, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         // Pick up the certificate by the provided ID
         Certificate certificate = this.certificateRepo.findById(id)
                 .orElseThrow(() ->
@@ -398,9 +400,9 @@ public class CertificateService {
                 );
 
         // Create a new signature to sign the provided content
-        Signature sign = Signature.getInstance(this.defaultSigningtAlgorithm);
+        Signature sign = Signature.getInstance(Optional.ofNullable(algorithm).orElse(this.defaultSigningtAlgorithm));
         sign.initVerify(X509Utils.publicKeyFromPem(certificate.getPublicKey()));
-        sign.update(content);
+        sign.update(payload);
 
         // Sign and return the signature
         return sign.verify(signature);

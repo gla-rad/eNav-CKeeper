@@ -146,11 +146,12 @@ public class SignatureService {
      * from the controller.
      *
      * @param entityMrn     The entity MRN to get the certificate for
+     * @param algorithm     The algorithm to verify the signature with
      * @param b64Content    The Base64 encoded content to be verified
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyEntitySignatureByMrn(@NotNull String entityMrn, String b64Content, String b64Signature) {
+    public boolean verifyEntitySignatureByMrn(@NotNull String entityMrn, String algorithm, String b64Content, String b64Signature) {
         return Optional.of(entityMrn)
                 .map(this.mrnEntityService::findOneByMrn)
                 .map(MrnEntity::getId)
@@ -159,7 +160,7 @@ public class SignatureService {
                 .map(id -> {
                     try {
                         log.debug("Signature service verifying payload: {}\n with signature: {}", b64Content, b64Signature);
-                        return this.certificateService.verifyContent(id, Base64.getDecoder().decode(b64Content), Base64.getDecoder().decode(b64Signature));
+                        return this.certificateService.verifyContent(id, algorithm, Base64.getDecoder().decode(b64Content), Base64.getDecoder().decode(b64Signature));
                     } catch (Exception ex) {
                         return false;
                     }
@@ -175,15 +176,16 @@ public class SignatureService {
      * from the controller.
      *
      * @param mmsi          The entity MMSI to get the certificate for
+     * @param algorithm     The algorithm to verify the signature with
      * @param b64Content    The Base64 encoded content to be verified
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyEntitySignatureByMmsi(@NotNull String mmsi, String b64Content, String b64Signature) {
+    public boolean verifyEntitySignatureByMmsi(@NotNull String mmsi, String algorithm, String b64Content, String b64Signature) {
         return Optional.of(mmsi)
                 .map(this.mrnEntityService::findOneByMmsi)
                 .map(MrnEntity::getMrn)
-                .map(mrn -> this.verifyEntitySignatureByMrn(mrn, b64Content, b64Signature))
+                .map(mrn -> this.verifyEntitySignatureByMrn(mrn, algorithm, b64Content, b64Signature))
                 .orElse(Boolean.FALSE);
     }
 }

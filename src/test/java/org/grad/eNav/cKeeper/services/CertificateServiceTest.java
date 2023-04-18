@@ -549,7 +549,7 @@ class CertificateServiceTest {
         byte[] signature = sign.sign();
 
         // Verify that the signature is correct
-        assertTrue(this.certificateService.verifyContent(certificate.getId(), payload, signature));
+        assertTrue(this.certificateService.verifyContent(certificate.getId(), null, payload, signature));
     }
 
     /**
@@ -564,7 +564,7 @@ class CertificateServiceTest {
 
         // Perform the service call
         assertThrows(DataNotFoundException.class, () ->
-                this.certificateService.verifyContent(this.certificate.getId(), payload, null)
+                this.certificateService.verifyContent(this.certificate.getId(), null, payload, null)
         );
     }
 

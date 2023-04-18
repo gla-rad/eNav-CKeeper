@@ -14,6 +14,7 @@ public class SignatureVerificationRequestDto {
     // Class Variables
     private String content;
     private String signature;
+    private String algorithm;
 
     /**
      * Instantiates a new Signature verification request.
@@ -58,6 +59,24 @@ public class SignatureVerificationRequestDto {
     }
 
     /**
+     * Gets algorithm.
+     *
+     * @return the algorithm
+     */
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    /**
+     * Sets algorithm.
+     *
+     * @param algorithm the algorithm
+     */
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    /**
      * Overrides the equality operator of the class.
      *
      * @param o the object to check the equality
@@ -66,9 +85,8 @@ public class SignatureVerificationRequestDto {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SignatureVerificationRequestDto)) return false;
-        SignatureVerificationRequestDto that = (SignatureVerificationRequestDto) o;
-        return Objects.equals(content, that.content) && Objects.equals(signature, that.signature);
+        if (!(o instanceof SignatureVerificationRequestDto that)) return false;
+        return Objects.equals(content, that.content) && Objects.equals(signature, that.signature) && Objects.equals(algorithm, that.algorithm);
     }
 
     /**
@@ -78,6 +96,6 @@ public class SignatureVerificationRequestDto {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(content, signature);
+        return Objects.hash(content, signature, algorithm);
     }
 }
