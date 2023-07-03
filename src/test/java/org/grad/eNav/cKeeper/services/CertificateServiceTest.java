@@ -22,6 +22,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.exceptions.ValidationException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.Pair;
@@ -100,6 +101,9 @@ class CertificateServiceTest {
      */
     @BeforeEach
     void setUp() {
+        // Set the maximum limit of certificates generated daily
+        this.certificateService.maxDailyGeneratedCertificates = 100;
+
         // Create an existing MRN entity
         this.mrnEntity = new MrnEntity();
         this.mrnEntity.setId(BigInteger.ONE);
@@ -252,6 +256,22 @@ class CertificateServiceTest {
 
         // Perform the service call
         assertThrows(DataNotFoundException.class, () ->
+                this.certificateService.generateMrnEntityCertificate(this.mrnEntity.getId())
+        );
+    }
+
+    /**
+     * Test that if we attempt to generate a certificate for an MRN entity that
+     * exists, but we've breached the allowed daily maximum limit, a
+     * ValidationException will be thrown.
+     */
+    @Test
+    void testGenerateMrnEntityCertificateMaxLimitBreached() {
+        doReturn(Optional.of(this.mrnEntity)).when(this.mrnEntityRepo).findById(this.mrnEntity.getId());
+        doReturn(this.certificateService.maxDailyGeneratedCertificates).when(this.certificateRepo).getNumOfGeneratedCertificatesToday();
+
+        // Perform the service call
+        assertThrows(ValidationException.class, () ->
                 this.certificateService.generateMrnEntityCertificate(this.mrnEntity.getId())
         );
     }

@@ -16,6 +16,10 @@
 
 package org.grad.eNav.cKeeper.services;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.NotNull;
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -23,6 +27,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
+import org.grad.eNav.cKeeper.exceptions.ValidationException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.Pair;
@@ -34,12 +39,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.transaction.Transactional;
-import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -102,6 +103,12 @@ public class CertificateService {
      */
     @Value("${gla.rad.ckeeper.mcp.trustStoreType:PKCS12}")
     String trustStoreType;
+
+    /**
+     * The X.509 Trust-Store Type.
+     */
+    @Value("${gla.rad.ckeeper.mcp.max-daily-generated-certificates:100}")
+    int maxDailyGeneratedCertificates;
 
     /**
      * The Certificate Repo.
@@ -251,6 +258,15 @@ public class CertificateService {
                         new DataNotFoundException(String.format("No MRN Entity node found for the provided ID: %d", mrnEntityId))
                 );
 
+        // Perform a check to stop certificate flooding
+        if(this.certificateRepo.getNumOfGeneratedCertificatesToday() >= this.maxDailyGeneratedCertificates) {
+            log.error(String.format(
+                    "Certificate generation maximum limit breached!!!" +
+                    "\nCannot generate the requested certificate for MRN entity %s.", mrnEntity.getName())
+            );
+            throw new ValidationException("Too many certificates generated for one day... is there a leak taking place?");
+        }
+
         // Generate a new keypair for the certificate
         KeyPair keyPair = X509Utils.generateKeyPair(this.keyPairCurve);
 
@@ -326,6 +342,7 @@ public class CertificateService {
      * @param mrnEntityId       The ID of the MRN entity to get the certificate for
      * @return the latest valid certificate for the specifed MRN entity
      */
+    @Synchronized
     public Certificate getLatestOrCreate(BigInteger mrnEntityId) {
         return this.findAllByMrnEntityId(mrnEntityId)
                 .stream()

@@ -18,6 +18,7 @@ package org.grad.eNav.cKeeper.repos;
 
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigInteger;
 import java.util.Set;
@@ -35,5 +36,13 @@ public interface CertificateRepo extends JpaRepository<Certificate, BigInteger> 
      * @return The ID of the MRN Entity to get the certificates for
      */
     Set<Certificate> findAllByMrnEntityId(BigInteger mrnEntityId);
+
+    /**
+     * Returns the number of the new certificates generated today.
+     *
+     * @return the number of the new certificates generated today
+     */
+    @Query("select count(*) from Certificate c where c.startDate >= current_date()")
+    int getNumOfGeneratedCertificatesToday();
 
 }
