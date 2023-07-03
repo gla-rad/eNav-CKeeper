@@ -206,10 +206,10 @@ public class McpService {
         try {
             return this.mcpMirClient.get()
                     .uri(mcpEntityType.getValue() + "/" +
-                            fullMrn + "/" +
+                            fullMrn +
                             Optional.of(mcpEntityType)
                                     .filter(McpEntityType.SERVICE::equals)
-                                    .map(t -> String.format("%s", version))
+                                    .map(t -> String.format("/%s", version))
                                     .orElse(""))
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
