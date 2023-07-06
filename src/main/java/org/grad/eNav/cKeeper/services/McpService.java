@@ -163,7 +163,7 @@ public class McpService {
             sslContextBuilder.trustManager(KeyStoreUtils.getTrustManagerFactory(
                     this.trustStore, this.trustStorePassword, this.trustStoreType, null));
         }
-        // Otherwise, check is an insecure policy it to be applied
+        // Otherwise, check if an insecure policy it to be applied
         else {
             sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
         }
