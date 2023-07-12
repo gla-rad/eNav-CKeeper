@@ -19,7 +19,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<spring-cloud.version>2022.0.3</spring-cloud.version>
-		<hibernate.search-orm.version>6.1.6.Final</hibernate.search-orm.version>
+		<hibernate.search-orm.version>6.2.0.Final</hibernate.search-orm.version>
 		<springdoc.version>2.0.2</springdoc.version>
 		<bootstrap.version>5.1.3</bootstrap.version>
 		<jquery.version>3.6.0</jquery.version>
