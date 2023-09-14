@@ -86,14 +86,15 @@ public class SignatureService {
      * be accessed and used, before the actual signing process.
      *
      * @param entityName        The name of the entity to retrieve the certificate for
+     * @param version           The version of the service entity to retrieve the certificate for
      * @param mmsi              The mmsi of the entity to retrieve the certificate for
      * @param entityType        The type of the entity to retrieve the certificate for
      * @return the most recent valid certificate for the specified entity
      */
-    public SignatureCertificate getSignatureCertificate(@NotNull String entityName, String mmsi, McpEntityType entityType) {
+    public SignatureCertificate getSignatureCertificate(@NotNull String entityName, String version, String mmsi, McpEntityType entityType) {
         // Get or create a new MRN Entity if it doesn't exist
         final MrnEntity mrnEntity = this.mrnEntityService.getOrCreate(
-                entityName, this.mcpConfigService.constructMcpEntityMrn(entityType, entityName),  mmsi, entityType);
+                entityName, this.mcpConfigService.constructMcpEntityMrn(entityType, entityName), version, mmsi, entityType);
 
         // Get the latest or create a certificate if it doesn't exist
         final Certificate certificate = this.certificateService.getLatestOrCreate(

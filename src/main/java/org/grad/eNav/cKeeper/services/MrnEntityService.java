@@ -297,25 +297,30 @@ public class MrnEntityService {
      *
      * @param entityName        The entity name to identify the entry with
      * @param mrn               The MRN to be used for new entries
+     * @param version           The version to be used for new service entries
      * @param mmsi              The MMSI to be used for new entries
      * @param entityType        The type of the enity to be used for new entries
      * @return the identified or new MRN Entity entry
      */
-    public MrnEntity getOrCreate(@NotNull String entityName, @NotNull String mrn, String mmsi, @NotNull McpEntityType entityType) {
-        return this.mrnEntityRepo.findByName(entityName)
-                .orElseGet(() -> {
-                    try {
-                        final MrnEntity newMrnEntity = new MrnEntity();
-                        newMrnEntity.setName(entityName);
-                        newMrnEntity.setMrn(mrn);
-                        newMrnEntity.setMmsi(mmsi);
-                        newMrnEntity.setEntityType(entityType);
-                        newMrnEntity.setVersion(entityType == McpEntityType.SERVICE ? "0.0.1" : null);
-                        return this.save(newMrnEntity);
-                    } catch (Exception ex) {
-                        throw new SavingFailedException(ex.getMessage());
-                    }
-                });
+    public MrnEntity getOrCreate(@NotNull String entityName, @NotNull String mrn, String version, String mmsi, @NotNull McpEntityType entityType) {
+        // Find the entity that matches the search criteria
+        final Optional<MrnEntity> result = entityType == McpEntityType.SERVICE ?
+                this.mrnEntityRepo.findByNameAndVersion(entityName, version) : this.mrnEntityRepo.findByName(entityName);
+
+        // Return if found or create a new one
+        return result.orElseGet(() -> {
+                try {
+                    final MrnEntity newMrnEntity = new MrnEntity();
+                    newMrnEntity.setName(entityName);
+                    newMrnEntity.setMrn(mrn);
+                    newMrnEntity.setMmsi(mmsi);
+                    newMrnEntity.setEntityType(entityType);
+                    newMrnEntity.setVersion(entityType == McpEntityType.SERVICE ? version : null);
+                    return this.save(newMrnEntity);
+                } catch (Exception ex) {
+                    throw new SavingFailedException(ex.getMessage());
+                }
+            });
     }
 
     /**

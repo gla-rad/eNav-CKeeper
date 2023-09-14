@@ -81,9 +81,10 @@ public class SignatureController {
     @GetMapping(value = "/certificate", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SignatureCertificateDto> getCertificate(@RequestParam(value = "entityName") String entityName,
                                                                   @RequestParam(value = "mmsi", required = false) String mmsi,
+                                                                  @RequestParam(value = "version", required = false) String version,
                                                                   @RequestParam(value = "entityType", required = false, defaultValue="device") McpEntityType entityType) {
-        log.debug("REST request to get signature certificate for entity with name : {}", entityName);
-        final SignatureCertificate signatureCertificate = this.signatureService.getSignatureCertificate(entityName, mmsi, entityType);
+        log.debug("REST request to get signature certificate for entity with name : {} and version (not required) {}", entityName, version);
+        final SignatureCertificate signatureCertificate = this.signatureService.getSignatureCertificate(entityName, version, mmsi, entityType);
         return ResponseEntity.ok()
                 .body(this.signatureCertificateDomainToDtoMapper.convertTo(signatureCertificate, SignatureCertificateDto.class));
     }
@@ -130,12 +131,14 @@ public class SignatureController {
     @PostMapping(value = "/entity/generate/{entityName}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<byte[]> generateEntitySignature(@PathVariable String entityName,
                                                           @RequestParam(value = "mmsi", required = false) String mmsi,
+                                                          @RequestParam(value = "version", required = false) String version,
                                                           @RequestParam(value = "entityType", required = false, defaultValue = "device") McpEntityType entityType,
                                                           @RequestParam(value = "algorithm", required = false) String algorithm,
                                                           @RequestBody @Schema(type = "string", format = "byte") byte[] signaturePayload) {
         log.debug("REST request to get a signature for entity with name : {}", entityName);
         final SignatureCertificate signatureCertificate =  this.signatureService.getSignatureCertificate(
                 entityName,
+                version,
                 mmsi,
                 entityType);
         final byte[] result = signatureService.generateEntitySignature(
