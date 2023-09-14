@@ -38,7 +38,7 @@ public interface MRNEntityRepo extends JpaRepository<MrnEntity, BigInteger> {
     Optional<MrnEntity> findByName(String name);
 
     /**
-     * Find one using the Entity name.
+     * Find one using the Entity name and the version.
      *
      * @param name the name of the entity
      * @param version the version of the service entity
@@ -53,6 +53,15 @@ public interface MRNEntityRepo extends JpaRepository<MrnEntity, BigInteger> {
      * @return The Entity matching the MRN
      */
     Optional<MrnEntity> findByMrn(String mrn);
+
+    /**
+     * Find one using the Entity MRN and the version.
+     *
+     * @param mrn the MRN of the entity
+     * @param version the version of the service entity
+     * @return The Entity matching the name and the version
+     */
+    Optional<MrnEntity> findByMrnAndVersion(String mrn, String version);
 
     /**
      * Find one using the Entity MMSI.

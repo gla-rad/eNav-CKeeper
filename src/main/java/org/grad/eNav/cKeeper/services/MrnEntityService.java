@@ -305,7 +305,7 @@ public class MrnEntityService {
     public MrnEntity getOrCreate(@NotNull String entityName, @NotNull String mrn, String version, String mmsi, @NotNull McpEntityType entityType) {
         // Find the entity that matches the search criteria
         final Optional<MrnEntity> result = entityType == McpEntityType.SERVICE ?
-                this.mrnEntityRepo.findByNameAndVersion(entityName, version) : this.mrnEntityRepo.findByName(entityName);
+                this.mrnEntityRepo.findByMrnAndVersion(entityName, version) : this.mrnEntityRepo.findByMrn(mrn);
 
         // Return if found or create a new one
         return result.orElseGet(() -> {
