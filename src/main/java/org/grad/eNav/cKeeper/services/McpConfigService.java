@@ -120,7 +120,7 @@ public class McpConfigService {
                         this.organisation,
                         (mcpEntityType == McpEntityType.SERVICE ? "instance:" : "")
                                 + Optional.ofNullable(entityId)
-                                .map(id -> id.replaceAll("[^A-Za-z0-9]+", "-"))
+                                .map(id -> id.replaceAll("[^A-Za-z0-9_]+", "-"))
                                 .map(String::toLowerCase)
                                 .orElse("")
                 );
