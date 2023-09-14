@@ -445,7 +445,32 @@ class MrnEntityServiceTest {
         doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByName(any());
 
         // Perform the service call
-        MrnEntity result = this.mrnEntityService.getOrCreate("name", "mrn", "mmsi", McpEntityType.SERVICE);
+        MrnEntity result = this.mrnEntityService.getOrCreate("name", "mrn", null, "mmsi", McpEntityType.DEVICE);
+
+        // Assert that the result is correct
+        assertNotNull(result);
+        assertEquals(this.existingEntity.getId(), result.getId());
+        assertEquals(this.existingEntity.getName(), result.getName());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
+        assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getCertificates(), result.getCertificates());
+
+        // Make sure we did not save anything
+        verify(this.mrnEntityService, never()).save(any());
+    }
+
+    /**
+     * Test that by using the getOrCreate function, we can access existing MRN
+     * Entity service entries, and new ones will not be created.
+     */
+    @Test
+    void testGetOrCreateExistingService() {
+        doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByNameAndVersion(any(), any());
+
+        // Perform the service call
+        MrnEntity result = this.mrnEntityService.getOrCreate("name", "mrn", "version", "mmsi", McpEntityType.SERVICE);
 
         // Assert that the result is correct
         assertNotNull(result);
@@ -463,7 +488,8 @@ class MrnEntityServiceTest {
 
     /**
      * Test that by using the getOrCreate function, if an existing MRN Entity
-     * does not create, a new one will be generated and returned.
+     * does not create and this is NOT a service, a new one will be generated
+     * and returned.
      */
     @Test
     void testGetOrCreateNew() {
@@ -471,7 +497,34 @@ class MrnEntityServiceTest {
         doReturn(this.existingEntity).when(this.mrnEntityService).save(any());
 
         // Perform the service call
-        MrnEntity result = this.mrnEntityService.getOrCreate("name", "mrn", "mmsi", McpEntityType.SERVICE);
+        MrnEntity result = this.mrnEntityService.getOrCreate("name", "mrn", null, "mmsi", McpEntityType.DEVICE);
+
+        // Assert that the result is correct
+        assertNotNull(result);
+        assertEquals(this.existingEntity.getId(), result.getId());
+        assertEquals(this.existingEntity.getName(), result.getName());
+        assertEquals(this.existingEntity.getMrn(), result.getMrn());
+        assertEquals(this.existingEntity.getMmsi(), result.getMmsi());
+        assertEquals(this.existingEntity.getVersion(), result.getVersion());
+        assertEquals(this.existingEntity.getEntityType(), result.getEntityType());
+        assertEquals(this.existingEntity.getCertificates(), result.getCertificates());
+
+        // Make sure we did save the new entry
+        verify(this.mrnEntityService, times(1)).save(any());
+    }
+
+    /**
+     * Test that by using the getOrCreate function, if an existing MRN Entity
+     * does not create and this is a service, a new one will be generated and
+     * returned.
+     */
+    @Test
+    void testGetOrCreateNewService() {
+        doReturn(Optional.empty()).when(this.mrnEntityRepo).findByNameAndVersion(any(), any());
+        doReturn(this.existingEntity).when(this.mrnEntityService).save(any());
+
+        // Perform the service call
+        MrnEntity result = this.mrnEntityService.getOrCreate("name", "mrn", "version", "mmsi", McpEntityType.SERVICE);
 
         // Assert that the result is correct
         assertNotNull(result);

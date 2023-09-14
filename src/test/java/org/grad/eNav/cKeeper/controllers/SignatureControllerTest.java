@@ -65,6 +65,7 @@ class SignatureControllerTest {
     // Test Variables
     private String entityName;
     private String entityMrn;
+    private String version;
     private Integer mmsi;
     private McpEntityType mcpEntityType;
     private SignatureCertificate signatureCertificate;
@@ -75,9 +76,10 @@ class SignatureControllerTest {
      */
     @BeforeEach
     void setUp() throws NoSuchAlgorithmException {
-        this.mmsi = 123456789;
         this.entityName = "test_aton";
         this.mcpEntityType = McpEntityType.SERVICE;
+        this.version = "0.0.1";
+        this.mmsi = 123456789;
         this.entityMrn = "urn:mrn:mcp:" + this.mcpEntityType.getValue() + ":mcc:grad:instance:" + this.entityName;
 
         // Create a new signature certificate
@@ -99,7 +101,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGetSignatureCertificate() throws Exception {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any(), any());
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/signature/certificate?entityName={entityName}&mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.SERVICE.getValue())
@@ -167,7 +169,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForDevice() throws Exception {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any(), any());
         doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
@@ -190,11 +192,11 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForService() throws Exception {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any(), any());
         doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?mmsi={mmsi}&entityType={entityType}", this.entityName, this.mmsi, McpEntityType.SERVICE.getValue())
+        MvcResult mvcResult = this.mockMvc.perform(post("/api/signature/entity/generate/{entityName}?version={version}&entityType={entityType}", this.entityName, this.version, McpEntityType.SERVICE.getValue())
                         .contentType(MediaType.TEXT_PLAIN_VALUE)
                         .content(this.svr.getContent()))
                 .andExpect(status().isOk())
@@ -213,7 +215,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForVessel() throws Exception {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any(), any());
         doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
@@ -236,7 +238,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureForUser() throws Exception {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any(), any());
         doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
@@ -259,7 +261,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureFoRole() throws Exception {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any(), any());
         doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), any(), any());
 
         // Perform the MVC request
@@ -282,7 +284,7 @@ class SignatureControllerTest {
      */
     @Test
     void testGenerateEntitySignatureWithAlgorithm() throws Exception {
-        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any());
+        doReturn(this.signatureCertificate).when(this.signatureService).getSignatureCertificate(any(), any(), any(), any());
         doReturn(this.svr.getSignature().getBytes()).when(this.signatureService).generateEntitySignature(any(), eq("someAlgorithm"), any());
 
         // Perform the MVC request

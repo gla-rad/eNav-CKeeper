@@ -112,12 +112,12 @@ class SignatureServiceTest {
         X509Certificate rootCertificate = mock(X509Certificate.class);
         doReturn(new byte[]{0x01, 0x02, 0x03, 0x04}).when(rootCertificate).getEncoded();
 
-        doReturn(this.mrnEntity).when(this.mrnEntityService).getOrCreate(any(), any(), any(), any());
+        doReturn(this.mrnEntity).when(this.mrnEntityService).getOrCreate(any(), any(), any(), any(), any());
         doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
         doReturn(rootCertificate).when(this.certificateService).getTrustedCertificate(any());
 
         // Perform the service call
-        SignatureCertificate result = this.signatureService.getSignatureCertificate(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getEntityType());
+        SignatureCertificate result = this.signatureService.getSignatureCertificate(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getVersion(), this.mrnEntity.getEntityType());
 
         // Assert that the signature certificate seems OK
         assertNotNull(result);
