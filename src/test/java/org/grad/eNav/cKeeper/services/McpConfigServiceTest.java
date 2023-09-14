@@ -90,11 +90,12 @@ class McpConfigServiceTest {
         this.mcpConfigService.organisation = "grad";
 
         // Make the assertions for device
-        assertEquals("urn:mrn:mcp:device:mcc:grad:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, null));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, null));
         assertEquals("urn:mrn:mcp:device:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, ""));
         assertEquals("urn:mrn:mcp:device:mcc:grad:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, "test"));
         assertEquals("urn:mrn:mcp:device:mcc:grad:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, "test2"));
         assertEquals("urn:mrn:mcp:device:mcc:grad:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE, "test3"));
+        assertEquals("urn:mrn:mcp:device:mcc:grad:test-test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.DEVICE,"Test Test"));
     }
 
     /**
@@ -109,11 +110,12 @@ class McpConfigServiceTest {
         this.mcpConfigService.organisation = "grad";
 
         // Make the assertions for service
-        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,null));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,null));
         assertEquals("urn:mrn:mcp:service:mcc:grad:instance:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,""));
         assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test"));
         assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test2"));
         assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test3"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test-test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"Test Test"));
     }
 
     /**
@@ -128,11 +130,12 @@ class McpConfigServiceTest {
         this.mcpConfigService.organisation = "grad";
 
         // Make the assertions for user
-        assertEquals("urn:mrn:mcp:user:mcc:grad:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,null));
+        assertEquals("urn:mrn:mcp:user:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,null));
         assertEquals("urn:mrn:mcp:user:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,""));
         assertEquals("urn:mrn:mcp:user:mcc:grad:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,"test"));
         assertEquals("urn:mrn:mcp:user:mcc:grad:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,"test2"));
         assertEquals("urn:mrn:mcp:user:mcc:grad:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,"test3"));
+        assertEquals("urn:mrn:mcp:user:mcc:grad:test-test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.USER,"Test Test"));
     }
 
     /**
@@ -147,11 +150,12 @@ class McpConfigServiceTest {
         this.mcpConfigService.organisation = "grad";
 
         // Make the assertions for vessel
-        assertEquals("urn:mrn:mcp:vessel:mcc:grad:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,null));
+        assertEquals("urn:mrn:mcp:vessel:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,null));
         assertEquals("urn:mrn:mcp:vessel:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,""));
         assertEquals("urn:mrn:mcp:vessel:mcc:grad:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,"test"));
         assertEquals("urn:mrn:mcp:vessel:mcc:grad:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,"test2"));
         assertEquals("urn:mrn:mcp:vessel:mcc:grad:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,"test3"));
+        assertEquals("urn:mrn:mcp:vessel:mcc:grad:test-test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.VESSEL,"Test Test"));
     }
 
     /**
@@ -166,11 +170,12 @@ class McpConfigServiceTest {
         this.mcpConfigService.organisation = "grad";
 
         // Make the assertions for role
-        assertEquals("urn:mrn:mcp:role:mcc:grad:null", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,null));
+        assertEquals("urn:mrn:mcp:role:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,null));
         assertEquals("urn:mrn:mcp:role:mcc:grad:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,""));
         assertEquals("urn:mrn:mcp:role:mcc:grad:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,"test"));
         assertEquals("urn:mrn:mcp:role:mcc:grad:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,"test2"));
         assertEquals("urn:mrn:mcp:role:mcc:grad:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,"test3"));
+        assertEquals("urn:mrn:mcp:role:mcc:grad:test-test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.ROLE,"Test Test"));
     }
 
 }
