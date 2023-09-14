@@ -35,6 +35,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -175,16 +176,18 @@ class SpringSecurityConfig {
                                            ClientRegistrationRepository clientRegistrationRepository,
                                            RestTemplate restTemplate) throws Exception {
         // Authenticate through configured OpenID Provider
-        http.oauth2Login()
-                .loginPage("/oauth2/authorization/keycloak");
+        http.oauth2Login(login -> login
+                .loginPage("/oauth2/authorization/keycloak")
 //                .authorizationEndpoint().baseUri("/oauth2/authorization/keycloak")
 //                .authorizationRequestRepository(new HttpSessionOAuth2AuthorizationRequestRepository());
+        );
         // Also, logout at the OpenID Connect provider
-        http.logout()
+        http.logout(logout -> logout
                 .deleteCookies("JSESSIONID")
                 .addLogoutHandler(keycloakLogoutHandler(restTemplate))
-                .logoutSuccessUrl("/");
+                .logoutSuccessUrl("/")
 //                .logoutSuccessHandler(new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository));
+        );
         // Require authentication for specific requests
         http.authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers(EndpointRequest.to(
@@ -197,11 +200,16 @@ class SpringSecurityConfig {
                                 .toArray(AntPathRequestMatcher[]::new)).permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2ResourceServer().jwt()
-                .jwtAuthenticationConverter(keycloakJwtAuthenticationConverter());
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(keycloakJwtAuthenticationConverter())
+                        )
+                );
 
         // Disable the CSRF
-        http.csrf().disable();
+        http.csrf(AbstractHttpConfigurer::disable);
+
+        // Build and return
         return http.build();
     }
 
