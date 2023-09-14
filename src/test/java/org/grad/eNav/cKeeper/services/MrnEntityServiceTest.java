@@ -442,7 +442,7 @@ class MrnEntityServiceTest {
      */
     @Test
     void testGetOrCreateExisting() {
-        doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByMrn(any());
+        doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByMrn(eq("mrn"));
 
         // Perform the service call
         MrnEntity result = this.mrnEntityService.getOrCreate("name", "mrn", null, "mmsi", McpEntityType.DEVICE);
@@ -467,7 +467,7 @@ class MrnEntityServiceTest {
      */
     @Test
     void testGetOrCreateExistingService() {
-        doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByMrnAndVersion(any(), any());
+        doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findByMrnAndVersion(eq("mrn"), eq("version"));
 
         // Perform the service call
         MrnEntity result = this.mrnEntityService.getOrCreate("name", "mrn", "version", "mmsi", McpEntityType.SERVICE);
