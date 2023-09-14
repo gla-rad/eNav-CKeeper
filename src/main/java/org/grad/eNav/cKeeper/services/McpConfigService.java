@@ -17,6 +17,7 @@
 
 package org.grad.eNav.cKeeper.services;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.springframework.beans.factory.annotation.Value;
@@ -108,14 +109,21 @@ public class McpConfigService {
      * @param entityId  The ID of the device to construct the MRN from
      * @return The constructed device MRN
      */
-    public String constructMcpEntityMrn(McpEntityType mcpEntityType, String entityId) {
+    public String constructMcpEntityMrn(@NotNull McpEntityType mcpEntityType, String entityId) {
         return Optional.ofNullable(entityId).orElse("").startsWith(this.mcpEntityPrefix) ?
                 entityId :
                 String.format("%s:%s:%s:%s:%s", this.mcpEntityPrefix,
-                        mcpEntityType.getValue(),
+                        Optional.of(mcpEntityType)
+                                .map(McpEntityType::getValue)
+                                .orElse(""),
                         this.mcpEntitySuffix,
                         this.organisation,
-                        (mcpEntityType == McpEntityType.SERVICE ? "instance:" : "") + entityId);
+                        (mcpEntityType == McpEntityType.SERVICE ? "instance:" : "")
+                                + Optional.ofNullable(entityId)
+                                .map(id -> id.replaceAll("[^A-Za-z0-9]+", "-"))
+                                .map(String::toLowerCase)
+                                .orElse("")
+                );
     }
 
 }
