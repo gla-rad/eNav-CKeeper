@@ -80,13 +80,13 @@ public class McpService {
     /**
      * The MCP Keystore File Location.
      */
-    @Value("${gla.rad.ckeeper.mcp.keyStore:mcp/keystore.p12}")
+    @Value("${gla.rad.ckeeper.mcp.keyStore:keystore.p12}")
     String keyStore;
 
     /**
      * The MCP Keystore File Password.
      */
-    @Value("${gla.rad.ckeeper.mcp.keyStorePassword:password}")
+    @Value("${gla.rad.ckeeper.mcp.keyStorePassword:}")
     String keyStorePassword;
 
     /**
@@ -98,13 +98,13 @@ public class McpService {
     /**
      * The X.509 Trust-Store.
      */
-    @Value("${gla.rad.ckeeper.mcp.trustStore:mcp/truststore.p12}")
+    @Value("${gla.rad.ckeeper.mcp.trustStore:truststore.p12}")
     String trustStore;
 
     /**
      * The X.509 Trust-Store Password.
      */
-    @Value("${gla.rad.ckeeper.mcp.trustStorePassword:password}")
+    @Value("${gla.rad.ckeeper.mcp.trustStorePassword:}")
     String trustStorePassword;
 
     /**
@@ -163,7 +163,7 @@ public class McpService {
             sslContextBuilder.trustManager(KeyStoreUtils.getTrustManagerFactory(
                     this.trustStore, this.trustStorePassword, this.trustStoreType, null));
         }
-        // Otherwise, check if an insecure policy it to be applied
+        // Otherwise check if an insecure policy it to be applied
         else {
             sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
         }
@@ -173,7 +173,7 @@ public class McpService {
         httpConnector = httpConnector.secure(spec -> spec.sslContext(sslContext)
                 .handshakeTimeout(Duration.of(2, ChronoUnit.SECONDS)));
 
-        // And create the SECOM web client
+        // And create the MCP MIR web client
         this.mcpMirClient = WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(httpConnector))
                 .baseUrl(this.mcpConfigService.constructMcpBaseUrl())
