@@ -176,7 +176,6 @@ While the application properties need to provide the service with an OAuth2.0
 server like keycloak, logging configuration, the eureka client connection etc.:
 
     # Configuration Variables
-    service.variable.hostname=<service.hostname>
     service.variable.eureka.server.name=<eureka.server.name>
     service.variable.eureka.server.port=<eureka.server.port>
     service.variable.keycloak.server.name=<keycloak.server.name>
