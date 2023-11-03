@@ -16,10 +16,11 @@
 
 package org.grad.eNav.cKeeper.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +46,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.netty.http.client.HttpClient;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.validation.constraints.NotNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -112,12 +111,6 @@ public class McpService {
      */
     @Value("${gla.rad.ckeeper.mcp.trustStoreType:PKCS12}")
     String trustStoreType;
-
-    /**
-     * The JSON Object Mapper
-     */
-    @Autowired
-    ObjectMapper objectMapper;
 
     /**
      * The MCP Base Service.

@@ -121,9 +121,8 @@ class McpServiceTest {
 
         // Add a real object mapper to the service
         this.objectMapper = new ObjectMapper();
-        this.mcpService.objectMapper = this.objectMapper;
 
-        // Mock the MCP Base URL to point to the mock-serber
+        // Mock the MCP Base URL to point to the mock-server
         doReturn(String.format("http://localhost:%s", mockBackEnd.getPort())).when(this.mcpConfigService).constructMcpBaseUrl();
     }
 
