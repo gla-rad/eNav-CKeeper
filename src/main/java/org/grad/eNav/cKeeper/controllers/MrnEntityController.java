@@ -16,7 +16,7 @@
 
 package org.grad.eNav.cKeeper.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.grad.eNav.cKeeper.components.DomainDtoMapper;
@@ -38,14 +38,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
