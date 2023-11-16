@@ -158,7 +158,7 @@
 		<dependency>
 			<groupId>org.grad.secom</groupId>
 			<artifactId>secom-core-jakarta</artifactId>
-			<version>0.0.25</version>
+			<version>0.0.26</version>
 		</dependency>
 
 		<!-- Swagger -->
