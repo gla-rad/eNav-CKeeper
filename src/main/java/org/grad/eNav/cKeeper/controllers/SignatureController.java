@@ -50,8 +50,8 @@ public class SignatureController {
     /**
      * The X.509 Certificate Algorithm.
      */
-    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA256withCVC-ECDSA}")
-    String defaultSigningtAlgorithm;
+    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA3-384withECDSA}")
+    String defaultSigningAlgorithm;
 
     /**
      * The Certificate Service.
@@ -109,7 +109,7 @@ public class SignatureController {
         log.debug("REST request to get a signature for certificate with ID : {}", certificateId);
         final byte[] result = signatureService.generateEntitySignature(
                 certificateId,
-                Optional.ofNullable(algorithm).orElse(this.defaultSigningtAlgorithm),
+                Optional.ofNullable(algorithm).orElse(this.defaultSigningAlgorithm),
                 signaturePayload);
         return ResponseEntity.ok()
                 .body(result);
@@ -143,7 +143,7 @@ public class SignatureController {
                 entityType);
         final byte[] result = signatureService.generateEntitySignature(
                 signatureCertificate.getCertificateId(),
-                Optional.ofNullable(algorithm).orElse(this.defaultSigningtAlgorithm),
+                Optional.ofNullable(algorithm).orElse(this.defaultSigningAlgorithm),
                 signaturePayload);
         return ResponseEntity.ok()
                 .body(result);

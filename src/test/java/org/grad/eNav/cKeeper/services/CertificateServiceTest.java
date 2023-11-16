@@ -493,7 +493,7 @@ class CertificateServiceTest {
 
         // Spin up a self-signed certificate
         final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
-        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningtAlgorithm);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningAlgorithm);
 
         // Populate the mock certificate with the actual keys
         this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
@@ -541,13 +541,13 @@ class CertificateServiceTest {
     @Test
     void testVerifyContent() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeyException, SignatureException, InvalidKeySpecException {
         // Initialise the service parameters
-        this.certificateService.keyPairCurve="secp256r1";
-        this.certificateService.defaultSigningtAlgorithm ="SHA256WITHECDSA";
+        this.certificateService.keyPairCurve="secp384r1";
+        this.certificateService.defaultSigningAlgorithm ="SHA3-384withECDSA";
         this.certificateService.certDirName="CN=Test";
 
         // Spin up a self-signed certificate
         final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
-        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningtAlgorithm);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningAlgorithm);
 
         // Populate the mock certificate with the actual keys
         this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
@@ -555,7 +555,7 @@ class CertificateServiceTest {
         this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
 
         // Initialise the signing signature
-        final Signature sign = Signature.getInstance(this.certificateService.defaultSigningtAlgorithm);
+        final Signature sign = Signature.getInstance(this.certificateService.defaultSigningAlgorithm);
         sign.initSign(keyPair.getPrivate());
 
         // Create a dummy payload
