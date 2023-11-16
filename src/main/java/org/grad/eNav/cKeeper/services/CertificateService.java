@@ -65,14 +65,14 @@ public class CertificateService {
     /**
      * The Key-Pair Curve.
      */
-    @Value("${gla.rad.ckeeper.x509.keypair.curve:secp256r1}")
+    @Value("${gla.rad.ckeeper.x509.keypair.curve:secp384r1}")
     String keyPairCurve;
 
     /**
      * The X.509 Certificate Algorithm.
      */
-    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA256withCVC-ECDSA}")
-    String defaultSigningtAlgorithm;
+    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA3-384withECDSA}")
+    String defaultSigningAlgorithm;
 
     /**
      * The X.509 Certificate Name String.
@@ -271,7 +271,7 @@ public class CertificateService {
         KeyPair keyPair = X509Utils.generateKeyPair(this.keyPairCurve);
 
         // Generate a new X509 certificate signing request
-        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, this.defaultSigningtAlgorithm);
+        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, this.defaultSigningAlgorithm);
 
         // Get the X509 certificate signed by the MCP
         Pair<String, X509Certificate> certificateInfo = this.mcpService.issueMcpEntityCertificate(mrnEntity.getEntityType(), mrnEntity.getMrn(), mrnEntity.getVersion(), csr);
@@ -386,7 +386,7 @@ public class CertificateService {
                 );
 
         // Create a new signature to sign the provided content
-        Signature sign = Signature.getInstance(Optional.ofNullable(algorithm).orElse(this.defaultSigningtAlgorithm));
+        Signature sign = Signature.getInstance(Optional.ofNullable(algorithm).orElse(this.defaultSigningAlgorithm));
         sign.initSign(X509Utils.privateKeyFromPem(certificate.getPrivateKey(), this.keyPairCurve));
         sign.update(payload);
 
@@ -417,7 +417,7 @@ public class CertificateService {
                 );
 
         // Create a new signature to sign the provided content
-        Signature sign = Signature.getInstance(Optional.ofNullable(algorithm).orElse(this.defaultSigningtAlgorithm));
+        Signature sign = Signature.getInstance(Optional.ofNullable(algorithm).orElse(this.defaultSigningAlgorithm));
         sign.initVerify(X509Utils.publicKeyFromPem(certificate.getPublicKey()));
         sign.update(payload);
 
