@@ -29,6 +29,7 @@ import org.grad.eNav.cKeeper.utils.HeaderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -62,6 +63,7 @@ public class CertificateController {
      * @param id the ID of the certificate to be revoked
      * @return the ResponseEntity with status 200 (OK)
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping(value = "/{id}/revoke", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CertificateDto> revokeCertificate(@PathVariable BigInteger id) {
         log.debug("REST request to revoke Certificate : {}", id);
@@ -79,6 +81,7 @@ public class CertificateController {
      * @param id the ID of the certificate to delete
      * @return the ResponseEntity with status 200 (OK)
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> deleteCertificate(@PathVariable BigInteger id) {
         log.debug("REST request to delete Certificate : {}", id);

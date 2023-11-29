@@ -36,6 +36,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -140,6 +141,7 @@ public class MrnEntityController {
      * @return the ResponseEntity with status 201 (Created) and with body the new MRN entity, or with status 400 (Bad Request) if the MRN entity has already an ID
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<MrnEntityDto> createMrnEntity(@RequestBody @Valid MrnEntityDto entity) throws Exception, URISyntaxException {
         log.debug("REST request to save MRN Entity : {}", entity);
@@ -162,6 +164,7 @@ public class MrnEntityController {
      * @param entity the MRN entity to update
      * @return the ResponseEntity with status 200 (OK) and with body the updated MRN entity, or with status 400 (Bad Request) if the MRN entity does not have an ID
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<MrnEntityDto> updateMrnEntity(@PathVariable BigInteger id,
                                                         @RequestBody @Valid MrnEntityDto entity) {
@@ -182,6 +185,7 @@ public class MrnEntityController {
      * @param id the ID of the MRN entity to delete
      * @return the ResponseEntity with status 200 (OK)
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> deleteMrnEntity(@PathVariable BigInteger id) {
         log.debug("REST request to delete MRN Entity : {}", id);
@@ -213,6 +217,7 @@ public class MrnEntityController {
      * @param id the ID of the MRN entity to generate the certificates for
      * @return the ResponseEntity with status 200 (OK) and with body the new certificates, or with status 404 (Not Found)
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping(value = "/{id}/certificates", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CertificateDto> putMrnEntityCertificate(@PathVariable BigInteger id) {
         log.debug("REST request to generate a new certificates for MRN Entity : {}", id);

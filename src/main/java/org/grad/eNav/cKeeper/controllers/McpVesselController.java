@@ -25,6 +25,7 @@ import org.grad.eNav.cKeeper.utils.HeaderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -75,6 +76,7 @@ public class McpVesselController {
      * already an ID or mo MRN
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<McpVesselDto> createMcpVessel(@RequestBody McpVesselDto mcpEntityDto) throws URISyntaxException {
         log.debug("REST request to create MCP vessel : {}", mcpEntityDto);
@@ -105,6 +107,7 @@ public class McpVesselController {
      * new MRN entity, or with status 400 (Bad Request) if the MCP vessel has
      * already an ID
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping(value = "/{mrn}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<McpVesselDto> updateMcpVessel(@PathVariable String mrn,
                                                         @RequestBody McpVesselDto mcpEntityDto) {
@@ -134,6 +137,7 @@ public class McpVesselController {
      * @return the ResponseEntity with status 200 (OK), or with status 404
      * (Not Found) if the MCP vessel was not found
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping(value = "/{mrn}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> deleteMcpVessel(@PathVariable String mrn) {
         log.debug("REST request to delete MCP vessel : {}", mrn);
