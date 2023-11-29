@@ -31,6 +31,7 @@ import org.grad.eNav.cKeeper.exceptions.ValidationException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.Pair;
+import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
@@ -69,10 +70,22 @@ public class CertificateService {
     String keyPairCurve;
 
     /**
+     * The device-specific Key-Pair Curve.
+     */
+    @Value("${gla.rad.ckeeper.x509.keypair.device.curve:secp256r1}")
+    String deviceKeyPairCurve;
+
+    /**
      * The X.509 Certificate Algorithm.
      */
     @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA3-384withECDSA}")
     String defaultSigningAlgorithm;
+
+    /**
+     * The device-specific X.509 Certificate Algorithm.
+     */
+    @Value("${gla.rad.ckeeper.x509.cert.device.algorithm:SHA256withCVC-ECDSA}")
+    String deviceDefaultSigningAlgorithm;
 
     /**
      * The X.509 Certificate Name String.
@@ -243,6 +256,9 @@ public class CertificateService {
      * Generates a brand-new X.509 certificate for the MRN Entity specified by
      * the provided ID. The new certificate will be added into the database
      * and the corresponding DTO object will be returned.
+     * <p/>
+     * Note that for devices the hash of the certificate will be fixed to SHA-256
+     * to allow for smaller signatures for AIS transmissions.
      *
      * @param mrnEntityId   The ID of the MRN entity to generate the certificate for
      * @return The generated X.509 certificate DTO
@@ -267,11 +283,13 @@ public class CertificateService {
             throw new ValidationException("Too many certificates generated for one day... is there a leak taking place?");
         }
 
-        // Generate a new keypair for the certificate
-        KeyPair keyPair = X509Utils.generateKeyPair(this.keyPairCurve);
+        // Generate a new keypair for the certificate - device will follow a different curve
+        String curve = McpEntityType.DEVICE.equals(mrnEntity.getEntityType()) ? this.deviceKeyPairCurve : this.keyPairCurve;
+        KeyPair keyPair = X509Utils.generateKeyPair(curve);
 
-        // Generate a new X509 certificate signing request
-        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, this.defaultSigningAlgorithm);
+        // Generate a new X509 certificate signing request - device will follow a different algorithm
+        String algorithm = McpEntityType.DEVICE.equals(mrnEntity.getEntityType()) ? this.deviceDefaultSigningAlgorithm : this.defaultSigningAlgorithm;
+        PKCS10CertificationRequest csr = X509Utils.generateX509CSR(keyPair, this.certDirName, algorithm);
 
         // Get the X509 certificate signed by the MCP
         Pair<String, X509Certificate> certificateInfo = this.mcpService.issueMcpEntityCertificate(mrnEntity.getEntityType(), mrnEntity.getMrn(), mrnEntity.getVersion(), csr);
