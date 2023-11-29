@@ -488,7 +488,7 @@ class CertificateServiceTest {
     @Test
     void testSignContent() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         // Initialise the service parameters
-        this.certificateService.keyPairCurve="secp256r1";
+        this.certificateService.keyPairCurve="secp384r1";
         this.certificateService.certDirName="CN=Test";
 
         // Spin up a self-signed certificate
@@ -501,7 +501,7 @@ class CertificateServiceTest {
         this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
 
         // Initialise the verification signature
-        final Signature sign = Signature.getInstance("SHA256WITHECDSA");
+        final Signature sign = Signature.getInstance("SHA3-384withECDSA");
         sign.initVerify(keyPair.getPublic());
 
         // Create a dummy payload
