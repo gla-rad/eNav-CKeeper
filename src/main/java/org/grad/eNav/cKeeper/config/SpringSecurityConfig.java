@@ -32,7 +32,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -61,7 +61,7 @@ import java.util.Arrays;
  */
 @Configuration
 @EnableWebSecurity
-@EnableReactiveMethodSecurity
+@EnableMethodSecurity
 @ConditionalOnProperty(value = "keycloak.enabled", matchIfMissing = true)
 class SpringSecurityConfig {
 
@@ -208,6 +208,14 @@ class SpringSecurityConfig {
 
         // Disable the CSRF
         http.csrf(AbstractHttpConfigurer::disable);
+
+        // Add an exception handler to add a permission response
+        http.exceptionHandling(handler ->
+                handler.accessDeniedHandler((req, res, ex) -> {
+                    res.setStatus(403);
+                    res.getWriter().print("You don't seem to have the appropriate permissions to perform this action.");
+                })
+        );
 
         // Build and return
         return http.build();

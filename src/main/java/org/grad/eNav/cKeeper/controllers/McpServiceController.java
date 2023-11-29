@@ -25,6 +25,7 @@ import org.grad.eNav.cKeeper.utils.HeaderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -77,6 +78,7 @@ public class McpServiceController {
      * already an ID or mo MRN
      * @throws URISyntaxException if the Location URI syntax is incorrect
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<McpServiceDto> createMcpService(@RequestBody McpServiceDto mcpServiceDto) throws URISyntaxException {
         log.debug("REST request to create MCP service : {}", mcpServiceDto);
@@ -107,6 +109,7 @@ public class McpServiceController {
      * new MRN entity, or with status 400 (Bad Request) if the MCP service has
      * already an ID
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping(value = "/{mrn}/{version}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<McpServiceDto> updateMcpService(@PathVariable String mrn,
                                                           @RequestBody McpServiceDto mcpServiceDto) {
@@ -137,6 +140,7 @@ public class McpServiceController {
      * @return the ResponseEntity with status 200 (OK), or with status 404
      * (Not Found) if the MCP service was not found
      */
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping(value = "/{mrn}/{version}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> deleteMcpService(@PathVariable String mrn,
                                                  @PathVariable String version) {
