@@ -104,7 +104,7 @@ var certificatesColumnDefs = [{
         true: "true",
         false: "false"
     },
-    render: function (data, type, row) {
+    render: (data, type, row) => {
         return (data ? '<i class="fa-solid fa-circle-check" style="color:red"></i>' : '<i class="fa-solid fa-circle-xmark" style="color:green"></i>');
     },
     className: "dt-body-center",
@@ -122,7 +122,7 @@ $(() => {
             "type": "POST",
             "url": "./api/mrn-entity/dt",
             "contentType": "application/json",
-            "data": function (d) {
+            "data": (d) => {
                 return JSON.stringify(d);
             },
             error: (response, status, more) => {
@@ -159,7 +159,7 @@ $(() => {
                 loadMrnEntityCertificates(e, dt, node, config)
             }
         }],
-        onAddRow: function (datatable, rowdata, success, error) {
+        onAddRow: (datatable, rowdata, success, error) => {
             $.ajax({
                 url: './api/mrn-entity',
                 type: 'POST',
@@ -179,8 +179,8 @@ $(() => {
                 }
             });
         },
-        onDeleteRow: function (datatable, selectedRows, success, error) {
-            selectedRows.every(function (rowIdx, tableLoop, rowLoop) {
+        onDeleteRow: (datatable, selectedRows, success, error) => {
+            selectedRows.every((rowIdx, tableLoop, rowLoop) => {
                 $.ajax({
                     url: `./api/mrn-entity/${this.data()["id"]}`,
                     type: 'DELETE',
@@ -191,7 +191,7 @@ $(() => {
                 });
             });
         },
-        onEditRow: function (datatable, rowdata, success, error) {
+        onEditRow: (datatable, rowdata, success, error) => {
             $.ajax({
                 url: `./api/mrn-entity/${rowdata["id"]}`,
                 type: 'PUT',
@@ -297,7 +297,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
             "url": `./api/mrn-entity/${mrnEntityId}/certificates`,
             "dataType": "json",
             "cache": false,
-            "dataSrc": function (json) {
+            "dataSrc": (json) => {
                 // Place the content inside a textarea to escape the XML
                 json.forEach(node => {
                     node["publicKey"] = "<textarea style=\"width: 100%; max-height: 300px\" readonly>"
@@ -306,7 +306,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
                 });
                 return json;
             },
-            error: function (response, status, more) => {
+            error: (response, status, more) => {
                 showErrorDialog(response.getResponseHeader("X-cKeeper-error"));
             }
         },
@@ -338,8 +338,8 @@ function loadMrnEntityCertificates(event, table, button, config) {
                 $('#confirm-revoke-certificate').modal('show');
             }
         }],
-        onDeleteRow: function (datatable, selectedRows, success, error) {
-            selectedRows.every(function (rowIdx, tableLoop, rowLoop) {
+        onDeleteRow: (datatable, selectedRows, success, error) => {
+            selectedRows.every((rowIdx, tableLoop, rowLoop) => {
                 if(!this.data()["revoked"] || this.data()["revoked"]=="false") {
                     $(datatable.modal_selector).modal('hide');
                     $('.reveal-overlay').hide();
