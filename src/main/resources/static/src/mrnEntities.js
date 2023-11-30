@@ -114,7 +114,7 @@ var certificatesColumnDefs = [{
 }];
 
 // Run when the document is ready
-$(document).ready( function () {
+$(() => {
     mrnEntitiesTable = $('#mrn_entities_table').DataTable({
         "processing": true,
         "serverSide": true,
@@ -125,8 +125,8 @@ $(document).ready( function () {
             "data": function (d) {
                 return JSON.stringify(d);
             },
-            error: function (jqXHR, ajaxOptions, thrownError) {
-                console.error(thrownError);
+            error: (response, status, more) => {
+                error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
             }
         },
         columns: mrnEntitiesColumnDefs,
@@ -174,7 +174,9 @@ $(document).ready( function () {
                     version: nullIfEmpty(rowdata["version"])
                 }),
                 success: success,
-                error: error
+                error: (response, status, more) => {
+                    error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
+                }
             });
         },
         onDeleteRow: function (datatable, selectedRows, success, error) {
@@ -183,7 +185,9 @@ $(document).ready( function () {
                     url: `./api/mrn-entity/${this.data()["id"]}`,
                     type: 'DELETE',
                     success: success,
-                    error: error
+                    error: (response, status, more) => {
+                        error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
+                    }
                 });
             });
         },
@@ -202,7 +206,9 @@ $(document).ready( function () {
                     version: nullIfEmpty(rowdata["version"])
                 }),
                 success: success,
-                error: error
+                error: (response, status, more) => {
+                    error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
+                }
             });
         }
     });
@@ -231,9 +237,9 @@ $(document).ready( function () {
                 certificatesTable.ajax.reload();
                 $modalDiv.modal('hide').removeClass('loading');
             },
-            error: (jqXHR, textStatus, errorThrown)  => {
+            error: (response, status, more)  => {
                 $modalDiv.removeClass('loading');
-                showError(jqXHR.responseJSON.message);
+                showErrorDialog(response.getResponseHeader("X-cKeeper-error"));
             }
         });
     });
@@ -255,9 +261,9 @@ $(document).ready( function () {
                 certificatesTable.ajax.reload();
                 $modalDiv.modal('hide').removeClass('loading');
             },
-            error: (jqXHR, textStatus, errorThrown)  => {
+            error: (response, status, more) => {
                 $modalDiv.removeClass('loading');
-                showError(jqXHR.responseJSON.message);
+                showErrorDialog(response.getResponseHeader("X-cKeeper-error"));
             }
         });
     });
@@ -300,8 +306,8 @@ function loadMrnEntityCertificates(event, table, button, config) {
                 });
                 return json;
             },
-            error: function (jqXHR, ajaxOptions, thrownError) {
-                console.error(thrownError);
+            error: function (response, status, more) => {
+                showErrorDialog(response.getResponseHeader("X-cKeeper-error"));
             }
         },
         columns: certificatesColumnDefs,
@@ -337,13 +343,15 @@ function loadMrnEntityCertificates(event, table, button, config) {
                 if(!this.data()["revoked"] || this.data()["revoked"]=="false") {
                     $(datatable.modal_selector).modal('hide');
                     $('.reveal-overlay').hide();
-                    showError("You can only delete a certificate if it has first been revoked.\nPlease revoke it and try again...");
+                    showErrorDialog("You can only delete a certificate if it has first been revoked.\nPlease revoke it and try again...");
                 } else {
                     $.ajax({
                         url: `./api/certificate/${this.data()["id"]}`,
                         type: 'DELETE',
                         success: success,
-                        error: error
+                        error: (response, status, more) => {
+                            error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
+                        }
                     });
                 }
             });

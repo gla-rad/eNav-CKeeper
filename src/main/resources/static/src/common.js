@@ -1,12 +1,4 @@
 /**
- * Standard jQuery initialisation of the page were all buttons are assigned an
- * operation and the form doesn't really do anything.
- */
-$(() => {
-    console.log("Content Loaded");
-});
-
-/**
  * A helper function sets a value to null if it's empty/undefined.
  *
  * @param {*} obj   The object to be checked whether empty
@@ -19,10 +11,14 @@ function nullIfEmpty(obj) {
 }
 
 /**
- * A helper function that shows the error boostrap error dialog and displays
- * the provided error message in it.
+ * A helper function to handle error UI operations.
+ *
+ * @param {String}      text    The error text to be displayed
  */
-function showError(errorMsg) {
-    $('#error-dialog').modal('show');
-    $('#error-dialog .modal-body').html(`<p class="text-danger">${errorMsg}</p>`);
+function showErrorDialog(text, action) {
+    // Initialise the confirmation dialog
+    $('#errorDialog .modal-body').html(text);
+
+    // And show the dialog
+    $('#errorDialog').modal('show');
 }
