@@ -179,18 +179,6 @@ $(() => {
                 }
             });
         },
-        onDeleteRow: (datatable, selectedRows, success, error) => {
-             selectedRows.every((rowIdx, tableLoop, rowLoop) => {
-                 $.ajax({
-                     url: `./api/mrn-entity/${this.data()["id"]}`,
-                     type: 'DELETE',
-                     success: success,
-                     error: (response, status, more) => {
-                         error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
-                     }
-                 });
-             });
-        },
         onEditRow: (datatable, rowdata, success, error) => {
             $.ajax({
                 type: 'PUT',
@@ -211,6 +199,18 @@ $(() => {
                     error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
                 }
             });
+        },
+        onDeleteRow: (datatable, selectedRows, success, error) => {
+             selectedRows.every(function(rowIdx, tableLoop, rowLoop) {
+                 $.ajax({
+                     url: `./api/mrn-entity/${this.data()["id"]}`,
+                     type: 'DELETE',
+                     success: success,
+                     error: (response, status, more) => {
+                         error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
+                     }
+                 });
+             });
         }
     });
 
@@ -340,7 +340,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
             }
         }],
         onDeleteRow: (datatable, selectedRows, success, error) => {
-            selectedRows.every((rowIdx, tableLoop, rowLoop) => {
+            selectedRows.every(function(rowIdx, tableLoop, rowLoop) {
                 if(!this.data()["revoked"] || this.data()["revoked"]=="false") {
                     $(datatable.modal_selector).modal('hide');
                     $('.reveal-overlay').hide();
