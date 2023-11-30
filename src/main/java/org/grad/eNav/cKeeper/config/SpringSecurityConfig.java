@@ -213,7 +213,10 @@ class SpringSecurityConfig {
         http.exceptionHandling(handler ->
                 handler.accessDeniedHandler((req, res, ex) -> {
                     res.setStatus(403);
-                    res.getWriter().print("You don't seem to have the appropriate permissions to perform this action.");
+                    res.addHeader(
+                            "X-cKeeper-error",
+                            "You don't seem to have the appropriate permissions to perform this action."
+                    );
                 })
         );
 
