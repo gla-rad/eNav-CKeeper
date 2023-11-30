@@ -179,22 +179,22 @@ $(() => {
                 }
             });
         },
-        onDeleteRow: (datatable, selectedRows, success, error) => {
-            selectedRows.every((rowIdx, tableLoop, rowLoop) => {
-                $.ajax({
-                    url: `./api/mrn-entity/${this.data()["id"]}`,
-                    type: 'DELETE',
-                    success: success,
-                    error: (response, status, more) => {
-                        error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
-                    }
-                });
+        onDeleteRow: (datatable, rowdata, success, error) => {
+            $.ajax({
+                type: 'DELETE',
+                url: `./api/mrn-entity/${rowdata["id"]}`,
+                crossDomain: true,
+                success: success,
+                error: (response, status, more) => {
+                    error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
+                }
             });
         },
         onEditRow: (datatable, rowdata, success, error) => {
             $.ajax({
-                url: `./api/mrn-entity/${rowdata["id"]}`,
                 type: 'PUT',
+                url: `./api/mrn-entity/${rowdata["id"]}`,
+                crossDomain: true,
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 data: JSON.stringify({
@@ -338,23 +338,22 @@ function loadMrnEntityCertificates(event, table, button, config) {
                 $('#confirm-revoke-certificate').modal('show');
             }
         }],
-        onDeleteRow: (datatable, selectedRows, success, error) => {
-            selectedRows.every((rowIdx, tableLoop, rowLoop) => {
-                if(!this.data()["revoked"] || this.data()["revoked"]=="false") {
-                    $(datatable.modal_selector).modal('hide');
-                    $('.reveal-overlay').hide();
-                    showErrorDialog("You can only delete a certificate if it has first been revoked.\nPlease revoke it and try again...");
-                } else {
-                    $.ajax({
-                        url: `./api/certificate/${this.data()["id"]}`,
-                        type: 'DELETE',
-                        success: success,
-                        error: (response, status, more) => {
-                            error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
-                        }
-                    });
-                }
-            });
+        onDeleteRow: (datatable, rowdata, success, error) => {
+            if(!rowdata["revoked"] || rowdata["revoked"]=="false") {
+                $(datatable.modal_selector).modal('hide');
+                $('.reveal-overlay').hide();
+                showErrorDialog("You can only delete a certificate if it has first been revoked.\nPlease revoke it and try again...");
+            } else {
+                $.ajax({
+                    url: `./api/certificate/${rowdata["id"]}`,
+                    type: 'DELETE',
+                    crossDomain: true,
+                    success: success,
+                    error: (response, status, more) => {
+                        error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
+                    }
+                });
+            }
         },
     });
 }
