@@ -86,10 +86,6 @@ class SpringSecurityConfig {
     @Value("${gla.rad.ckeeper.resources.open:/,/index,/webjars/**,/css/**,/lib/**,/images/**,/src/**}")
     private String[] openResources;
 
-
-    @Autowired
-    JwtDecoder jwtDecoder;
-
     /**
      * The REST Template.
      *
