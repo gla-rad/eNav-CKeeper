@@ -15,7 +15,7 @@
 #
 
 # Use the official OpenJDK 17 image as the base image
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:21-jre-alpine
 
 LABEL org.opencontainers.image.source="https://github.com/gla-rad/eNav-CKeeper"
 
