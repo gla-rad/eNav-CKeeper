@@ -356,7 +356,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
                         }
                     });
                 }
-            }):
+            })
         }
     });
 }
