@@ -68,37 +68,37 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, JwtAut
     public JwtAuthenticationToken convert(Jwt jwt) {
         Collection<GrantedAuthority> authorities = Stream.concat(
                         defaultGrantedAuthoritiesConverter.convert(jwt).stream(),
-                        extractResourceRoles(jwt, resourceId).stream())
+                        extractResourceRoles(jwt.getClaim("resource_access"), resourceId).stream())
                 .collect(Collectors.toSet());
         return new JwtAuthenticationToken(jwt, authorities);
     }
 
     /**
-     * This helper function performs the actual conversion and pickes up all the
+     * This helper function performs the actual conversion and picks up all the
      * roles defined for the specified resource ID, in order to add the ROLE_
      * prefix.
      *
-     * @param jwt the keycloak-generated JWT token
+     * @param resourceAccess the resource access claims
      * @param resourceId the resource ID to pick up the roles for
      * @return the adjusted authentication token
      */
-    private static Collection<? extends GrantedAuthority> extractResourceRoles(final Jwt jwt, final String resourceId)
+    public static Collection<? extends GrantedAuthority> extractResourceRoles(final Map<?,?> resourceAccess, final String resourceId)
     {
         // Parse the incoming JWT token
-        final Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
-        final Collection<String> resourceRoles= Optional.ofNullable(resourceAccess)
+        final List<?> resourceRoles= Optional.ofNullable(resourceAccess)
                 .map(map -> map.get(resourceId))
                 .filter(Map.class::isInstance)
                 .map(Map.class::cast)
                 .map(map -> map.get("roles"))
                 .filter(Collection.class::isInstance)
                 .map(Collection.class::cast)
-                .map(roles -> new ArrayList<String>(roles))
-                .orElse(null);
+                .map(roles -> roles.stream().toList())
+                .orElseGet(Collections::emptyList);
         // Map the roles with a ROLE_ prefix
-        return Optional.ofNullable(resourceRoles)
-                .orElse(Collections.emptySet())
+        return Optional.of(resourceRoles)
+                .orElse(Collections.emptyList())
                 .stream()
+                .map(Objects::toString)
                 .map(x -> new SimpleGrantedAuthority("ROLE_" + x.toUpperCase()))
                 .collect(Collectors.toList());
     }

@@ -20,6 +20,7 @@ import jakarta.servlet.DispatcherType;
 import org.grad.eNav.cKeeper.config.keycloak.KeycloakGrantedAuthoritiesMapper;
 import org.grad.eNav.cKeeper.config.keycloak.KeycloakJwtAuthenticationConverter;
 import org.grad.eNav.cKeeper.config.keycloak.KeycloakLogoutHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.actuate.health.HealthEndpoint;
@@ -36,10 +37,17 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
+import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -49,7 +57,8 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.ForwardedHeaderFilter;
 
-import java.util.Arrays;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The Web Security Configuration.
@@ -76,6 +85,10 @@ class SpringSecurityConfig {
      */
     @Value("${gla.rad.ckeeper.resources.open:/,/index,/webjars/**,/css/**,/lib/**,/images/**,/src/**}")
     private String[] openResources;
+
+
+    @Autowired
+    JwtDecoder jwtDecoder;
 
     /**
      * The REST Template.
@@ -164,8 +177,41 @@ class SpringSecurityConfig {
     }
 
     /**
-     * Defines the security web-filter chains.
+     * Defines the resource access authorities mapper to retrieve the respective
+     * claims from the user information.
+     * <p/>
+     * Note that in order for this to work we need to include the resource
+     * access information to the user information in the OAuth2 server (i.e.
+     * in our keycloak) client scope mappers.
      *
+     * @return the granted authorities mapper
+     */
+    @Bean
+    GrantedAuthoritiesMapper userAuthoritiesMapper() {
+        return (authorities) -> {
+            // Initialise an authorities map
+            Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+            // Parse the role/resource-access claims for this client and add
+            // them to the granted authorities.
+            authorities.forEach(authority -> {
+                Optional.of(authority)
+                        .filter(OAuth2UserAuthority.class::isInstance)
+                        .map(OAuth2UserAuthority.class::cast)
+                        .map(OAuth2UserAuthority::getAttributes)
+                        .map(attributes -> attributes.getOrDefault("resource_access", Collections.emptyMap()))
+                        .filter(Map.class::isInstance)
+                        .map(Map.class::cast)
+                        .map(claims -> KeycloakJwtAuthenticationConverter.extractResourceRoles(claims, this.clientId))
+                        .ifPresent(mappedAuthorities::addAll);
+            });
+            // And finally return the populated authorities map
+            return mappedAuthorities;
+        };
+    }
+
+    /**
+     * Defines the security web-filter chains.
+     * <p/>
      * Allows open access to the health and info actuator endpoints.
      * All other actuator endpoints are only available for the actuator role.
      * Finally, all other exchanges need to be authenticated.
@@ -178,6 +224,9 @@ class SpringSecurityConfig {
         // Authenticate through configured OpenID Provider
         http.oauth2Login(login -> login
                 .loginPage("/oauth2/authorization/keycloak")
+                .userInfoEndpoint((userInfoCustomizer) -> userInfoCustomizer
+                        .userAuthoritiesMapper(this.userAuthoritiesMapper())
+                )
 //                .authorizationEndpoint().baseUri("/oauth2/authorization/keycloak")
 //                .authorizationRequestRepository(new HttpSessionOAuth2AuthorizationRequestRepository());
         );
@@ -208,6 +257,11 @@ class SpringSecurityConfig {
 
         // Disable the CSRF
         http.csrf(AbstractHttpConfigurer::disable);
+
+        // State-less session (state in access-token only)
+//        http.sessionManagement(sessionManagementConfigurer -> sessionManagementConfigurer.
+//                sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+//        );
 
         // Add an exception handler to add a permission response
         http.exceptionHandling(handler ->
