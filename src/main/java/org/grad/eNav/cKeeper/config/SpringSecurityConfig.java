@@ -20,7 +20,6 @@ import jakarta.servlet.DispatcherType;
 import org.grad.eNav.cKeeper.config.keycloak.KeycloakGrantedAuthoritiesMapper;
 import org.grad.eNav.cKeeper.config.keycloak.KeycloakJwtAuthenticationConverter;
 import org.grad.eNav.cKeeper.config.keycloak.KeycloakLogoutHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.actuate.health.HealthEndpoint;
@@ -37,17 +36,12 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -58,7 +52,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.ForwardedHeaderFilter;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The Web Security Configuration.
@@ -253,11 +246,6 @@ class SpringSecurityConfig {
 
         // Disable the CSRF
         http.csrf(AbstractHttpConfigurer::disable);
-
-        // State-less session (state in access-token only)
-//        http.sessionManagement(sessionManagementConfigurer -> sessionManagementConfigurer.
-//                sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//        );
 
         // Add an exception handler to add a permission response
         http.exceptionHandling(handler ->
