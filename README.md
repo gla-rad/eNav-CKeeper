@@ -7,6 +7,7 @@ the transmitted AtoN information and the Navigational Warning messages.
 The core micro-service is built using the Springboot framework.
 
 ## What is e-Navigation
+
 The maritime domain is facing a number for challenges, mainly due to the
 increasing demand, that may increase the risk of an accident or loss of life.
 These challenges require technological solutions and e-Navigation is one such
@@ -85,7 +86,7 @@ the client side, in order to provide an easier and more robust way to verify the
 messages originating from the CSSA, especially in cases of intermittent
 connectivity.
 
-### Development Setup
+## Development Setup
 
 To start developing just open the repository with the IDE of your choice. The
 original code has been generated using
@@ -98,7 +99,7 @@ Provide the URL of the current repository and the local directory you want.
 You don't have to use it if you have another preference. Just make sure you
 update the *.gitignore* file appropriately.
 
-### Build Setup
+## Build Setup
 
 The project is using the latest OpenJDK 21 to build, although earlier versions
 should also work.
@@ -108,7 +109,7 @@ IDE. Nothing exotic about the goals, just clean and install should do:
 
     mvn clean package
 
-### How to Run
+## How to Run
 
 This service can be used in two ways (based on the use or not of the Spring Cloud
 Config server).
@@ -117,7 +118,7 @@ Config server).
 * Disabling the cloud config client and using the configuration provided
   locally.
 
-#### Cloud Config Configuration
+### Cloud Config Configuration
 
 In order to run the service in a **Cloud Config** configuration, you just need
 to provide the environment variables that allow is to connect to the cloud
@@ -159,7 +160,7 @@ use the following command:
         -DENAV_CLOUD_CONFIG_PASSWORD='<config config repository passord>' \
         <ckeeper.jar>
 
-#### Local Config Configuration
+### Local Config Configuration
 
 In order to run the service in a **Local Config** configuration, you just need
 to provide a local configuration directory that contains the necessary
@@ -285,7 +286,7 @@ server like keycloak, logging configuration, the eureka client connection etc.:
     gla.rad.ckeeper.x509.cert.dirName=<certificate.dir.name>
     gla.rad.ckeeper.x509.cert.yearDuration=1
 
-### Operation
+## Operation
 
 The **Certificate Keeper** microservice’s main purpose is to integrate the
 architecture with an MCP instance. This is achieved via an X.509 certificate
