@@ -23,6 +23,7 @@
 		<bootstrap.version>5.3.2</bootstrap.version>
 		<jquery.version>3.7.1</jquery.version>
 		<fa.version>6.5.1</fa.version>
+		<secomlib-version>0.0.42</secomlib-version>
 		<hibernate.search-orm.version>6.2.3.Final</hibernate.search-orm.version>
 	</properties>
 
@@ -168,7 +169,7 @@
 		<dependency>
 			<groupId>org.grad.secom</groupId>
 			<artifactId>secom-core-jakarta</artifactId>
-			<version>0.0.26</version>
+			<version>${secomlib-version}</version>
 		</dependency>
 
 		<!-- Swagger -->
