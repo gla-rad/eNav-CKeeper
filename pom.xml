@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.2.5</version>
+		<version>3.2.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
@@ -24,7 +24,7 @@
 		<jquery.version>3.7.1</jquery.version>
 		<fa.version>6.5.1</fa.version>
 		<secomlib-version>0.0.42</secomlib-version>
-		<hibernate.search-orm.version>6.2.3.Final</hibernate.search-orm.version>
+		<hibernate.search-orm.version>7.1.1.Final</hibernate.search-orm.version>
 	</properties>
 
 	<build>
@@ -123,7 +123,7 @@
 
 		<dependency>
 			<groupId>org.hibernate.search</groupId>
-			<artifactId>hibernate-search-mapper-orm-orm6</artifactId>
+			<artifactId>hibernate-search-mapper-orm</artifactId>
 			<version>${hibernate.search-orm.version}</version>
 		</dependency>
 		<dependency>
