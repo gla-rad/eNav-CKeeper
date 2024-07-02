@@ -115,14 +115,14 @@ The available environment variables are:
     ENAV_CLOUD_CONFIG_PASSWORD=<The cloud configration server password>
     
 The parameters will be picked up and used to populate the default
-**bootstrap.properties** of the service that look as follows:
+**application.properties** of the service that look as follows:
 
     server.port=8764
     spring.application.name=cKeeper
     spring.application.version=<application.version>
     
     # The Spring Cloud Discovery Config
-    spring.cloud.config.uri=${ENAV_CLOUD_CONFIG_URI}
+    spring.config.import=optional:configserver:${ENAV_CLOUD_CONFIG_URI}
     spring.cloud.config.username=${ENAV_CLOUD_CONFIG_USERNAME}
     spring.cloud.config.password=${ENAV_CLOUD_CONFIG_PASSWORD}
     spring.cloud.config.label=${ENAV_CLOUD_CONFIG_BRANCH}
@@ -146,7 +146,7 @@ use the following command:
 
 In order to run the image in a **Local Config** configuration, you just need
 to mount a local configuration directory that contains the necessary 
-**.properties** files (including bootstrap) into the **/conf** directory of the
+**application.properties** files into the **/conf** directory of the
 image.
 
 This can be done in the following way:
@@ -157,22 +157,6 @@ This can be done in the following way:
         <image-id>
 
 Examples of the required properties files can be seen below.
-
-For bootstrapping, we need to disable the cloud config client, and clear our the
-environment variable inputs:
-    
-    server.port=8764
-    spring.application.name=cKeeper
-    spring.application.version=<application.version>
-    
-    # Disable the cloud config
-    spring.cloud.config.enabled=false
-    
-    # Clear out the environment variables
-    spring.cloud.config.uri=
-    spring.cloud.config.username=
-    spring.cloud.config.password=
-    spring.cloud.config.label=
 
 While the application properties need to provide the service with an OAuth2.0
 server like keycloak, logging configuration, the eureka client connection etc.:
@@ -186,6 +170,14 @@ server like keycloak, logging configuration, the eureka client connection etc.:
     service.variable.database.server.name=<database.server.name>
     service.variable.database.server.port=<database.server.port>
     service.variable.mcp.identity-registry.server.name=<mcp.identity-registry.server.name>
+
+    # Service properties
+    server.port=8764
+    spring.application.name=cKeeper
+    spring.application.version=0.0.3
+
+    # Disable the cloud config
+    spring.cloud.config.enabled=false
     
     # Eureka Client Configuration
     eureka.client.service-url.defaultZone=http://${service.variable.eureka.server.name}:${service.variable.eureka.server.port}/eureka/
