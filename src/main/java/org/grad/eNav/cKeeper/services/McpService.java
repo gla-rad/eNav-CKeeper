@@ -43,6 +43,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.netty.http.client.HttpClient;
 
@@ -438,7 +439,7 @@ public class McpService {
                     .filter(response -> response.getStatusCode().is2xxSuccessful())
                     .blockOptional()
                     .orElseThrow(() -> new InvalidRequestException(String.format("Failed to issue a new certificate for entity with MRN: %s", fullMrn)));
-        } catch (WebClientResponseException ex) {
+        } catch (WebClientException ex) {
             throw new InvalidRequestException((ex.getMessage()));
         }
 
@@ -518,13 +519,13 @@ public class McpService {
      */
     public void checkMcpMirConnectivity() throws McpConnectivityException {
         try {
-            assert this.mcpMirClient.options()
+            Optional<ResponseEntity<Void>> response = this.mcpMirClient.options()
                     .retrieve()
                     .toBodilessEntity()
-                    .filter(response -> response.getStatusCode().is2xxSuccessful())
-                    .blockOptional()
-                    .isPresent();
-        } catch (WebClientResponseException | AssertionError ex) {
+                    .blockOptional();
+            assert response.isPresent();
+            assert response.get().getStatusCode().is2xxSuccessful();
+        } catch (WebClientException | AssertionError ex) {
             log.trace(ex.getMessage(), ex);
             throw new McpConnectivityException("MCP Identity Registry could not be contacted... please make sure you have connected and try again later!");
         }

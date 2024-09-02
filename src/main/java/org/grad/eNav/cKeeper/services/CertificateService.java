@@ -163,20 +163,32 @@ public class CertificateService {
         final MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElse(null);
 
+        // Sanity Check - Entity Not Found
+        if(Objects.isNull(mrnEntity)) {
+            return;
+        }
+
+        // Sanity Check - Check the MCP connectivity
+        try {
+            this.mcpService.checkMcpMirConnectivity();
+        } catch (McpConnectivityException ex) {
+            return;
+        }
+
         // Extract all the local certificates
-        final Map<String, Certificate> localCertificates = Optional.ofNullable(mrnEntity)
+        final Map<String, Certificate> localCertificates = Optional.of(mrnEntity)
                 .map(MrnEntity::getCertificates)
                 .orElse(Collections.emptySet())
                 .stream()
                 .collect(Collectors.toMap(Certificate::getMcpMirId, Function.identity()));
 
         // And get the current MCP state
-        final Map<String, X509Certificate> mcpCertificates = Optional.ofNullable(mrnEntity)
+        final Map<String, X509Certificate> mcpCertificates = Optional.of(mrnEntity)
                 .map(entity -> {
                     try {
                         return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn(), mrnEntity.getVersion());
                     } catch (DataNotFoundException | McpConnectivityException ex) {
-                        // If the MCP connectivity failed, just don't use it
+                        // If the MCP connectivity failed here, just don't use it
                         return null;
                     }
                 })
