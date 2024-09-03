@@ -49,6 +49,7 @@ import reactor.netty.http.client.HttpClient;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -120,6 +121,7 @@ public class McpService {
     McpConfigService mcpConfigService;
 
     // Class Variables
+    protected HttpClient httpConnector;
     protected WebClient mcpMirClient;
     protected CertificateFactory certificateFactory;
 
@@ -138,7 +140,7 @@ public class McpService {
         this.certificateFactory = CertificateFactory.getInstance("X.509");
 
         // Initialise the HTTP connection configuration
-        HttpClient httpConnector = HttpClient
+        this.httpConnector = HttpClient
                 .create()
                 .followRedirect(true);
 
@@ -164,7 +166,7 @@ public class McpService {
 
         // Add the SSL context to the HTTP connector
         final SslContext sslContext = sslContextBuilder.build();
-        httpConnector = httpConnector.secure(spec -> spec.sslContext(sslContext)
+        this.httpConnector = this.httpConnector.secure(spec -> spec.sslContext(sslContext)
                 .handshakeTimeout(Duration.of(2, ChronoUnit.SECONDS)));
 
         // And create the MCP MIR web client
@@ -519,10 +521,13 @@ public class McpService {
      */
     public void checkMcpMirConnectivity() throws McpConnectivityException {
         try {
-            Optional<ResponseEntity<Void>> response = this.mcpMirClient.options()
+            // Check the MCP connection - Use a GET organisation call
+            final Optional<ResponseEntity<Void>> response = this.mcpMirClient.get()
+                    .uri(URI.create(StringUtils.removeEnd(this.mcpConfigService.constructMcpBaseUrl(),"/")))
                     .retrieve()
                     .toBodilessEntity()
                     .blockOptional();
+            // Make sure everything seems OK
             assert response.isPresent();
             assert response.get().getStatusCode().is2xxSuccessful();
         } catch (WebClientException | AssertionError ex) {

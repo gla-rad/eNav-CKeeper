@@ -266,9 +266,10 @@ public class MrnEntityService {
                         this.mcpService.deleteMcpEntity(entity.getMrn(), entity.getVersion(), entity.getEntityType().getEntityClass());
                     } catch(DeletingFailedException ex) {
                         // Not found? Not problem!
+                        log.debug(ex.getMessage());
                     } catch(McpConnectivityException ex) {
-                        // If the MCP connectivity failed, don't continue
-                        return null;
+                        // If the MCP connectivity failed, don't worry continue
+                        log.debug(ex.getMessage());
                     }
                     return entity.getId();
                 })
