@@ -159,31 +159,26 @@ public class CertificateService {
      */
     @Transactional
     public void syncMrnEntityWithMcpMir(@NotNull BigInteger mrnEntityId) {
-        // First check that the MRN Entity exists and get its MIR certificates
-        final MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
-                .orElse(null);
-
-        // Sanity Check - Entity Not Found
-        if(Objects.isNull(mrnEntity)) {
-            return;
-        }
-
-        // Sanity Check - Check the MCP connectivity
+        // Sanity Check - Check the MCP connectivity otherwise nothing to sync
         try {
             this.mcpService.checkMcpMirConnectivity();
         } catch (McpConnectivityException ex) {
             return;
         }
 
+        // Check that the MRN Entity exists and get its MIR certificates
+        final MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
+                .orElse(null);
+
         // Extract all the local certificates
-        final Map<String, Certificate> localCertificates = Optional.of(mrnEntity)
+        final Map<String, Certificate> localCertificates = Optional.ofNullable(mrnEntity)
                 .map(MrnEntity::getCertificates)
                 .orElse(Collections.emptySet())
                 .stream()
                 .collect(Collectors.toMap(Certificate::getMcpMirId, Function.identity()));
 
         // And get the current MCP state
-        final Map<String, X509Certificate> mcpCertificates = Optional.of(mrnEntity)
+        final Map<String, X509Certificate> mcpCertificates = Optional.ofNullable(mrnEntity)
                 .map(entity -> {
                     try {
                         return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn(), mrnEntity.getVersion());

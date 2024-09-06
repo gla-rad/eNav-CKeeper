@@ -79,13 +79,23 @@ public class McpConfigService {
     String keyStorePass;
 
     /**
+     * A helper function to construct the appropriate MCP check URL, based
+     * on the currently loaded host and registered organisation.
+     *
+     * @return the complete MCP check URL
+     */
+    public String constructMcpCheckUrl() {
+        return String.format("https://%s/x509/api/org/%s:%s", this.host, this.mcpOrgPrefix, this.organisation);
+    }
+
+    /**
      * A helper function to construct the appropriate MCP base URL, based
      * on the currently loaded host and registered organisation.
      *
-     * @return the complete MCP endpoint URL
+     * @return the complete MCP base URL
      */
     public String constructMcpBaseUrl() {
-        return String.format("https://%s/x509/api/org/%s:%s/", this.host, this.mcpOrgPrefix, this.organisation);
+        return String.format("%s/", this.constructMcpCheckUrl());
     }
 
     /**
@@ -97,7 +107,7 @@ public class McpConfigService {
      * @return the complete MCP endpoint URL
      */
     public String constructMcpEndpointUrl(String endpoint) {
-        return String.format("https://%s/x509/api/org/%s:%s/%s/", this.host, this.mcpOrgPrefix, this.organisation, endpoint);
+        return String.format("%s/%s/", this.constructMcpCheckUrl(), endpoint);
     }
 
     /**

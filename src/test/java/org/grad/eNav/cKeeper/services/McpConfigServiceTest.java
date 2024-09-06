@@ -46,7 +46,21 @@ class McpConfigServiceTest {
     }
 
     /**
-     * Test that we correctly construct the endpoint URLs for the MCP.
+     * Test that we correctly construct the check URLs for the MCP.
+     */
+    @Test
+    void testConstructMcpCheckUrl() {
+        // First set the host and the organization registered to the MCP
+        this.mcpConfigService.host = "localhost";
+        this.mcpConfigService.mcpOrgPrefix = "urn:mrn:mcp:org:mcc";
+        this.mcpConfigService.organisation = "grad";
+
+        // Make the assertions
+        assertEquals("https://localhost/x509/api/org/urn:mrn:mcp:org:mcc:grad", this.mcpConfigService.constructMcpCheckUrl());
+    }
+
+    /**
+     * Test that we correctly construct the base URLs for the MCP.
      */
     @Test
     void testConstructMcpBaseUrl() {

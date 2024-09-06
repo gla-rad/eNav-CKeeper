@@ -49,7 +49,6 @@ import reactor.netty.http.client.HttpClient;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -254,7 +253,7 @@ public class McpService {
                     .blockOptional()
                     .map(o -> (T) o)
                     .orElseThrow(() -> new SavingFailedException(String.format("Failed to create the provided MCP entity with MRN: %s", mcpEntity.getMrn())));
-        } catch (WebClientResponseException ex) {
+        } catch (WebClientException ex) {
             throw new SavingFailedException(ex.getMessage());
         }
     }
@@ -522,8 +521,8 @@ public class McpService {
     public void checkMcpMirConnectivity() throws McpConnectivityException {
         try {
             // Check the MCP connection - Use a GET organisation call
-            final Optional<ResponseEntity<Void>> response = this.mcpMirClient.get()
-                    .uri(URI.create(StringUtils.removeEnd(this.mcpConfigService.constructMcpBaseUrl(),"/")))
+            final Optional<ResponseEntity<Void>> response = this.mcpMirClient.options()
+                    .uri(this.mcpConfigService.constructMcpCheckUrl())
                     .retrieve()
                     .toBodilessEntity()
                     .blockOptional();
