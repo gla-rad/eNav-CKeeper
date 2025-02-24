@@ -17,6 +17,8 @@
 package org.grad.eNav.cKeeper.models.dtos.mcp;
 
 import jakarta.validation.constraints.NotNull;
+
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +30,7 @@ import java.util.Objects;
  * hosted entities, such as the
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-public abstract class McpEntityBase {
+public abstract class McpEntityBase implements Serializable {
 
     // Class Variable
     @NotNull

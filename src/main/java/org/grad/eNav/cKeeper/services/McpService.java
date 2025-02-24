@@ -37,6 +37,7 @@ import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.grad.secom.core.utils.KeyStoreUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -184,6 +185,7 @@ public class McpService {
      * @return the retrieved MCP entity object
      * @throws McpConnectivityException if the connection to the MCP is not active
      */
+    @Cacheable(value = "mcpEntityCache", key="{#mrn, #version, #entityClass}")
     public <T extends McpEntityBase> T getMcpEntity(@NotNull String mrn,
                                                     String version,
                                                     @NotNull Class<T> entityClass) throws McpConnectivityException {
@@ -370,6 +372,7 @@ public class McpService {
      * @return the list of available certificates
      * @throws McpConnectivityException if the connection to the MCP is not active
      */
+    @Cacheable(value = "mcpEntityCertificateCache", key="{#mcpEntityType, #mrn, #version}")
     public Map<String, X509Certificate> getMcpEntityCertificates(@NotNull McpEntityType mcpEntityType,
                                                                  @NotNull String mrn,
                                                                  String version) throws McpConnectivityException {
@@ -526,6 +529,7 @@ public class McpService {
                     .retrieve()
                     .toBodilessEntity()
                     .blockOptional();
+
             // Make sure everything seems OK
             assert response.isPresent();
             assert response.get().getStatusCode().is2xxSuccessful();
