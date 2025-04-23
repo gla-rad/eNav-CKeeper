@@ -598,12 +598,6 @@ class CertificateServiceTest {
         sign.update("Hello World".getBytes());
         assertTrue(sign.verify(signature));
         assertTrue(signature.length == 64);
-        byte[] b64= Base64.getEncoder().encode(signature);
-        byte[] bsmall = new byte[b64.length-2];
-        for(int i=0; i<bsmall.length; i++) {
-            bsmall[i] = b64[i];
-        }
-        Base64.getDecoder().decode(bsmall);
     }
 
     /**
