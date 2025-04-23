@@ -45,10 +45,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -483,7 +480,8 @@ class CertificateServiceTest {
 
     /**
      * Test that we can successfully right any byte array content using
-     * a certificate identified by the certificate ID.
+     * a certificate identified by the certificate ID. In this case we
+     * test the default MCP signature algorithm with ECDSA and SHA-384.
      */
     @Test
     void testSignContent() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
@@ -516,6 +514,96 @@ class CertificateServiceTest {
         // Verify that the signature is correct
         sign.update(payload);
         assertTrue(sign.verify(signature));
+    }
+
+    /**
+     * Test that we can successfully right any byte array content using
+     * a certificate identified by the certificate ID. In this case we
+     * test the less secure MCP signature algorithm with ECDSA and SHA-256.
+     * Note that the default signature format is in ANS.1. DER which
+     * results in signatures larger than 512 bits (64 bytes).
+     */
+    @Test
+    void testSignContent256() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        // Initialise the service parameters
+        this.certificateService.keyPairCurve="secp256r1";
+        this.certificateService.certDirName="CN=Test";
+
+        // Spin up a self-signed certificate
+        final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningAlgorithm);
+
+        // Populate the mock certificate with the actual keys
+        this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
+        this.certificate.setPublicKey(X509Utils.formatPublicKey(keyPair.getPublic()));
+        this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
+
+        // Initialise the verification signature
+        final Signature sign = Signature.getInstance("SHA256withECDSA");
+
+        // Create a dummy payload
+        final byte[] payload = "Hello World".getBytes();
+
+        // Mock the service database call
+        doReturn(Optional.of(this.certificate)).when(this.certificateRepo).findById(this.certificate.getId());
+
+        // Perform the service call
+        final byte[] signature = this.certificateService.signContent(this.certificate.getId(), sign.getAlgorithm(), payload);
+
+        // Verify that the signature is correct
+        sign.initVerify(keyPair.getPublic());
+        sign.update("Hello World".getBytes());
+        assertTrue(sign.verify(signature));
+        assertTrue(signature.length > 64);
+    }
+
+    /**
+     * Test that we can successfully right any byte array content using
+     * a certificate identified by the certificate ID. In this case we
+     * test the less secure MCP signature algorithm with ECDSA and SHA-256.
+     * Note that the default signature format (ANS.1. DER) has been replaced
+     * with IEEE P1363 which always results in signatures equal to 512 bits
+     * (64 bytes). This is done in BouncyCastle using the "SHA256withCVC-ECDSA"
+     * signature instance name.
+     */
+    @Test
+    void testSignContent256WithCVC() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+        // Initialise the service parameters
+        this.certificateService.keyPairCurve="secp256r1";
+        this.certificateService.certDirName="CN=Test";
+
+        // Spin up a self-signed certificate
+        final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningAlgorithm);
+
+        // Populate the mock certificate with the actual keys
+        this.certificate.setCertificate(X509Utils.formatCertificate(x509Certificate));
+        this.certificate.setPublicKey(X509Utils.formatPublicKey(keyPair.getPublic()));
+        this.certificate.setPrivateKey(X509Utils.formatPrivateKey(keyPair.getPrivate()));
+
+        // Initialise the verification signature
+        final Signature sign = Signature.getInstance("SHA256withCVC-ECDSA");
+        sign.initVerify(keyPair.getPublic());
+
+        // Create a dummy payload
+        final byte[] payload = "Hello World".getBytes();
+
+        // Mock the service database call
+        doReturn(Optional.of(this.certificate)).when(this.certificateRepo).findById(this.certificate.getId());
+
+        // Perform the service call
+        final byte[] signature = this.certificateService.signContent(this.certificate.getId(), sign.getAlgorithm(), payload);
+
+        // Verify that the signature is correct
+        sign.update("Hello World".getBytes());
+        assertTrue(sign.verify(signature));
+        assertTrue(signature.length == 64);
+        byte[] b64= Base64.getEncoder().encode(signature);
+        byte[] bsmall = new byte[b64.length-2];
+        for(int i=0; i<bsmall.length; i++) {
+            bsmall[i] = b64[i];
+        }
+        Base64.getDecoder().decode(bsmall);
     }
 
     /**
