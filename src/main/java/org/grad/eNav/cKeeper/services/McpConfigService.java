@@ -119,6 +119,19 @@ public class McpConfigService {
      * @return The constructed device MRN
      */
     public String constructMcpEntityMrn(@NotNull McpEntityType mcpEntityType, String entityId) {
+        return constructMcpEntityMrn(mcpEntityType, null, entityId);
+    }
+
+    /**
+     * A helper function to construct the appropriate entity MRN, based on the
+     * provided device ID.
+     *
+     * @param mcpEntityType The MCP entity type
+     * @param version       The version of the entity type if a service
+     * @param entityId      The ID of the device to construct the MRN
+     * @return The constructed device MRN
+     */
+    public String constructMcpEntityMrn(@NotNull McpEntityType mcpEntityType, String version, String entityId) {
         return Optional.ofNullable(entityId).orElse("").startsWith(this.mcpEntityPrefix) ?
                 entityId :
                 String.format("%s:%s:%s:%s:%s",
@@ -130,6 +143,7 @@ public class McpConfigService {
                                 + Optional.ofNullable(entityId)
                                 .map(id -> id.replaceAll("[^A-Za-z0-9_.:]+", "-"))
                                 .map(String::toLowerCase)
+                                .map(str -> mcpEntityType == McpEntityType.SERVICE ? str + ":" + version : str)
                                 .orElse("")
                 );
     }
