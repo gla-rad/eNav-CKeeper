@@ -127,12 +127,12 @@ class McpConfigServiceTest {
         // Make the assertions for service
         assertEquals("urn:mrn:mcp:service:mcc:grad:instance:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,null));
         assertEquals("urn:mrn:mcp:service:mcc:grad:instance:", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,""));
-        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test"));
-        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test2"));
-        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test3"));
-        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test_test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"Test_Test"));
-        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test.test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"Test.Test"));
-        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test-test", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"Test Test"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test:0.0.1", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test:0.0.1"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test2:0.0.2", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test2:0.0.2"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test3:0.0.3", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"test3:0.0.3"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test_test:0.0.1", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"Test_Test:0.0.1"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test.test:0.0.1", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"Test.Test:0.0.1"));
+        assertEquals("urn:mrn:mcp:service:mcc:grad:instance:test-test:0.0.1", this.mcpConfigService.constructMcpEntityMrn(McpEntityType.SERVICE,"Test Test:0.0.1"));
     }
 
     /**

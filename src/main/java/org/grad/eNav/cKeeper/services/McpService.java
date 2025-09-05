@@ -203,11 +203,7 @@ public class McpService {
         try {
             return this.mcpMirClient.get()
                     .uri(mcpEntityType.getValue() + "/" +
-                            fullMrn +
-                            Optional.of(mcpEntityType)
-                                    .filter(McpEntityType.SERVICE::equals)
-                                    .map(t -> String.format("/%s", version))
-                                    .orElse(""))
+                            fullMrn)
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
                     .bodyToMono(entityClass)
@@ -291,11 +287,7 @@ public class McpService {
         try {
             this.mcpMirClient.put()
                     .uri(mcpEntityType.getValue() + "/" +
-                            fullMrn +
-                            Optional.of(mcpEntityType)
-                                    .filter(McpEntityType.SERVICE::equals)
-                                    .map(t -> String.format("/%s", ((McpServiceDto)mcpEntity).getInstanceVersion()))
-                                    .orElse(""))
+                            fullMrn)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
                     .body(BodyInserters.fromValue(mcpEntity))
@@ -345,11 +337,7 @@ public class McpService {
         try {
             return this.mcpMirClient.delete()
                     .uri(mcpEntityType.getValue() + "/" +
-                            fullMrn +
-                            Optional.of(mcpEntityType)
-                                    .filter(McpEntityType.SERVICE::equals)
-                                    .map(t -> String.format("/%s", version))
-                                    .orElse(""))
+                            fullMrn)
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
                     .toBodilessEntity()
@@ -430,10 +418,6 @@ public class McpService {
             responseEntity = this.mcpMirClient.post()
                     .uri(mcpEntityType.getValue() + "/" +
                             fullMrn +
-                            Optional.of(mcpEntityType)
-                                .filter(McpEntityType.SERVICE::equals)
-                                .map(t -> String.format("/%s", version))
-                                .orElse("") +
                             "/certificate/issue-new/csr")
                     .contentType(MediaType.TEXT_PLAIN)
                     .accept(MediaType.ALL)
@@ -492,10 +476,6 @@ public class McpService {
             this.mcpMirClient.post()
                     .uri(mcpEntityType.getValue() + "/" +
                             fullMrn +
-                            Optional.of(mcpEntityType)
-                                .filter(McpEntityType.SERVICE::equals)
-                                .map(t -> String.format("/%s", version))
-                                .orElse("") + "/" +
                             "certificate" + "/" +
                             mcpMirId +
                             "/revoke")

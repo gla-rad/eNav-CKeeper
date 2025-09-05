@@ -115,7 +115,7 @@ public class McpConfigService {
      * provided device ID.
      *
      * @param mcpEntityType The MCP entity type
-     * @param entityId  The ID of the device to construct the MRN from
+     * @param entityId      The ID of the device to construct the MRN
      * @return The constructed device MRN
      */
     public String constructMcpEntityMrn(@NotNull McpEntityType mcpEntityType, String entityId) {
@@ -129,7 +129,7 @@ public class McpConfigService {
                         this.organisation,
                         (mcpEntityType == McpEntityType.SERVICE ? "instance:" : "")
                                 + Optional.ofNullable(entityId)
-                                .map(id -> id.replaceAll("[^A-Za-z0-9_.]+", "-"))
+                                .map(id -> id.replaceAll("[^A-Za-z0-9_.:]+", "-"))
                                 .map(String::toLowerCase)
                                 .orElse("")
                 );
