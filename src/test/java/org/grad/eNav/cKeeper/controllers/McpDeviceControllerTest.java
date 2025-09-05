@@ -84,7 +84,7 @@ class McpDeviceControllerTest {
      */
     @Test
     void testGetMcpDevice() throws Exception {
-        doReturn(this.mcpDeviceDto).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
+        doReturn(this.mcpDeviceDto).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), McpDeviceDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn()))
@@ -103,7 +103,7 @@ class McpDeviceControllerTest {
      */
     @Test
     void testGetMcpDeviceFailed() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
+        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), McpDeviceDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn()))
@@ -117,7 +117,7 @@ class McpDeviceControllerTest {
      */
     @Test
     void testGetMcpDeviceMcpConnectivityFailed() throws Exception {
-        doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
+        doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpDeviceDto.getMrn(), McpDeviceDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn()))
@@ -326,7 +326,7 @@ class McpDeviceControllerTest {
      */
     @Test
     void testDeleteMcpDevice() throws Exception {
-        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
+        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.mcpDeviceDto.getMrn(), McpDeviceDto.class);
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn())
@@ -341,7 +341,7 @@ class McpDeviceControllerTest {
      */
     @Test
     void testDeleteMcpDeviceNotFound() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn()))
@@ -354,7 +354,7 @@ class McpDeviceControllerTest {
      */
     @Test
     void testDeleteMcpDeviceFailed() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn())
@@ -369,7 +369,7 @@ class McpDeviceControllerTest {
      */
     @Test
     void testDeleteMcpDeviceMcpConnectivityFailed() throws Exception {
-        doThrow(McpConnectivityException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(McpConnectivityException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.DEVICE.getValue(), this.mcpDeviceDto.getMrn())

@@ -61,7 +61,7 @@ public class McpVesselController {
         log.debug("REST request to get MCP vessel : {}", mrn);
         try {
             return ResponseEntity.ok()
-                    .body(this.mcpService.getMcpEntity(mrn, null, McpVesselDto.class));
+                    .body(this.mcpService.getMcpEntity(mrn, McpVesselDto.class));
         } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
@@ -144,7 +144,7 @@ public class McpVesselController {
 
         // Delete the MRN Entity
         try {
-            this.mcpService.deleteMcpEntity(mrn, null, McpVesselDto.class);
+            this.mcpService.deleteMcpEntity(mrn, McpVesselDto.class);
         } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }

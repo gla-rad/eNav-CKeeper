@@ -28,13 +28,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.io.IOException;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,7 +64,7 @@ class McpServiceControllerTest {
     /**
      * The MCP Service mock.
      */
-    @MockBean
+    @MockitoBean
     McpService mcpService;
 
     // Test Variables
@@ -77,7 +76,6 @@ class McpServiceControllerTest {
     @BeforeEach
     void setUp() {
         this.mcpServiceDto = new McpServiceDto("Test","urn:mrn:mcp:service:mcc:grad:test");
-        this.mcpServiceDto.setInstanceVersion("0.0.1");
 
     }
 
@@ -87,10 +85,10 @@ class McpServiceControllerTest {
      */
     @Test
     void testGetMcpService() throws Exception {
-        doReturn(this.mcpServiceDto).when(this.mcpService).getMcpEntity(this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion(), McpServiceDto.class);
+        doReturn(this.mcpServiceDto).when(this.mcpService).getMcpEntity(this.mcpServiceDto.getMrn(), McpServiceDto.class);
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion()))
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andReturn();
@@ -106,10 +104,10 @@ class McpServiceControllerTest {
      */
     @Test
     void testGetMcpServiceFailed() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion(), McpServiceDto.class);
+        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(this.mcpServiceDto.getMrn(), McpServiceDto.class);
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion()))
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn()))
                 .andExpect(status().isNotFound())
                 .andReturn();
     }
@@ -120,10 +118,10 @@ class McpServiceControllerTest {
      */
     @Test
     void testGetMcpServiceMcpConnectivityFailed() throws Exception {
-        doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion(), McpServiceDto.class);
+        doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpServiceDto.getMrn(), McpServiceDto.class);
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion()))
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}/", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn()))
                 .andExpect(status().isBadRequest())
                 .andReturn();
     }
@@ -232,7 +230,7 @@ class McpServiceControllerTest {
         doReturn(this.mcpServiceDto).when(this.mcpService).updateMcpEntity(this.mcpServiceDto.getMrn(), this.mcpServiceDto);
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion())
+        MvcResult mvcResult = this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpServiceDto)))
                 .andExpect(status().isOk())
@@ -255,7 +253,7 @@ class McpServiceControllerTest {
         this.mcpServiceDto.setId(null);
 
         // Perform the MVC request
-        this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion())
+        this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpServiceDto)))
                 .andExpect(status().isBadRequest())
@@ -275,7 +273,7 @@ class McpServiceControllerTest {
         this.mcpServiceDto.setMrn(null);
 
         // Perform the MVC request
-        this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), "urn:mrn:mcp:service:mcc:grad:test", this.mcpServiceDto.getInstanceVersion())
+        this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), "urn:mrn:mcp:service:mcc:grad:test")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpServiceDto)))
                 .andExpect(status().isBadRequest())
@@ -296,7 +294,7 @@ class McpServiceControllerTest {
         doThrow(SavingFailedException.class).when(this.mcpService).updateMcpEntity(any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion())
+        this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpServiceDto)))
                 .andExpect(status().isUnprocessableEntity())
@@ -316,7 +314,7 @@ class McpServiceControllerTest {
         doThrow(McpConnectivityException.class).when(this.mcpService).updateMcpEntity(any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion())
+        this.mockMvc.perform(put("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(this.mcpServiceDto)))
                 .andExpect(status().isBadRequest())
@@ -329,10 +327,10 @@ class McpServiceControllerTest {
      */
     @Test
     void testDeleteMcpService() throws Exception {
-        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion(), McpServiceDto.class);
+        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.mcpServiceDto.getMrn(), McpServiceDto.class);
 
         // Perform the MVC request
-        this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion())
+        this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -344,10 +342,10 @@ class McpServiceControllerTest {
      */
     @Test
     void testDeleteMcpServiceNotFound() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion()))
+        this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn()))
                 .andExpect(status().isNotFound());
     }
 
@@ -357,10 +355,10 @@ class McpServiceControllerTest {
      */
     @Test
     void testDeleteMcpServiceFailed() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion())
+        this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -372,10 +370,10 @@ class McpServiceControllerTest {
      */
     @Test
     void testDeleteMcpServiceMcpConnectivityFailed() throws Exception {
-        doThrow(McpConnectivityException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(McpConnectivityException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
-        this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}/{version}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion())
+        this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn())
                         .contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(status().isBadRequest())
                 .andReturn();

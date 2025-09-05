@@ -53,17 +53,15 @@ public class McpServiceController {
      * service from the MCP MIR.
      *
      * @param mrn the MRN of the MCP service to be retrieved
-     * @param version the instance version of the MCP service to be retrieved
      * @return the ResponseEntity with status 200 (OK) if successful, or with
      * status 400 (Bad Request)
      */
-    @GetMapping(value = "/{mrn}/{version}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<McpServiceDto> getMcpService(@PathVariable String mrn,
-                                                       @PathVariable String version) {
+    @GetMapping(value = "/{mrn}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<McpServiceDto> getMcpService(@PathVariable String mrn) {
         log.debug("REST request to get MCP service : {}", mrn);
         try {
             return ResponseEntity.ok()
-                    .body(this.mcpService.getMcpEntity(mrn, version, McpServiceDto.class));
+                    .body(this.mcpService.getMcpEntity(mrn, McpServiceDto.class));
         } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
@@ -101,7 +99,7 @@ public class McpServiceController {
     }
 
     /**
-     * PUT /api/mcp/service/{mrn}/{version} : Update an existing MCP service.
+     * PUT /api/mcp/service/{mrn} : Update an existing MCP service.
      *
      * @param mrn the ID of the MCP service to be updated
      * @param mcpServiceDto the MCP service to update
@@ -110,7 +108,7 @@ public class McpServiceController {
      * already an ID
      */
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @PutMapping(value = "/{mrn}/{version}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/{mrn}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<McpServiceDto> updateMcpService(@PathVariable String mrn,
                                                           @RequestBody McpServiceDto mcpServiceDto) {
         log.debug("REST request to update MCP service : {}", mcpServiceDto);
@@ -136,19 +134,17 @@ public class McpServiceController {
      * DELETE /api/mcp/service/{mrn}/{version} : Delete the "MRN" MCP service.
      *
      * @param mrn the MRN of the MCP service to be deleted
-     * @param version the instance version of the MCP service to be deleted
      * @return the ResponseEntity with status 200 (OK), or with status 404
      * (Not Found) if the MCP service was not found
      */
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @DeleteMapping(value = "/{mrn}/{version}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> deleteMcpService(@PathVariable String mrn,
-                                                 @PathVariable String version) {
+    @DeleteMapping(value = "/{mrn}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> deleteMcpService(@PathVariable String mrn) {
         log.debug("REST request to delete MCP service : {}", mrn);
 
         // Delete the MRN Entity
         try {
-            this.mcpService.deleteMcpEntity(mrn, version, McpServiceDto.class);
+            this.mcpService.deleteMcpEntity(mrn, McpServiceDto.class);
         } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }

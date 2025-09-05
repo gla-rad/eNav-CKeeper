@@ -181,7 +181,7 @@ public class CertificateService {
         final Map<String, X509Certificate> mcpCertificates = Optional.ofNullable(mrnEntity)
                 .map(entity -> {
                     try {
-                        return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn(), mrnEntity.getVersion());
+                        return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn());
                     } catch (DataNotFoundException | McpConnectivityException ex) {
                         // If the MCP connectivity failed here, just don't use it
                         return null;
@@ -345,7 +345,7 @@ public class CertificateService {
                 );
 
         // Mark as revoked in the MCP
-        this.mcpService.revokeMcpEntityCertificate(certificate.getMrnEntity().getEntityType(), certificate.getMrnEntity().getMrn(), certificate.getMrnEntity().getVersion(), certificate.getMcpMirId());
+        this.mcpService.revokeMcpEntityCertificate(certificate.getMrnEntity().getEntityType(), certificate.getMrnEntity().getMrn(), certificate.getMcpMirId());
 
         // And if successful, make it locally as well
         certificate.setRevoked(Boolean.TRUE);

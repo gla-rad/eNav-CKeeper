@@ -21,7 +21,6 @@ import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
-import org.grad.eNav.cKeeper.models.dtos.mcp.McpDeviceDto;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpVesselDto;
 import org.grad.eNav.cKeeper.services.McpService;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,13 +28,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.io.IOException;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,7 +64,7 @@ class McpVesselControllerTest {
     /**
      * The MCP Service mock.
      */
-    @MockBean
+    @MockitoBean
     McpService mcpService;
 
     // Test Variables
@@ -86,7 +84,7 @@ class McpVesselControllerTest {
      */
     @Test
     void testGetMcpVessel() throws Exception {
-        doReturn(this.mcpVesselDto).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), null, McpVesselDto.class);
+        doReturn(this.mcpVesselDto).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), McpVesselDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn()))
@@ -105,7 +103,7 @@ class McpVesselControllerTest {
      */
     @Test
     void testGetMcpVesselFailed() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), null,  McpVesselDto.class);
+        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), McpVesselDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn()))
@@ -119,7 +117,7 @@ class McpVesselControllerTest {
      */
     @Test
     void testGetMcpVesselMcpConnectivityFailed() throws Exception {
-        doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), null, McpVesselDto.class);
+        doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpVesselDto.getMrn(), McpVesselDto.class);
 
         // Perform the MVC request
         MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn()))
@@ -328,7 +326,7 @@ class McpVesselControllerTest {
      */
     @Test
     void testDeleteMcpVessel() throws Exception {
-        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.mcpVesselDto.getMrn(), null, McpVesselDto.class);
+        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.mcpVesselDto.getMrn(), McpVesselDto.class);
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn())
@@ -343,7 +341,7 @@ class McpVesselControllerTest {
      */
     @Test
     void testDeleteMcpVesselNotFound() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn()))
@@ -356,7 +354,7 @@ class McpVesselControllerTest {
      */
     @Test
     void testDeleteMcpVesselFailed() throws Exception {
-        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn())
@@ -371,7 +369,7 @@ class McpVesselControllerTest {
      */
     @Test
     void testDeleteMcpVesselMcpConnectivityFailed() throws Exception {
-        doThrow(McpConnectivityException.class).when(this.mcpService).deleteMcpEntity(any(), any(), any());
+        doThrow(McpConnectivityException.class).when(this.mcpService).deleteMcpEntity(any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(delete("/api/mcp/{mcpEntityType}/{mrn}", McpEntityType.VESSEL.getValue(), this.mcpVesselDto.getMrn())

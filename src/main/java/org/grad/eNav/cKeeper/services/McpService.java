@@ -187,7 +187,6 @@ public class McpService {
      */
     @Cacheable(value = "mcpEntityCache", key="{#mrn, #version, #entityClass}")
     public <T extends McpEntityBase> T getMcpEntity(@NotNull String mrn,
-                                                    String version,
                                                     @NotNull Class<T> entityClass) throws McpConnectivityException {
         // Figure our the type of entity we are working on
         final McpEntityType mcpEntityType = McpEntityType.fromEntityClass(entityClass);
@@ -303,11 +302,6 @@ public class McpService {
         // Once updated, we can retrieve the full entity again
         return (T) this.getMcpEntity(
                 mcpEntity.getMrn(),
-                Optional.of(mcpEntity)
-                        .filter(McpServiceDto.class::isInstance)
-                        .map(McpServiceDto.class::cast)
-                        .map(McpServiceDto::getInstanceVersion)
-                        .orElse(null),
                 mcpEntity.getClass()
         );
     }
@@ -321,7 +315,6 @@ public class McpService {
      * @throws McpConnectivityException if the connection to the MCP is not active
      */
     public <T extends McpEntityBase> boolean deleteMcpEntity(@NotNull String mrn,
-                                                             String version,
                                                              @NotNull Class<T> entityClass) throws McpConnectivityException {
         // Figure our the type of entity we are working on
         McpEntityType mcpEntityType = McpEntityType.fromEntityClass(entityClass);
@@ -356,18 +349,16 @@ public class McpService {
      *
      * @param mcpEntityType The MCP entity type
      * @param mrn           The MCP entity MRN to retrieve the certificates for
-     * @param version       The version (if applicable) of the MCP entity
      * @return the list of available certificates
      * @throws McpConnectivityException if the connection to the MCP is not active
      */
     @Cacheable(value = "mcpEntityCertificateCache", key="{#mcpEntityType, #mrn, #version}")
     public Map<String, X509Certificate> getMcpEntityCertificates(@NotNull McpEntityType mcpEntityType,
-                                                                 @NotNull String mrn,
-                                                                 String version) throws McpConnectivityException {
+                                                                 @NotNull String mrn) throws McpConnectivityException {
         log.debug("Request to retrieve an existing certificate for the MCP {} with MRN {}", mcpEntityType.getValue(), mrn);
 
         // Get the MCP Entity certificates directly from the MCP MIR
-        return this.getMcpEntity(mrn, version, mcpEntityType.getEntityClass())
+        return this.getMcpEntity(mrn, mcpEntityType.getEntityClass())
                 .getCertificates()
                 .stream()
                 .filter(not(McpCertitifateDto::isRevoked))
@@ -456,13 +447,11 @@ public class McpService {
      *
      * @param mcpEntityType The MCP entity type
      * @param mrn           The MRN of the MCP device to revoke the certificate for
-     * @param version       The version (if applicable) of the MCP entity
      * @param mcpMirId  The MCP MIR ID of the certificate to be revoked
      * @throws IOException if the HTTP request fails
      */
     public void revokeMcpEntityCertificate(@NotNull McpEntityType mcpEntityType,
                                            @NotNull String mrn,
-                                           String version,
                                            @NotNull String mcpMirId) throws IOException, McpConnectivityException {
         log.debug("Request to revoke a certificate for the MCP {} with MRN {}", mcpEntityType.getValue(), mrn);
 

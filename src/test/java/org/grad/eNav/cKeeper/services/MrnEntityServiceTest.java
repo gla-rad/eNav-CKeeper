@@ -326,7 +326,7 @@ class MrnEntityServiceTest {
      */
     @Test
     void testCreate() throws IOException, McpConnectivityException {
-        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(any(), any(), any());
+        doThrow(DataNotFoundException.class).when(this.mcpService).getMcpEntity(any(), any());
         doReturn(this.newEntity).when(this.mrnEntityRepo).save(any());
         doReturn(this.newMcpDevice).when(this.mcpService).createMcpEntity(any());
 
@@ -368,7 +368,7 @@ class MrnEntityServiceTest {
     @Test
     void testUpdate() throws IOException, McpConnectivityException {
         doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());
-        doReturn(this.existingMcpDevice).when(this.mcpService).getMcpEntity(this.existingEntity.getMrn(), null, McpDeviceDto.class);
+        doReturn(this.existingMcpDevice).when(this.mcpService).getMcpEntity(this.existingEntity.getMrn(), McpDeviceDto.class);
         doReturn(this.existingMcpDevice).when(this.mcpService).updateMcpEntity(this.existingMcpDevice.getMrn(), this.existingMcpDevice);
         doReturn(this.existingEntity).when(this.mrnEntityRepo).save(any());
 
@@ -411,7 +411,7 @@ class MrnEntityServiceTest {
     @Test
     void testDelete() throws IOException, McpConnectivityException {
         doReturn(Optional.of(this.existingEntity)).when(this.mrnEntityRepo).findById(this.existingEntity.getId());
-        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.existingEntity.getMrn(), null, McpDeviceDto.class);
+        doReturn(Boolean.TRUE).when(this.mcpService).deleteMcpEntity(this.existingEntity.getMrn(), McpDeviceDto.class);
         doReturn(Boolean.TRUE).when(this.mrnEntityRepo).existsById(this.existingEntity.getId());
         doNothing().when(this.mrnEntityRepo).deleteById(this.existingEntity.getId());
 

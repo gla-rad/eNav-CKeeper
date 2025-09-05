@@ -61,7 +61,7 @@ public class McpDeviceController {
         log.debug("REST request to get MCP device : {}", mrn);
         try {
             return ResponseEntity.ok()
-                    .body(this.mcpService.getMcpEntity(mrn, null, McpDeviceDto.class));
+                    .body(this.mcpService.getMcpEntity(mrn, McpDeviceDto.class));
         } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
@@ -144,7 +144,7 @@ public class McpDeviceController {
 
         // Delete the MRN Entity
         try {
-            this.mcpService.deleteMcpEntity(mrn, null, McpDeviceDto.class);
+            this.mcpService.deleteMcpEntity(mrn, McpDeviceDto.class);
         } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }

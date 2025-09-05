@@ -35,7 +35,6 @@ public class McpServiceDto extends McpEntityBase {
     private String oidcClientSecret;
     private String oidcRedirectUri;
     private String certDomainName;
-    private String instanceVersion;
 
     /**
      * Instantiates a new Mcp service dto.
@@ -178,24 +177,6 @@ public class McpServiceDto extends McpEntityBase {
      */
     public void setCertDomainName(String certDomainName) {
         this.certDomainName = certDomainName;
-    }
-
-    /**
-     * Gets instance version.
-     *
-     * @return the instance version
-     */
-    public String getInstanceVersion() {
-        return instanceVersion;
-    }
-
-    /**
-     * Sets instance version.
-     *
-     * @param instanceVersion the instance version
-     */
-    public void setInstanceVersion(String instanceVersion) {
-        this.instanceVersion = instanceVersion;
     }
 
     /**

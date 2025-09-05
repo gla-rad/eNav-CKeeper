@@ -121,10 +121,9 @@ public class McpConfigService {
     public String constructMcpEntityMrn(@NotNull McpEntityType mcpEntityType, String entityId) {
         return Optional.ofNullable(entityId).orElse("").startsWith(this.mcpEntityPrefix) ?
                 entityId :
-                String.format("%s:%s:%s:%s:%s", this.mcpEntityPrefix,
-                        Optional.of(mcpEntityType)
-                                .map(McpEntityType::getValue)
-                                .orElse(""),
+                String.format("%s:%s:%s:%s:%s",
+                        this.mcpEntityPrefix,
+                        "entity",
                         this.mcpEntitySuffix,
                         this.organisation,
                         (mcpEntityType == McpEntityType.SERVICE ? "instance:" : "")
