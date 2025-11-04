@@ -99,6 +99,7 @@ public class Certificate {
         this.setStartDate(x509Certificate.getNotBefore());
         this.setEndDate(x509Certificate.getNotAfter());
         this.setMcpMirId(mcpMirId);
+        this.setRevoked(null);
     }
 
     /**
