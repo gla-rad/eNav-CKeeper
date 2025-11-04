@@ -235,8 +235,11 @@ $(() => {
             contentType: 'application/json; charset=utf-8',
             dataType: 'json',
             success: () => {
-                certificatesTable.ajax.reload();
-                $modalDiv.modal('hide').removeClass('loading');
+                // Wait for a sec or so... and reload
+                setTimeout(() => {
+                    certificatesTable.ajax.reload();
+                    $modalDiv.modal('hide').removeClass('loading');
+                }, 10000);
             },
             error: (response, status, more)  => {
                 $modalDiv.removeClass('loading');
@@ -259,8 +262,11 @@ $(() => {
             contentType: 'application/json; charset=utf-8',
             dataType: 'json',
             success: () => {
-                certificatesTable.ajax.reload();
-                $modalDiv.modal('hide').removeClass('loading');
+                // Wait for a sec or so... and reload
+                setTimeout(() => {
+                    certificatesTable.ajax.reload();
+                    $modalDiv.modal('hide').removeClass('loading');
+                }, 10000);
             },
             error: (response, status, more) => {
                 $modalDiv.removeClass('loading');
@@ -350,8 +356,14 @@ function loadMrnEntityCertificates(event, table, button, config) {
                         url: `./api/certificate/${this.data()["id"]}`,
                         type: 'DELETE',
                         crossDomain: true,
-                        success: success,
+                        success: () => {
+                            $(datatable.modal_selector).modal('hide');
+                            $('.reveal-overlay').hide();
+                            certificatesTable.ajax.reload();
+                        },
                         error: (response, status, more) => {
+                            $(datatable.modal_selector).modal('hide');
+                            $('.reveal-overlay').hide();
                             error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
                         }
                     });

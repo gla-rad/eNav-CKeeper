@@ -204,6 +204,7 @@ public class McpService {
                     .uri(mcpEntityType.getValue() + "/" +
                             fullMrn)
                     .accept(MediaType.APPLICATION_JSON)
+                    .header("Cache-Control","no-cache")
                     .retrieve()
                     .bodyToMono(entityClass)
                     .blockOptional()
@@ -417,7 +418,7 @@ public class McpService {
                     .toEntity(String.class)
                     .filter(response -> response.getStatusCode().is2xxSuccessful())
                     .blockOptional()
-                    .orElseThrow(() -> new InvalidRequestException(String.format("Failed to issue a new certificate for entity with MRN: %s", fullMrn)));
+                .orElseThrow(() -> new InvalidRequestException(String.format("Failed to issue a new certificate for entity with MRN: %s", fullMrn)));
         } catch (WebClientException ex) {
             throw new InvalidRequestException((ex.getMessage()));
         }
@@ -464,7 +465,7 @@ public class McpService {
         try {
             this.mcpMirClient.post()
                     .uri(mcpEntityType.getValue() + "/" +
-                            fullMrn +
+                            fullMrn + "/" +
                             "certificate" + "/" +
                             mcpMirId +
                             "/revoke")
