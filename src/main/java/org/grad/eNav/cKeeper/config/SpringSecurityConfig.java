@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2022 GLA Research and Development Directorate
+ * Copyright (c) 2024 GLA Research and Development Directorate
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -233,9 +233,7 @@ class SpringSecurityConfig {
                                 HealthEndpoint.class    //health endpoints
                         )).permitAll()
                         .requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole("ACTUATOR")
-                        .requestMatchers(Arrays.stream(this.openResources)
-                                .map(AntPathRequestMatcher::new)
-                                .toArray(AntPathRequestMatcher[]::new)).permitAll()
+                        .requestMatchers(this.openResources).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

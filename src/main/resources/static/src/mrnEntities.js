@@ -130,7 +130,7 @@ $(() => {
             }
         },
         columns: mrnEntitiesColumnDefs,
-        dom: "<'row'<'col-lg-2 col-md-4'B><'col-lg-2 col-md-4'l><'col-lg-8 col-md-4'f>><'row'<'col-md-12'rt>><'row'<'col-md-6'i><'col-md-6'p>>",
+        dom: '<"d-flex"<"flex-start"B><"flex-middle p-1"l><"flex-end flex-fill"f>><"d-flex mt-1 mb-1"t><"d-flex w-100"<"flex-fill"i><"flex-end"p>>',
         select: 'single',
         lengthMenu: [10, 25, 50, 75, 100],
         responsive: true,
@@ -235,8 +235,11 @@ $(() => {
             contentType: 'application/json; charset=utf-8',
             dataType: 'json',
             success: () => {
-                certificatesTable.ajax.reload();
-                $modalDiv.modal('hide').removeClass('loading');
+                // Wait for a sec or so... and reload
+                setTimeout(() => {
+                    certificatesTable.ajax.reload();
+                    $modalDiv.modal('hide').removeClass('loading');
+                }, 10000);
             },
             error: (response, status, more)  => {
                 $modalDiv.removeClass('loading');
@@ -259,8 +262,11 @@ $(() => {
             contentType: 'application/json; charset=utf-8',
             dataType: 'json',
             success: () => {
-                certificatesTable.ajax.reload();
-                $modalDiv.modal('hide').removeClass('loading');
+                // Wait for a sec or so... and reload
+                setTimeout(() => {
+                    certificatesTable.ajax.reload();
+                    $modalDiv.modal('hide').removeClass('loading');
+                }, 10000);
             },
             error: (response, status, more) => {
                 $modalDiv.removeClass('loading');
@@ -312,7 +318,7 @@ function loadMrnEntityCertificates(event, table, button, config) {
             }
         },
         columns: certificatesColumnDefs,
-        dom: "<'row'<'col-lg-2 col-md-4'B><'col-lg-2 col-md-4'l><'col-lg-8 col-md-4'f>><'row'<'col-md-12'rt>><'row'<'col-md-6'i><'col-md-6'p>>",
+        dom: '<"d-flex"<"flex-start"B><"flex-middle p-1"l><"flex-end flex-fill"f>><"d-flex mt-1 mb-1"t><"d-flex w-100"<"flex-fill"i><"flex-end"p>>',
         select: 'single',
         autoWidth: false,
         lengthMenu: [10, 25, 50, 75, 100],
@@ -350,8 +356,14 @@ function loadMrnEntityCertificates(event, table, button, config) {
                         url: `./api/certificate/${this.data()["id"]}`,
                         type: 'DELETE',
                         crossDomain: true,
-                        success: success,
+                        success: () => {
+                            $(datatable.modal_selector).modal('hide');
+                            $('.reveal-overlay').hide();
+                            certificatesTable.ajax.reload();
+                        },
                         error: (response, status, more) => {
+                            $(datatable.modal_selector).modal('hide');
+                            $('.reveal-overlay').hide();
                             error({"responseText" : response.getResponseHeader("X-cKeeper-error")}, status, more);
                         }
                     });

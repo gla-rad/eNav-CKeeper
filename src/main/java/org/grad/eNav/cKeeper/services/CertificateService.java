@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021 GLA Research and Development Directorate
+ * Copyright (c) 2024 GLA Research and Development Directorate
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -159,7 +159,14 @@ public class CertificateService {
      */
     @Transactional
     public void syncMrnEntityWithMcpMir(@NotNull BigInteger mrnEntityId) {
-        // First check that the MRN Entity exists and get its MIR certificates
+        // Sanity Check - Check the MCP connectivity otherwise nothing to sync
+        try {
+            this.mcpService.checkMcpMirConnectivity();
+        } catch (McpConnectivityException ex) {
+            return;
+        }
+
+        // Check that the MRN Entity exists and get its MIR certificates
         final MrnEntity mrnEntity = this.mrnEntityRepo.findById(mrnEntityId)
                 .orElse(null);
 
@@ -174,9 +181,9 @@ public class CertificateService {
         final Map<String, X509Certificate> mcpCertificates = Optional.ofNullable(mrnEntity)
                 .map(entity -> {
                     try {
-                        return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn(), mrnEntity.getVersion());
+                        return mcpService.getMcpEntityCertificates(mrnEntity.getEntityType(), entity.getMrn());
                     } catch (DataNotFoundException | McpConnectivityException ex) {
-                        // If the MCP connectivity failed, just don't use it
+                        // If the MCP connectivity failed here, just don't use it
                         return null;
                     }
                 })
@@ -338,7 +345,7 @@ public class CertificateService {
                 );
 
         // Mark as revoked in the MCP
-        this.mcpService.revokeMcpEntityCertificate(certificate.getMrnEntity().getEntityType(), certificate.getMrnEntity().getMrn(), certificate.getMrnEntity().getVersion(), certificate.getMcpMirId());
+        this.mcpService.revokeMcpEntityCertificate(certificate.getMrnEntity().getEntityType(), certificate.getMrnEntity().getMrn(), certificate.getMcpMirId());
 
         // And if successful, make it locally as well
         certificate.setRevoked(Boolean.TRUE);

@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021 GLA Research and Development Directorate
+ * Copyright (c) 2024 GLA Research and Development Directorate
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,7 +61,7 @@ public class McpDeviceController {
         log.debug("REST request to get MCP device : {}", mrn);
         try {
             return ResponseEntity.ok()
-                    .body(this.mcpService.getMcpEntity(mrn, null, McpDeviceDto.class));
+                    .body(this.mcpService.getMcpEntity(mrn, McpDeviceDto.class));
         } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }
@@ -144,7 +144,7 @@ public class McpDeviceController {
 
         // Delete the MRN Entity
         try {
-            this.mcpService.deleteMcpEntity(mrn, null, McpDeviceDto.class);
+            this.mcpService.deleteMcpEntity(mrn, McpDeviceDto.class);
         } catch (McpConnectivityException ex) {
             throw new InvalidRequestException(ex.getMessage());
         }

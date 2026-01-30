@@ -1,18 +1,17 @@
 /*
- * Copyright (c) 2021 GLA Research and Development Directorate
+ * Copyright (c) 2024 GLA Research and Development Directorate
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.grad.eNav.cKeeper.services;
@@ -80,13 +79,23 @@ public class McpConfigService {
     String keyStorePass;
 
     /**
+     * A helper function to construct the appropriate MCP check URL, based
+     * on the currently loaded host and registered organisation.
+     *
+     * @return the complete MCP check URL
+     */
+    public String constructMcpCheckUrl() {
+        return String.format("https://%s/x509/api/org/%s:%s", this.host, this.mcpOrgPrefix, this.organisation);
+    }
+
+    /**
      * A helper function to construct the appropriate MCP base URL, based
      * on the currently loaded host and registered organisation.
      *
-     * @return the complete MCP endpoint URL
+     * @return the complete MCP base URL
      */
     public String constructMcpBaseUrl() {
-        return String.format("https://%s/x509/api/org/%s:%s/", this.host, this.mcpOrgPrefix, this.organisation);
+        return String.format("%s/", this.constructMcpCheckUrl());
     }
 
     /**
@@ -98,7 +107,7 @@ public class McpConfigService {
      * @return the complete MCP endpoint URL
      */
     public String constructMcpEndpointUrl(String endpoint) {
-        return String.format("https://%s/x509/api/org/%s:%s/%s/", this.host, this.mcpOrgPrefix, this.organisation, endpoint);
+        return String.format("%s/%s/", this.constructMcpCheckUrl(), endpoint);
     }
 
     /**
@@ -106,22 +115,35 @@ public class McpConfigService {
      * provided device ID.
      *
      * @param mcpEntityType The MCP entity type
-     * @param entityId  The ID of the device to construct the MRN from
+     * @param entityId      The ID of the device to construct the MRN
      * @return The constructed device MRN
      */
     public String constructMcpEntityMrn(@NotNull McpEntityType mcpEntityType, String entityId) {
+        return constructMcpEntityMrn(mcpEntityType, null, entityId);
+    }
+
+    /**
+     * A helper function to construct the appropriate entity MRN, based on the
+     * provided device ID.
+     *
+     * @param mcpEntityType The MCP entity type
+     * @param version       The version of the entity type if a service
+     * @param entityId      The ID of the device to construct the MRN
+     * @return The constructed device MRN
+     */
+    public String constructMcpEntityMrn(@NotNull McpEntityType mcpEntityType, String version, String entityId) {
         return Optional.ofNullable(entityId).orElse("").startsWith(this.mcpEntityPrefix) ?
                 entityId :
-                String.format("%s:%s:%s:%s:%s", this.mcpEntityPrefix,
-                        Optional.of(mcpEntityType)
-                                .map(McpEntityType::getValue)
-                                .orElse(""),
+                String.format("%s:%s:%s:%s:%s",
+                        this.mcpEntityPrefix,
+                        "entity",
                         this.mcpEntitySuffix,
                         this.organisation,
                         (mcpEntityType == McpEntityType.SERVICE ? "instance:" : "")
                                 + Optional.ofNullable(entityId)
-                                .map(id -> id.replaceAll("[^A-Za-z0-9_.]+", "-"))
+                                .map(id -> id.replaceAll("[^A-Za-z0-9_.:]+", "-"))
                                 .map(String::toLowerCase)
+                                .map(str -> mcpEntityType == McpEntityType.SERVICE ? str + ":" + version : str)
                                 .orElse("")
                 );
     }

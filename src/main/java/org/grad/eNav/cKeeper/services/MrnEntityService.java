@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021 GLA Research and Development Directorate
+ * Copyright (c) 2024 GLA Research and Development Directorate
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -194,7 +194,7 @@ public class MrnEntityService {
                         // MIR, and if no we are going to create it, otherwise
                         // update it
                         try {
-                            mcpEntity = this.mcpService.getMcpEntity(entity.getMrn(), entity.getVersion(), entity.getEntityType().getEntityClass());
+                            mcpEntity = this.mcpService.getMcpEntity(entity.getMrn(), entity.getEntityType().getEntityClass());
                         } catch(DataNotFoundException ex) {
                             this.log.warn("MCP entry for the MRN device with MRN {} not found", entity.getMrn());
                             mcpEntity = entity.getEntityType().getEntityClass().getDeclaredConstructor().newInstance();
@@ -206,9 +206,6 @@ public class MrnEntityService {
                             ((McpDeviceDto)mcpEntity).setName(entity.getName());
                         } else if(McpServiceDto.class.isInstance(mcpEntity)) {
                             ((McpServiceDto)mcpEntity).setName(entity.getName());
-                            if(Objects.isNull(mcpEntity.getId())) {
-                                ((McpServiceDto) mcpEntity).setInstanceVersion(entity.getVersion());
-                            }
                         } else if(McpVesselDto.class.isInstance(mcpEntity)) {
                             ((McpVesselDto)mcpEntity).setName(entity.getName());
                         } else if(McpUserDto.class.isInstance(mcpEntity)) {
@@ -263,12 +260,13 @@ public class MrnEntityService {
         this.mrnEntityRepo.findById(id)
                 .map(entity -> {
                     try {
-                        this.mcpService.deleteMcpEntity(entity.getMrn(), entity.getVersion(), entity.getEntityType().getEntityClass());
+                        this.mcpService.deleteMcpEntity(entity.getMrn(), entity.getEntityType().getEntityClass());
                     } catch(DeletingFailedException ex) {
                         // Not found? Not problem!
+                        log.debug(ex.getMessage());
                     } catch(McpConnectivityException ex) {
-                        // If the MCP connectivity failed, don't continue
-                        return null;
+                        // If the MCP connectivity failed, don't worry continue
+                        log.debug(ex.getMessage());
                     }
                     return entity.getId();
                 })

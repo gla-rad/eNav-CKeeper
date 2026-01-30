@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021 GLA Research and Development Directorate
+ * Copyright (c) 2024 GLA Research and Development Directorate
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -106,7 +106,6 @@ class McpServiceTest {
         // Setup an MCP device for testing
         this.mcpDeviceDto = new McpDeviceDto("Test","urn:mrn:mcp:device:mcc:grad:test");
         this.mcpServiceDto = new McpServiceDto("Test", "urn:mrn:mcp:service:mcc:grad:instance:test");
-        this.mcpServiceDto.setInstanceVersion("0.0.1");
 
         // Create a new MCP Certificate DTO object
         this.keypair = X509Utils.generateKeyPair(null);
@@ -123,7 +122,8 @@ class McpServiceTest {
         this.objectMapper = new ObjectMapper();
 
         // Mock the MCP Base URL to point to the mock-server
-        doReturn(String.format("http://localhost:%s", mockBackEnd.getPort())).when(this.mcpConfigService).constructMcpBaseUrl();
+        doReturn(String.format("http://localhost:%s", mockBackEnd.getPort())).when(this.mcpConfigService).constructMcpCheckUrl();
+        doCallRealMethod().when(this.mcpConfigService).constructMcpBaseUrl();
     }
 
     /**
@@ -162,7 +162,7 @@ class McpServiceTest {
         this.mcpService.init();
 
         // Perform the service call
-        McpDeviceDto result = this.mcpService.getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
+        McpDeviceDto result = this.mcpService.getMcpEntity(this.mcpDeviceDto.getMrn(), McpDeviceDto.class);
 
         // Make sure the response is correct
         assertNotNull(result);
@@ -196,7 +196,7 @@ class McpServiceTest {
 
         // Perform the service call
         assertThrows(DataNotFoundException.class, () ->
-            this.mcpService.getMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class)
+            this.mcpService.getMcpEntity(this.mcpDeviceDto.getMrn(), McpDeviceDto.class)
         );
     }
 
@@ -342,7 +342,7 @@ class McpServiceTest {
         this.mcpService.init();
 
         // Perform the service call
-        boolean result = this.mcpService.deleteMcpEntity(this.mcpDeviceDto.getMrn(), null, McpDeviceDto.class);
+        boolean result = this.mcpService.deleteMcpEntity(this.mcpDeviceDto.getMrn(), McpDeviceDto.class);
 
         // Make sure the response is correct
         assertTrue(result);
@@ -369,7 +369,7 @@ class McpServiceTest {
 
         // Perform the service call
         assertThrows(DeletingFailedException.class, () ->
-                this.mcpService.deleteMcpEntity(this.mcpDeviceDto.getMrn(),null, McpDeviceDto.class)
+                this.mcpService.deleteMcpEntity(this.mcpDeviceDto.getMrn(),McpDeviceDto.class)
         );
     }
 
@@ -396,7 +396,7 @@ class McpServiceTest {
         this.mcpService.init();
 
         // Perform the service call
-        Map<String, X509Certificate> certificates = this.mcpService.getMcpEntityCertificates(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn(), null);
+        Map<String, X509Certificate> certificates = this.mcpService.getMcpEntityCertificates(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn());
 
         // Make sure the result looks OK
         assertNotNull(certificates);
@@ -431,7 +431,7 @@ class McpServiceTest {
 
         // Perform the service call
         assertThrows(DataNotFoundException.class, () ->
-                this.mcpService.getMcpEntityCertificates(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn(), null)
+                this.mcpService.getMcpEntityCertificates(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn())
         );
     }
 
@@ -460,7 +460,7 @@ class McpServiceTest {
         this.mcpService.init();
 
         // Perform the service call
-        assertTrue(this.mcpService.getMcpEntityCertificates(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn(), null).isEmpty());
+        assertTrue(this.mcpService.getMcpEntityCertificates(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn()).isEmpty());
     }
 
     /**
@@ -486,7 +486,7 @@ class McpServiceTest {
         this.mcpService.init();
 
         // Perform the service call
-        Map<String, X509Certificate> certificates = this.mcpService.getMcpEntityCertificates(McpEntityType.SERVICE, this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion());
+        Map<String, X509Certificate> certificates = this.mcpService.getMcpEntityCertificates(McpEntityType.SERVICE, this.mcpServiceDto.getMrn());
 
         // Make sure the result looks OK
         assertNotNull(certificates);
@@ -521,7 +521,7 @@ class McpServiceTest {
 
         // Perform the service call
         assertThrows(DataNotFoundException.class, () ->
-                this.mcpService.getMcpEntityCertificates(McpEntityType.SERVICE, this.mcpDeviceDto.getMrn(), null)
+                this.mcpService.getMcpEntityCertificates(McpEntityType.SERVICE, this.mcpDeviceDto.getMrn())
         );
     }
 
@@ -550,7 +550,7 @@ class McpServiceTest {
         this.mcpService.init();
 
         // Perform the service call
-        assertTrue(this.mcpService.getMcpEntityCertificates(McpEntityType.SERVICE, this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion()).isEmpty());
+        assertTrue(this.mcpService.getMcpEntityCertificates(McpEntityType.SERVICE, this.mcpServiceDto.getMrn()).isEmpty());
     }
 
     /**
@@ -740,7 +740,7 @@ class McpServiceTest {
         this.mcpService.init();
 
         // Perform the service call
-        this.mcpService.revokeMcpEntityCertificate(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn(), null, "1234567890");
+        this.mcpService.revokeMcpEntityCertificate(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn(), "1234567890");
     }
 
     /**
@@ -763,7 +763,7 @@ class McpServiceTest {
 
         // Perform the service call
         assertThrows(InvalidRequestException.class, () ->
-            this.mcpService.revokeMcpEntityCertificate(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn(), null, "1234567890")
+            this.mcpService.revokeMcpEntityCertificate(McpEntityType.DEVICE, this.mcpDeviceDto.getMrn(), "1234567890")
         );
     }
 
@@ -786,7 +786,7 @@ class McpServiceTest {
         this.mcpService.init();
 
         // Perform the service call
-        this.mcpService.revokeMcpEntityCertificate(McpEntityType.SERVICE, this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion(), "1234567890");
+        this.mcpService.revokeMcpEntityCertificate(McpEntityType.SERVICE, this.mcpServiceDto.getMrn(), "1234567890");
     }
 
     /**
@@ -809,7 +809,7 @@ class McpServiceTest {
 
         // Perform the service call
         assertThrows(InvalidRequestException.class, () ->
-                this.mcpService.revokeMcpEntityCertificate(McpEntityType.SERVICE, this.mcpServiceDto.getMrn(), this.mcpServiceDto.getInstanceVersion(), "1234567890")
+                this.mcpService.revokeMcpEntityCertificate(McpEntityType.SERVICE, this.mcpServiceDto.getMrn(), "1234567890")
         );
     }
 
