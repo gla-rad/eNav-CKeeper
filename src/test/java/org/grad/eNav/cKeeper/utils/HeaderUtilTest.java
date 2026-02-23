@@ -31,9 +31,9 @@ class HeaderUtilTest {
     void testCreateAlert() {
         HttpHeaders headers = HeaderUtil.createAlert("message", "param");
         assertNotNull(headers);
-        assertTrue(headers.containsKey("X-cKeeper-alert"));
+        assertTrue(headers.containsHeader("X-cKeeper-alert"));
         assertEquals("[message]", headers.get("X-cKeeper-alert").toString());
-        assertTrue(headers.containsKey("X-cKeeper-params"));
+        assertTrue(headers.containsHeader("X-cKeeper-params"));
         assertEquals("[param]", headers.get("X-cKeeper-params").toString());
     }
 
@@ -44,8 +44,8 @@ class HeaderUtilTest {
     void testCreateEntityCreationAlert() {
         HttpHeaders headers = HeaderUtil.createEntityCreationAlert("entity", "param");
         assertNotNull(headers);
-        assertTrue(headers.containsKey("X-cKeeper-alert"));
-        assertTrue(headers.containsKey("X-cKeeper-params"));
+        assertTrue(headers.containsHeader("X-cKeeper-alert"));
+        assertTrue(headers.containsHeader("X-cKeeper-params"));
         assertEquals("[param]", headers.get("X-cKeeper-params").toString());
     }
 
@@ -56,8 +56,8 @@ class HeaderUtilTest {
     void testCreateEntityUpdateAlert() {
         HttpHeaders headers = HeaderUtil.createEntityUpdateAlert("entity", "param");
         assertNotNull(headers);
-        assertTrue(headers.containsKey("X-cKeeper-alert"));
-        assertTrue(headers.containsKey("X-cKeeper-params"));
+        assertTrue(headers.containsHeader("X-cKeeper-alert"));
+        assertTrue(headers.containsHeader("X-cKeeper-params"));
         assertEquals("[param]", headers.get("X-cKeeper-params").toString());
     }
 
@@ -68,8 +68,8 @@ class HeaderUtilTest {
     void testCreateEntityDeletionAlert() {
         HttpHeaders headers = HeaderUtil.createEntityDeletionAlert("entity", "param");
         assertNotNull(headers);
-        assertTrue(headers.containsKey("X-cKeeper-alert"));
-        assertTrue(headers.containsKey("X-cKeeper-params"));
+        assertTrue(headers.containsHeader("X-cKeeper-alert"));
+        assertTrue(headers.containsHeader("X-cKeeper-params"));
         assertEquals("[param]", headers.get("X-cKeeper-params").toString());
     }
 
@@ -80,9 +80,9 @@ class HeaderUtilTest {
     void testCreateFailureAlert() {
         HttpHeaders headers = HeaderUtil.createFailureAlert("entity", "key", "message");
         assertNotNull(headers);
-        assertTrue(headers.containsKey("X-cKeeper-error"));
+        assertTrue(headers.containsHeader("X-cKeeper-error"));
         assertEquals("[error.key]", headers.get("X-cKeeper-error").toString());
-        assertTrue(headers.containsKey("X-cKeeper-params"));
+        assertTrue(headers.containsHeader("X-cKeeper-params"));
         assertEquals("[entity]", headers.get("X-cKeeper-params").toString());
     }
 

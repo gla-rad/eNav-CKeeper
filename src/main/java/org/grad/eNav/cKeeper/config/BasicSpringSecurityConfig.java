@@ -17,16 +17,17 @@
 package org.grad.eNav.cKeeper.config;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
-import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.info.InfoEndpoint;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.health.actuate.endpoint.HealthEndpoint;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -131,24 +132,26 @@ class BasicSpringSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // Authenticate through Basic Auth
         http.httpBasic(withDefaults())
-                .formLogin();
+                .formLogin(login -> login.init(http));
         // Also, logout using Basic Auth
-        http.logout()
+        http.logout(logout -> logout
                 .deleteCookies("JSESSIONID")
-                .logoutSuccessUrl("/");
+                .logoutSuccessUrl("/"));
         // Require authentication for specific requests
         http.httpBasic(withDefaults())
-                .authorizeHttpRequests()
+                .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                 .requestMatchers(EndpointRequest.to(
                         InfoEndpoint.class,     //info endpoints
                         HealthEndpoint.class    //health endpoints
                 )).permitAll()
                 .requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole("ACTUATOR")
                 .requestMatchers(this.openResources).permitAll()
-                .anyRequest().authenticated();
+                .anyRequest().authenticated());
 
         // Disable the CSRF
-        http.csrf().disable();
+        http.csrf(AbstractHttpConfigurer::disable);
+
+        // Build and return
         return http.build();
     }
 
