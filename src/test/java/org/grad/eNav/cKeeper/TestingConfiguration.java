@@ -41,7 +41,7 @@ public class TestingConfiguration {
      * Support for Jackson Page Deserialization.
      */
     @Bean
-    public com.fasterxml.jackson.databind.Module pageJacksonModule() {
+    public PageJacksonModule pageJacksonModule() {
         return new PageJacksonModule();
     }
 
@@ -49,7 +49,7 @@ public class TestingConfiguration {
      * Support for Jackson Page Sorting Deserialization.
      */
     @Bean
-    public com.fasterxml.jackson.databind.Module sortJacksonModule() {
+    public SortJacksonModule sortJacksonModule() {
         return new SortJacksonModule();
     }
 

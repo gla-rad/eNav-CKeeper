@@ -16,7 +16,7 @@
 
 package org.grad.eNav.cKeeper.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.TestingConfiguration;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
@@ -30,9 +30,8 @@ import org.grad.eNav.cKeeper.services.MrnEntityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -40,6 +39,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -76,13 +76,13 @@ class MrnEntityControllerTest {
     /**
      * The MRN Entity Service mock.
      */
-    @MockBean
+    @MockitoBean
     MrnEntityService mrnEntityService;
 
     /**
      * The Certificate Service mock.
      */
-    @MockBean
+    @MockitoBean
     CertificateService certificateService;
 
     // Test Variables

@@ -16,7 +16,7 @@
 
 package org.grad.eNav.cKeeper.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.McpConnectivityException;
 import org.grad.eNav.cKeeper.exceptions.SavingFailedException;
@@ -26,8 +26,8 @@ import org.grad.eNav.cKeeper.services.McpService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -121,7 +121,7 @@ class McpServiceControllerTest {
         doThrow(McpConnectivityException.class).when(this.mcpService).getMcpEntity(this.mcpServiceDto.getMrn(), McpServiceDto.class);
 
         // Perform the MVC request
-        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}/", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn()))
+        MvcResult mvcResult = this.mockMvc.perform(get("/api/mcp/{mcpEntityType}/{mcp}", McpEntityType.SERVICE.getValue(), this.mcpServiceDto.getMrn()))
                 .andExpect(status().isBadRequest())
                 .andReturn();
     }

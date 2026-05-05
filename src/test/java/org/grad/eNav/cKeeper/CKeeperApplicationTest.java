@@ -18,13 +18,15 @@ package org.grad.eNav.cKeeper;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
 /**
  * The Application Context Test.
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource("classpath:application.properties")
+@Import(TestingConfiguration.class)
 class CKeeperApplicationTest {
 
 	/**
@@ -32,6 +34,7 @@ class CKeeperApplicationTest {
 	 */
 	@Test
 	void contextLoads() {
+
 	}
 
 }

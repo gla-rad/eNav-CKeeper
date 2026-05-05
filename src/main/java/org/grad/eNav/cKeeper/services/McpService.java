@@ -34,7 +34,7 @@ import org.grad.eNav.cKeeper.models.dtos.mcp.McpCertitifateDto;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpEntityBase;
 import org.grad.eNav.cKeeper.models.dtos.mcp.McpServiceDto;
 import org.grad.eNav.cKeeper.utils.X509Utils;
-import org.grad.secom.core.utils.KeyStoreUtils;
+import org.grad.secomv2.core.utils.KeyStoreUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
