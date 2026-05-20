@@ -16,6 +16,7 @@
 
 package org.grad.eNav.cKeeper.models.dtos.mcp;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Date;
 
@@ -27,7 +28,7 @@ import java.util.Date;
  *
  * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-public class McpCertitifateDto {
+public class McpCertitifateDto implements Serializable {
 
     private BigInteger id;
     private String certificate;
