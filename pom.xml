@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.5</version>
+		<version>4.1.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
@@ -44,13 +44,13 @@
 
 	<properties>
 		<java.version>25</java.version>
-		<spring-cloud.version>2025.1.1</spring-cloud.version>
-		<springdoc.version>3.0.1</springdoc.version>
+		<spring-cloud.version>2025.1.3</spring-cloud.version>
+		<springdoc.version>3.1.1</springdoc.version>
 		<bootstrap.version>5.3.8</bootstrap.version>
 		<jquery.version>3.7.1</jquery.version>
 		<fa.version>7.2.0</fa.version>
-		<secomlib-version>0.0.7-SNAPSHOT</secomlib-version>
-		<hibernate.search-orm.version>8.2.1.Final</hibernate.search-orm.version>
+		<secomlib-version>0.1.4</secomlib-version>
+		<hibernate.search-orm.version>8.4.0.Final</hibernate.search-orm.version>
 	</properties>
 
 	<build>
@@ -277,12 +277,12 @@
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk18on</artifactId>
-			<version>1.84</version>
+			<version>1.85.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcpkix-jdk18on</artifactId>
-			<version>1.84</version>
+			<version>1.85</version>
 		</dependency>
 
 		<!-- Testing -->
