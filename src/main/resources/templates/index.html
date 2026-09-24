@@ -17,114 +17,120 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <th:block th:insert="~{fragments/general.html :: headerfiles}"></th:block>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.bootstrap5.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.3/css/responsive.bootstrap5.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/2.1.0/css/select.bootstrap5.min.css">
+    <th:block th:replace="~{fragments/general.html :: headerfiles}"></th:block>
+    <th:block th:replace="~{fragments/general.html :: datatable-styles}"></th:block>
 </head>
-<body>
+<body class="app-shell sky-bg">
     <noscript>
-        <h2 style="color: #ff0000">
-            Seems your browser doesn't support Javascript!
-            Websocket relies on Javascript being enabled.
-            Please enable Javascript and reload this page!
-        </h2>
+        <div class="alert alert-danger rounded-0 mb-0 text-center">
+            This application relies on JavaScript being enabled. Please enable it and reload the page.
+        </div>
     </noscript>
-    <div class="d-flex flex-column vh-100">
-        <div th:replace="~{fragments/general.html :: navbar}"></div>
-        <div class="flex-fill flex-grow-1 flex-shrink-0 sky-bg">
-            <div id="main-content" class="container mt-3">
-                <div th:replace="~{fragments/general.html :: login-card}"></div>
-                <div class="card shadow" sec:authorize="isAuthenticated()">
-                    <div class="card-header">
-                        <h2>X.509 Certificate Dashboard</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="col-12 m-1">
-                            <table id="mrn_entities_table" class="table table-sm table-striped row-border hover w-100">
-                            </table>
-                        </div>
+    <th:block th:replace="~{fragments/general.html :: navbar}"></th:block>
+    <main class="app-main">
+        <div class="container-fluid app-container">
+            <th:block th:replace="~{fragments/general.html :: login-card}"></th:block>
+            <th:block th:replace="~{fragments/general.html :: page-header(
+                'fa-certificate',
+                'X.509 Certificate Dashboard',
+                'Register the MRN entities of the e-Navigation services and manage their MCP PKI certificates')}"></th:block>
+
+            <div class="card app-card" sec:authorize="isAuthenticated()">
+                <div class="card-header">
+                    <i class="fa-solid fa-id-badge"></i>
+                    <h2>MRN entities</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-shell">
+                        <table id="mrn_entities_table" class="table table-sm table-striped row-border hover w-100"></table>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="certificatesPanel" tabindex="-1" role="dialog" aria-labelledby="certificatesPanelHeader"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-slideout modal-xl" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="certificatesPanelHeader">Entity Certificates</h5>
-                        <button type="button" class="btn-close float-end" data-bs-dismiss="modal" aria-label="Close"></button>
+    </main>
+    <th:block th:replace="~{fragments/general.html :: footer}"></th:block>
+
+    <div class="modal fade" id="certificatesPanel" tabindex="-1" role="dialog" aria-labelledby="certificatesPanelHeader"
+         aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="certificatesPanelHeader">
+                        <i class="fa-solid fa-certificate"></i>Entity Certificates
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-shell">
+                        <table id="certificates_table" class="table table-sm table-striped row-border hover w-100"></table>
                     </div>
-                    <div class="modal-body">
-                        <table id="certificates_table" class="table table-sm table-striped row-border hover w-100">
-                        </table>
-                    </div>
-                    <div class="modal-footer">
-                        <div class="float-end">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel Changes">
-                                <i class="fa-solid fa-xmark"></i>
-                                <span class="btn-label"> Close</span>
-                            </button>
-                        </div>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" title="Close">
+                        <i class="fa-solid fa-xmark"></i><span class="btn-label">Close</span>
+                    </button>
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="confirm-generate-certificate" tabindex="-1" role="dialog" aria-labelledby="confirmGenerateCertificateLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="confirmGenerateCertificateLabel">Confirm Certificate Generation</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>You are about to generate a new certificate for the selected MRN entity.</p>
-                        <p>Do you want to proceed?</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary btn-ok">Generate</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal fade" id="confirm-revoke-certificate" tabindex="-1" role="dialog" aria-labelledby="confirmRevokeCertificateLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="confirmRevokeCertificateLabel">Confirm Revoke Certificate</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>You are about to revoke this certificate. This operation cannot be undone.</p>
-                        <p>Are you sure you want to proceed?</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger btn-ok">Revoke</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div th:replace="~{fragments/general.html :: error-dialog}"></div>
-        <div th:replace="~{fragments/general.html :: footer}"></div>
     </div>
-    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.bootstrap5.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/responsive/3.0.3/js/dataTables.responsive.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/responsive/3.0.3/js/responsive.bootstrap5.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/select/2.1.0/js/dataTables.select.min.js"></script>
+
+    <div class="modal fade" id="confirm-generate-certificate" tabindex="-1" role="dialog" aria-labelledby="confirmGenerateCertificateLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmGenerateCertificateLabel">
+                        <i class="fa-solid fa-gears text-primary"></i>Confirm Certificate Generation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You are about to generate a new certificate for the selected MRN entity.</p>
+                    <p class="mb-0">Do you want to proceed?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark"></i><span>Cancel</span>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-ok">
+                        <i class="fa-solid fa-gears"></i><span>Generate</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirm-revoke-certificate" tabindex="-1" role="dialog" aria-labelledby="confirmRevokeCertificateLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmRevokeCertificateLabel">
+                        <i class="fa-solid fa-triangle-exclamation text-warning"></i>Confirm Revoke Certificate
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You are about to revoke this certificate. This operation cannot be undone.</p>
+                    <p class="mb-0">Are you sure you want to proceed?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark"></i><span>Cancel</span>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-ok">
+                        <i class="fa-solid fa-ban"></i><span>Revoke</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:replace="~{fragments/general.html :: error-dialog}"></th:block>
+
+    <th:block th:replace="~{fragments/general.html :: core-scripts}"></th:block>
+    <th:block th:replace="~{fragments/general.html :: datatable-scripts}"></th:block>
     <!-- We need the datetime-moment plugin to handle the sorting in the dates columns -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
-    <script src="https://cdn.datatables.net/plug-ins/2.1.8/sorting/datetime-moment.js"></script>
-    <script th:src="@{/lib/dataTables.altEditor.free.js}"></script>
-    <script th:src="@{/src/common.js}"></script>
-    <script th:src="@{/src/mrnEntities.js}"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/plug-ins/2.1.8/sorting/datetime-moment.js"></script>
+    <script type="text/javascript" th:src="@{/src/mrnEntities.js}"></script>
 </body>
 </html>

@@ -79,9 +79,7 @@ public class HTMLViewerController {
      */
     @GetMapping("/index")
     public String index(Model model) {
-        model.addAttribute("appName", this.appName);
-        model.addAttribute("appOperatorUrl", this.appOperatorUrl);
-        model.addAttribute("appCopyright", this.appCopyright);
+        this.addCommonAttributes(model, "index");
         // Return the rendered index
         return "index";
     }
@@ -94,13 +92,26 @@ public class HTMLViewerController {
      */
     @GetMapping("/about")
     public String about(Model model) {
-        model.addAttribute("appName", this.appName);
+        this.addCommonAttributes(model, "about");
         model.addAttribute("appVersion", this.appVersion);
         model.addAttribute("appOperatorName", this.appOperatorName);
         model.addAttribute("appOperatorContact", this.appOperatorContact);
+        return "about";
+    }
+
+    /**
+     * Populates the UI model with the attributes shared by every page of the
+     * application - the service branding and the name of the currently
+     * rendered page, which drives the active entry of the navigation bar.
+     *
+     * @param model The application UI model
+     * @param page The name of the page being rendered
+     */
+    protected void addCommonAttributes(Model model, String page) {
+        model.addAttribute("page", page);
+        model.addAttribute("appName", this.appName);
         model.addAttribute("appOperatorUrl", this.appOperatorUrl);
         model.addAttribute("appCopyright", this.appCopyright);
-        return "about";
     }
 
     /**
