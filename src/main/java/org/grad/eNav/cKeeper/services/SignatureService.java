@@ -63,7 +63,7 @@ public class SignatureService {
      * The X.509 Trust-Store Certificate Thumbprint Algorithm.
      */
     @Value("${gla.rad.ckeeper.mcp.trustStore.intermediateCertificate.alias:}")
-    String intermediateCertificateAlias;
+    String intermediateCertAlias;
 
     /**
      * The MRN Entity Service.
@@ -113,7 +113,7 @@ public class SignatureService {
                 .map(Certificate::getCertificate)
                 .map(SecomPemUtils::getMinifiedPemFromCertString)
                 .orElse(null);;
-        final String intermediateCertificate = Optional.ofNullable(this.intermediateCertificateAlias)
+        final String intermediateCertificate = Optional.ofNullable(this.intermediateCertAlias)
                 .map(this.certificateService::getTrustedCertificate)
                 .map((x509) -> {try { return SecomPemUtils.getMinifiedPemFromCert(x509); } catch (CertificateEncodingException ex) {return null;}} )
                 .orElse(null);

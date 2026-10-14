@@ -50,7 +50,7 @@ public class SignatureController {
     /**
      * The X.509 Certificate Algorithm.
      */
-    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA2-384withECDSA}")
+    @Value("${gla.rad.ckeeper.x509.cert.algorithm:SHA384withECDSA}")
     String defaultSigningAlgorithm;
 
     /**
