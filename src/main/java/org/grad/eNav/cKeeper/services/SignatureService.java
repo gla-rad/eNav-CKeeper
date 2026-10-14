@@ -62,7 +62,7 @@ public class SignatureService {
     /**
      * The X.509 Trust-Store Certificate Thumbprint Algorithm.
      */
-    @Value("${gla.rad.ckeeper.mcp.trustStore.intermediateCertificate.alias:intermediate")
+    @Value("${gla.rad.ckeeper.mcp.trustStore.intermediateCertificate.alias:intermediate}")
     String intermediateCertificateAlias;
 
     /**
