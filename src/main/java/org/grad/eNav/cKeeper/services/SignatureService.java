@@ -62,7 +62,7 @@ public class SignatureService {
     /**
      * The X.509 Trust-Store Certificate Thumbprint Algorithm.
      */
-    @Value("${gla.rad.ckeeper.mcp.trustStore.intermediateCertificate.alias:intermediate}")
+    @Value("${gla.rad.ckeeper.mcp.trustStore.intermediateCertificate.alias:}")
     String intermediateCertificateAlias;
 
     /**
@@ -105,29 +105,33 @@ public class SignatureService {
         );
 
         // Get the latest or create a certificate if it doesn't exist
-        final Certificate signCertificate = this.certificateService.getLatestOrCreate(
+        final Certificate certificate = this.certificateService.getLatestOrCreate(
                 mrnEntity.getId());
 
         // Now get the defined intermediate and root certificate for the operation as well
-        final X509Certificate intermediateCertificate = Optional.ofNullable(this.intermediateCertificateAlias)
+        final String signingCertificate = Optional.ofNullable(certificate)
+                .map(Certificate::getCertificate)
+                .map(SecomPemUtils::getMinifiedPemFromCertString)
+                .orElse(null);;
+        final String intermediateCertificate = Optional.ofNullable(this.intermediateCertificateAlias)
                 .map(this.certificateService::getTrustedCertificate)
+                .map((x509) -> {try { return SecomPemUtils.getMinifiedPemFromCert(x509); } catch (CertificateEncodingException ex) {return null;}} )
                 .orElse(null);
         final X509Certificate rootCertificate = Optional.ofNullable(this.rootCertAlias)
                 .map(this.certificateService::getTrustedCertificate)
                 .orElseThrow(() -> new InvalidRequestException("Root certificate not found!"));
-        final String[] certificatePemArray = Stream.of(signCertificate, intermediateCertificate)
+
+        // Build the certificates array with non-null elements
+        final String[] certificatePemArray = Stream.of(signingCertificate, intermediateCertificate)
                 .filter(Objects::nonNull)
-                .map(Certificate.class::cast)
-                .map(Certificate::getCertificate)
-                .map(SecomPemUtils::getMinifiedPemFromCertString)
                 .toArray(String[]::new);
 
         // Create the signature certificate response
         final SignatureCertificate signatureCertificate = new SignatureCertificate();
         try {
-            signatureCertificate.setCertificateId(signCertificate.getId());
+            signatureCertificate.setCertificateId(certificate.getId());
             signatureCertificate.setCertificates(certificatePemArray);
-            signatureCertificate.setPublicKey(SecomPemUtils.getMinifiedPemFromPublicKeyString(signCertificate.getPublicKey()));
+            signatureCertificate.setPublicKey(SecomPemUtils.getMinifiedPemFromPublicKeyString(certificate.getPublicKey()));
             signatureCertificate.setRootCertificate(SecomPemUtils.getMinifiedPemFromCert(rootCertificate));
         } catch (CertificateEncodingException ex) {
             throw new ValidationException(ex.getMessage());
