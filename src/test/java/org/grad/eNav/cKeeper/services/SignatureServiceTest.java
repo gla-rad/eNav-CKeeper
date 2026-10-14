@@ -107,11 +107,12 @@ class SignatureServiceTest {
         // Create a new Signature Certificate
         this.signatureCertificate = new SignatureCertificate();
         this.signatureCertificate.setCertificateId(this.certificate.getId());
-        this.signatureCertificate.setCertificate(this.certificate.getCertificate());
+        this.signatureCertificate.setCertificates(new String[]{this.certificate.getCertificate()});
         this.signatureCertificate.setPublicKey(this.certificate.getPublicKey());
         this.signatureCertificate.setRootCertificate("ROOT_CERTIFICATE");
 
         // Generate a dummy content and signature
+        this.signatureService.rootCertAlias = "root";
         this.algorithm = "SHA256withECDSA";
         this.content = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
         this.signature = MessageDigest.getInstance("SHA-256").digest(("That's the signature?").getBytes());
@@ -130,7 +131,7 @@ class SignatureServiceTest {
 
         doReturn(this.mrnEntity).when(this.mrnEntityService).getOrCreate(any(), any(), any(), any(), any());
         doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
-        doReturn(rootCertificate).when(this.certificateService).getTrustedCertificate(any());
+        doReturn(rootCertificate).when(this.certificateService).getTrustedCertificate(eq("root"));
 
         // Perform the service call
         SignatureCertificate result = this.signatureService.getSignatureCertificate(this.mrnEntity.getName(), this.mrnEntity.getMmsi(), this.mrnEntity.getVersion(), this.mrnEntity.getEntityType());
@@ -138,7 +139,7 @@ class SignatureServiceTest {
         // Assert that the signature certificate seems OK
         assertNotNull(result);
         assertEquals(this.certificate.getId(), result.getCertificateId());
-        assertEquals(this.certificate.getCertificate(), result.getCertificate());
+        assertArrayEquals(new String[]{this.certificate.getCertificate()}, result.getCertificates());
         assertEquals(this.certificate.getPublicKey(), result.getPublicKey());
         assertEquals(Base64.getEncoder().encodeToString(new byte[]{0x01, 0x02, 0x03, 0x04}), result.getRootCertificate());
     }

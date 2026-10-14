@@ -41,6 +41,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -101,7 +102,7 @@ class SignatureControllerTest {
         // Create a new signature certificate
         this.signatureCertificate = new SignatureCertificate();
         this.signatureCertificate.setCertificateId(BigInteger.ONE);
-        this.signatureCertificate.setCertificate("Certificate");
+        this.signatureCertificate.setCertificates(new String[]{"Certificate"});
         this.signatureCertificate.setPublicKey("PublicKey");
         this.signatureCertificate.setRootCertificate("rootCertificateThumbprint");
 
@@ -129,7 +130,7 @@ class SignatureControllerTest {
         // Parse and validate the response
         SignatureCertificateDto result = this.objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignatureCertificateDto.class);
         assertEquals(this.signatureCertificate.getCertificateId(), result.getCertificateId());
-        assertEquals(this.signatureCertificate.getCertificate(), result.getCertificate());
+        assertArrayEquals(this.signatureCertificate.getCertificates(), result.getCertificates());
         assertEquals(this.signatureCertificate.getPublicKey(), result.getPublicKey());
         assertEquals(this.signatureCertificate.getRootCertificate(), result.getRootCertificate());
     }

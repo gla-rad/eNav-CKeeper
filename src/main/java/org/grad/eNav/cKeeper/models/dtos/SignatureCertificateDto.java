@@ -27,7 +27,7 @@ public class SignatureCertificateDto {
 
     // Class Variables
     private BigInteger certificateId;
-    private String certificate;
+    private String[] certificates;
     private String publicKey;
     private String rootCertificate;
 
@@ -50,21 +50,21 @@ public class SignatureCertificateDto {
     }
 
     /**
-     * Gets certificate.
+     * Gets certificates.
      *
-     * @return the certificate
+     * @return the certificates
      */
-    public String getCertificate() {
-        return certificate;
+    public String[] getCertificates() {
+        return certificates;
     }
 
     /**
-     * Sets certificate.
+     * Sets certificates.
      *
-     * @param certificate the certificate
+     * @param certificates the certificates
      */
-    public void setCertificate(String certificate) {
-        this.certificate = certificate;
+    public void setCertificates(String[] certificates) {
+        this.certificates = certificates;
     }
 
     /**

@@ -49,7 +49,7 @@
 		<bootstrap.version>5.3.8</bootstrap.version>
 		<jquery.version>3.7.1</jquery.version>
 		<fa.version>7.2.0</fa.version>
-		<secomlib-version>0.1.4</secomlib-version>
+		<secomlib-version>0.9.6</secomlib-version>
 		<hibernate.search-orm.version>8.4.0.Final</hibernate.search-orm.version>
 	</properties>
 
