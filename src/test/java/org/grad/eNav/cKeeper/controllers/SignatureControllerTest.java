@@ -324,7 +324,7 @@ class SignatureControllerTest {
      */
     @Test
     void testVerifyEntitySignatureByMrn() throws Exception {
-        doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignatureByMrn(any(), any(), any(), any());
+        doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignatureByMrn(any(), any(), any(), any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(post("/api/signature/entity/verify/{entityMrn}", this.entityMrn)
@@ -340,7 +340,7 @@ class SignatureControllerTest {
      */
     @Test
     void testVerifyEntitySignatureByMrnFail() throws Exception {
-        doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignatureByMrn(any(), any(), any(), any());
+        doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignatureByMrn(any(), any(), any(), any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(post("/api/signature/entity/verify/{entityMrn}", this.entityMrn)
@@ -356,7 +356,7 @@ class SignatureControllerTest {
      */
     @Test
     void testVerifyEntitySignatureByMmsi() throws Exception {
-        doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignatureByMmsi(any(), any(), any(), any());
+        doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignatureByMmsi(any(), any(), any(), any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(post("/api/signature/mmsi/verify/{mmsi}", this.mmsi)
@@ -372,7 +372,7 @@ class SignatureControllerTest {
      */
     @Test
     void testVerifyEntitySignatureByMmsiFail() throws Exception {
-        doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignatureByMmsi(any(), any(), any(), any());
+        doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignatureByMmsi(any(), any(), any(), any(), any());
 
         // Perform the MVC request
         this.mockMvc.perform(post("/api/signature/mmsi/verify/{mmsi}", this.mmsi)

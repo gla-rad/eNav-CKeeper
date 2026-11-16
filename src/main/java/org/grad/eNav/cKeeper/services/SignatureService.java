@@ -37,6 +37,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
@@ -178,21 +179,32 @@ public class SignatureService {
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyEntitySignatureByMrn(@NotNull String entityMrn, String algorithm, String b64Content, String b64Signature) {
-        return Optional.of(entityMrn)
+    public boolean verifyEntitySignatureByMrn(@NotNull String entityMrn, String algorithm, String[] certificates, String b64Content, String b64Signature) {
+        final BigInteger localCertificateId = Optional.of(entityMrn)
                 .map(this.mrnEntityService::findOneByMrn)
                 .map(MrnEntity::getId)
                 .map(this.certificateService::getLatestOrCreate)
                 .map(Certificate::getId)
-                .map(id -> {
-                    try {
-                        log.debug("Signature service verifying payload: {}\n with signature: {}", b64Content, b64Signature);
-                        return this.certificateService.verifyContent(id, algorithm, Base64.getDecoder().decode(b64Content), Base64.getDecoder().decode(b64Signature));
-                    } catch (Exception ex) {
-                        return false;
-                    }
-                })
-                .orElse(Boolean.FALSE);
+                .orElse(null);
+
+        log.debug("Signature service verifying payload: {}\n with signature: {}", b64Content, b64Signature);
+        try {
+            return this.certificateService.verifyContent(
+                    localCertificateId,
+                    algorithm,
+                    Arrays.stream(Optional.ofNullable(certificates)
+                            .orElse(new String[]{}))
+                            .findFirst()
+                            .map(Base64.getDecoder()::decode)
+                            .map(String::new)
+                            .map((cert) -> { try { return SecomPemUtils.getCertFromPem(cert); } catch (Exception ex) { return null; } })
+                            .orElse(null),
+                    Base64.getDecoder().decode(b64Content),
+                    Base64.getDecoder().decode(b64Signature));
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException | InvalidKeyException ex) {
+            log.error(ex.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -208,11 +220,11 @@ public class SignatureService {
      * @param b64Signature  The Base64 encoded signature to verify the content with
      * @return Whether the verification was successful or not
      */
-    public boolean verifyEntitySignatureByMmsi(@NotNull String mmsi, String algorithm, String b64Content, String b64Signature) {
+    public boolean verifyEntitySignatureByMmsi(@NotNull String mmsi, String algorithm,  String[] certificates, String b64Content, String b64Signature) {
         return Optional.of(mmsi)
                 .map(this.mrnEntityService::findOneByMmsi)
                 .map(MrnEntity::getMrn)
-                .map(mrn -> this.verifyEntitySignatureByMrn(mrn, algorithm, b64Content, b64Signature))
+                .map(mrn -> this.verifyEntitySignatureByMrn(mrn, algorithm, certificates, b64Content, b64Signature))
                 .orElse(Boolean.FALSE);
     }
 }

@@ -36,6 +36,7 @@ import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
 import org.grad.secomv2.core.utils.KeyStoreUtils;
+import org.grad.secomv2.core.utils.SecomPemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -434,16 +435,19 @@ public class CertificateService {
      * @throws SignatureException when the signature generation process fails
      * @throws InvalidKeyException if the key provided for the signature is invalid
      */
-    public boolean verifyContent(BigInteger id, String algorithm, byte[] payload, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public boolean verifyContent(BigInteger id, String algorithm, X509Certificate certificate, byte[] payload, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         // Pick up the certificate by the provided ID
-        Certificate certificate = this.certificateRepo.findById(id)
-                .orElseThrow(() ->
-                        new DataNotFoundException(String.format("No Certificate found for the provided ID: %d", id))
+        Certificate loadedCertificate = Optional.ofNullable(certificate)
+                .map(Certificate.class::cast)
+                .orElse(this.certificateRepo.findById(id)
+                    .orElseThrow(() ->
+                            new DataNotFoundException(String.format("No Certificate found for the provided ID: %d", id))
+                    )
                 );
 
         // Create a new signature to sign the provided content
         Signature sign = Signature.getInstance(Optional.ofNullable(algorithm).orElse(this.defaultSigningAlgorithm));
-        sign.initVerify(X509Utils.publicKeyFromPem(certificate.getPublicKey()));
+        sign.initVerify(X509Utils.publicKeyFromPem(loadedCertificate.getPublicKey()));
         sign.update(payload);
 
         // Sign and return the signature
