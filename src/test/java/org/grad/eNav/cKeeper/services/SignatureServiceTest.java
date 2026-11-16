@@ -16,11 +16,14 @@
 
 package org.grad.eNav.cKeeper.services;
 
+import org.bouncycastle.operator.OperatorCreationException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
 import org.grad.eNav.cKeeper.models.domain.MrnEntity;
 import org.grad.eNav.cKeeper.models.domain.SignatureCertificate;
 import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
+import org.grad.eNav.cKeeper.utils.X509Utils;
+import org.grad.secomv2.core.utils.SecomPemUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,11 +34,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
@@ -181,13 +182,20 @@ class SignatureServiceTest {
      * ID and the content we submit.
      */
     @Test
-    void testVerifyEntitySignatureByMrn() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByMrn(this.mrnEntity.getMrn());
-        doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
-        doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(mrnEntity.getId(), this.algorithm, null, this.content, this.signature);
+    void testVerifyEntitySignatureByMrn() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, CertificateException, OperatorCreationException {
+        // Initialise the service parameters
+        this.certificateService.keyPairCurve="secp384r1";
+        this.certificateService.defaultSigningAlgorithm ="SHA3-384withECDSA";
+        this.certificateService.certDirName="CN=Test";
+
+        // Get a test certificate
+        final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningAlgorithm);
+
+        doReturn(Boolean.TRUE).when(this.certificateService).verifyContent(this.algorithm, SecomPemUtils.getMinifiedPemFromCert(x509Certificate), this.content, this.signature);
 
         // Perform the service call
-        assertTrue(this.signatureService.verifyEntitySignatureByMrn(this.mrnEntity.getMrn(), this.algorithm, null, Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString((this.signature))));
+        assertTrue(this.signatureService.verifyEntitySignatureByMrn(this.mrnEntity.getMrn(), this.algorithm, SecomPemUtils.getMinifiedPemFromCerts(new X509Certificate[]{x509Certificate}), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString((this.signature))));
     }
 
     /**
@@ -195,13 +203,20 @@ class SignatureServiceTest {
      * entity ID and the content we submit is NOT valid.
      */
     @Test
-    void testVerifyEntitySignatureByMrnFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByMrn(this.mrnEntity.getMrn());
-        doReturn(this.certificate).when(this.certificateService).getLatestOrCreate(this.mrnEntity.getId());
-        doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(mrnEntity.getId(), this.algorithm, null, this.content, this.signature);
+    void testVerifyEntitySignatureByMrnFail() throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, InvalidAlgorithmParameterException, CertificateException, OperatorCreationException {
+        // Initialise the service parameters
+        this.certificateService.keyPairCurve="secp384r1";
+        this.certificateService.defaultSigningAlgorithm ="SHA3-384withECDSA";
+        this.certificateService.certDirName="CN=Test";
+
+        // Get a test certificate
+        final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningAlgorithm);
+
+        doReturn(Boolean.FALSE).when(this.certificateService).verifyContent(this.algorithm, SecomPemUtils.getMinifiedPemFromCert(x509Certificate), this.content, this.signature);
 
         // Perform the service call
-        assertFalse(this.signatureService.verifyEntitySignatureByMrn(this.mrnEntity.getMrn(), this.algorithm, null, Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString(this.signature)));
+        assertFalse(this.signatureService.verifyEntitySignatureByMrn(this.mrnEntity.getMrn(), this.algorithm, SecomPemUtils.getMinifiedPemFromCerts(new X509Certificate[]{x509Certificate}), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString(this.signature)));
     }
 
     /**
@@ -209,12 +224,21 @@ class SignatureServiceTest {
      * MMSI and the content we submit.
      */
     @Test
-    void testVerifyEntitySignatureByMmsi() {
+    void testVerifyEntitySignatureByMmsi() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException {
+        // Initialise the service parameters
+        this.certificateService.keyPairCurve="secp384r1";
+        this.certificateService.defaultSigningAlgorithm ="SHA3-384withECDSA";
+        this.certificateService.certDirName="CN=Test";
+
+        // Get a test certificate
+        final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningAlgorithm);
+
         doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByMmsi(this.mrnEntity.getMmsi());
         doReturn(Boolean.TRUE).when(this.signatureService).verifyEntitySignatureByMrn(eq(this.mrnEntity.getMrn()), any(), any(), any(), any());
 
         // Perform the service call
-        assertTrue(this.signatureService.verifyEntitySignatureByMmsi(this.mrnEntity.getMmsi(), this.algorithm, null, Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString((this.signature))));
+        assertTrue(this.signatureService.verifyEntitySignatureByMmsi(this.mrnEntity.getMmsi(), this.algorithm, SecomPemUtils.getMinifiedPemFromCerts(new X509Certificate[]{x509Certificate}), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString((this.signature))));
     }
 
     /**
@@ -222,12 +246,21 @@ class SignatureServiceTest {
      * entity MMSI and the content we submit is NOT valid.
      */
     @Test
-    void testVerifyEntitySignatureByMmsiFail() {
+    void testVerifyEntitySignatureByMmsiFail() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException, OperatorCreationException {
+        // Initialise the service parameters
+        this.certificateService.keyPairCurve="secp384r1";
+        this.certificateService.defaultSigningAlgorithm ="SHA3-384withECDSA";
+        this.certificateService.certDirName="CN=Test";
+
+        // Get a test certificate
+        final KeyPair keyPair = X509Utils.generateKeyPair(this.certificateService.keyPairCurve);
+        final X509Certificate x509Certificate = X509Utils.generateX509Certificate(keyPair, this.certificateService.certDirName, new Date(), new Date(), this.certificateService.defaultSigningAlgorithm);
+
         doReturn(this.mrnEntity).when(this.mrnEntityService).findOneByMmsi(this.mrnEntity.getMmsi());
         doReturn(Boolean.FALSE).when(this.signatureService).verifyEntitySignatureByMrn(eq(this.mrnEntity.getMrn()), any(), any(), any(), any());
 
         // Perform the service call
-        assertFalse(this.signatureService.verifyEntitySignatureByMmsi(this.mrnEntity.getMmsi(), this.algorithm, null, Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString(this.signature)));
+        assertFalse(this.signatureService.verifyEntitySignatureByMmsi(this.mrnEntity.getMmsi(), this.algorithm, SecomPemUtils.getMinifiedPemFromCerts(new X509Certificate[]{x509Certificate}), Base64.getEncoder().encodeToString(this.content), Base64.getEncoder().encodeToString(this.signature)));
     }
 
 }

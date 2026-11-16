@@ -44,6 +44,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.time.Instant;
@@ -435,19 +436,21 @@ public class CertificateService {
      * @throws SignatureException when the signature generation process fails
      * @throws InvalidKeyException if the key provided for the signature is invalid
      */
-    public boolean verifyContent(BigInteger id, String algorithm, X509Certificate certificate, byte[] payload, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
-        // Pick up the certificate by the provided ID
-        Certificate loadedCertificate = Optional.ofNullable(certificate)
-                .map(Certificate.class::cast)
-                .orElse(this.certificateRepo.findById(id)
-                    .orElseThrow(() ->
-                            new DataNotFoundException(String.format("No Certificate found for the provided ID: %d", id))
-                    )
-                );
-
+    public boolean verifyContent(String algorithm, String certificate, byte[] payload, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
         // Create a new signature to sign the provided content
-        Signature sign = Signature.getInstance(Optional.ofNullable(algorithm).orElse(this.defaultSigningAlgorithm));
-        sign.initVerify(X509Utils.publicKeyFromPem(loadedCertificate.getPublicKey()));
+        Signature sign = Signature.getInstance(Optional.ofNullable(algorithm)
+                .orElse(this.defaultSigningAlgorithm));
+        sign.initVerify(Optional.ofNullable(certificate)
+                .map(pem -> {
+                    try {
+                        return SecomPemUtils.getCertFromPem(pem);
+                    } catch (CertificateException ex) {
+                        log.error(ex.getMessage(), ex);
+                        return null;
+                    }}
+                )
+                .map(X509Certificate::getPublicKey)
+                .orElse(null));
         sign.update(payload);
 
         // Sign and return the signature

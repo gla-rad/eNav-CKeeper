@@ -30,6 +30,7 @@ import org.grad.eNav.cKeeper.models.domain.mcp.McpEntityType;
 import org.grad.eNav.cKeeper.repos.CertificateRepo;
 import org.grad.eNav.cKeeper.repos.MRNEntityRepo;
 import org.grad.eNav.cKeeper.utils.X509Utils;
+import org.grad.secomv2.core.utils.SecomPemUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -643,15 +644,12 @@ class CertificateServiceTest {
         // Create a dummy payload
         final byte[] payload = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
 
-        // Mock the service database call
-        doReturn(Optional.of(this.certificate)).when(this.certificateRepo).findById(this.certificate.getId());
-
         // Create the signature bytes
         sign.update(payload);
         byte[] signature = sign.sign();
 
         // Verify that the signature is correct
-        assertTrue(this.certificateService.verifyContent(certificate.getId(), null, null, payload, signature));
+        assertTrue(this.certificateService.verifyContent("SHA3-384withECDSA", SecomPemUtils.getMinifiedPemFromCert(x509Certificate), payload, signature));
     }
 
     /**
@@ -665,8 +663,8 @@ class CertificateServiceTest {
         final byte[] payload = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
 
         // Perform the service call
-        assertThrows(DataNotFoundException.class, () ->
-                this.certificateService.verifyContent(this.certificate.getId(), null, null,payload, null)
+        assertThrows(InvalidKeyException.class, () ->
+                this.certificateService.verifyContent("SHA3-384withECDSA", null, payload, null)
         );
     }
 

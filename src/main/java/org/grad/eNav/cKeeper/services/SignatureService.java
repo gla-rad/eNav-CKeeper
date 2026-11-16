@@ -17,6 +17,7 @@
 package org.grad.eNav.cKeeper.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.grad.eNav.cKeeper.exceptions.DataNotFoundException;
 import org.grad.eNav.cKeeper.exceptions.InvalidRequestException;
 import org.grad.eNav.cKeeper.exceptions.ValidationException;
 import org.grad.eNav.cKeeper.models.domain.Certificate;
@@ -180,25 +181,21 @@ public class SignatureService {
      * @return Whether the verification was successful or not
      */
     public boolean verifyEntitySignatureByMrn(@NotNull String entityMrn, String algorithm, String[] certificates, String b64Content, String b64Signature) {
-        final BigInteger localCertificateId = Optional.of(entityMrn)
-                .map(this.mrnEntityService::findOneByMrn)
-                .map(MrnEntity::getId)
-                .map(this.certificateService::getLatestOrCreate)
-                .map(Certificate::getId)
-                .orElse(null);
 
         log.debug("Signature service verifying payload: {}\n with signature: {}", b64Content, b64Signature);
         try {
             return this.certificateService.verifyContent(
-                    localCertificateId,
                     algorithm,
                     Arrays.stream(Optional.ofNullable(certificates)
                             .orElse(new String[]{}))
                             .findFirst()
-                            .map(Base64.getDecoder()::decode)
                             .map(String::new)
-                            .map((cert) -> { try { return SecomPemUtils.getCertFromPem(cert); } catch (Exception ex) { return null; } })
-                            .orElse(null),
+                            .orElseGet(() -> Optional.of(entityMrn)
+                                            .map(this.mrnEntityService::findOneByMrn)
+                                            .map(MrnEntity::getId)
+                                            .map(this.certificateService::getLatestOrCreate)
+                                            .map(Certificate::getCertificate)
+                                            .orElseThrow(() -> new DataNotFoundException(String.format("No Certificate found for the provided MRN: %s", entityMrn)))),
                     Base64.getDecoder().decode(b64Content),
                     Base64.getDecoder().decode(b64Signature));
         } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException | InvalidKeyException ex) {
@@ -221,10 +218,13 @@ public class SignatureService {
      * @return Whether the verification was successful or not
      */
     public boolean verifyEntitySignatureByMmsi(@NotNull String mmsi, String algorithm,  String[] certificates, String b64Content, String b64Signature) {
-        return Optional.of(mmsi)
+        // Try to find the local MRN based on the MMSI
+        final String localMrn = Optional.of(mmsi)
                 .map(this.mrnEntityService::findOneByMmsi)
                 .map(MrnEntity::getMrn)
-                .map(mrn -> this.verifyEntitySignatureByMrn(mrn, algorithm, certificates, b64Content, b64Signature))
-                .orElse(Boolean.FALSE);
+                .orElse(null);
+
+        // Then fall back to the MRN verification
+        return this.verifyEntitySignatureByMrn(localMrn, algorithm, certificates, b64Content, b64Signature);
     }
 }
