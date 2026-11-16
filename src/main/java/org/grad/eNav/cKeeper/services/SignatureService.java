@@ -36,6 +36,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
@@ -198,7 +199,7 @@ public class SignatureService {
                                             .orElseThrow(() -> new DataNotFoundException(String.format("No Certificate found for the provided MRN: %s", entityMrn)))),
                     Base64.getDecoder().decode(b64Content),
                     Base64.getDecoder().decode(b64Signature));
-        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException | InvalidKeyException ex) {
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeySpecException | SignatureException | InvalidKeyException | CertificateException ex) {
             log.error(ex.getMessage());
             return false;
         }

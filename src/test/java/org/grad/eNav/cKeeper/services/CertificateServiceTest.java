@@ -663,7 +663,7 @@ class CertificateServiceTest {
         final byte[] payload = MessageDigest.getInstance("SHA-256").digest(("Hello World").getBytes());
 
         // Perform the service call
-        assertThrows(InvalidKeyException.class, () ->
+        assertThrows(NullPointerException.class, () ->
                 this.certificateService.verifyContent("SHA3-384withECDSA", null, payload, null)
         );
     }

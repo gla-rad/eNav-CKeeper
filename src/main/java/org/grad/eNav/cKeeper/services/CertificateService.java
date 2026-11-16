@@ -436,21 +436,11 @@ public class CertificateService {
      * @throws SignatureException when the signature generation process fails
      * @throws InvalidKeyException if the key provided for the signature is invalid
      */
-    public boolean verifyContent(String algorithm, String certificate, byte[] payload, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException {
+    public boolean verifyContent(String algorithm, String certificate, byte[] payload, byte[] signature) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException, SignatureException, InvalidKeyException, CertificateException {
         // Create a new signature to sign the provided content
         Signature sign = Signature.getInstance(Optional.ofNullable(algorithm)
                 .orElse(this.defaultSigningAlgorithm));
-        sign.initVerify(Optional.ofNullable(certificate)
-                .map(pem -> {
-                    try {
-                        return SecomPemUtils.getCertFromPem(pem);
-                    } catch (CertificateException ex) {
-                        log.error(ex.getMessage(), ex);
-                        return null;
-                    }}
-                )
-                .map(X509Certificate::getPublicKey)
-                .orElse(null));
+        sign.initVerify(SecomPemUtils.getCertFromPem(certificate));
         sign.update(payload);
 
         // Sign and return the signature
